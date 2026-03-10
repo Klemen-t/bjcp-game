@@ -26,14 +26,14 @@ const ACTION_CARD_TYPES = [
     id: 'lie',
     name: 'Carta Mentida',
     icon: '🤥',
-    desc: 'Activa la mentida per a aquesta ronda. Si un equip rival demana info (IBU, ABV, color…), la app els donarà dades falses.',
-    playerAction: 'activate' // just activate, app handles lies automatically
+    desc: 'La pròxima carta d\'ajuda de l\'equip rival quedarà sabotejada (info falsa, acció invertida…). Persisteix fins que s\'activi una carta rival.',
+    playerAction: 'activate'
   },
   {
     id: 'cancel',
     name: 'Anul·lar Ajuda',
     icon: '🚫',
-    desc: 'Activa l\'escut. Si un equip rival usa una carta d\'info (IBU, ABV…) durant aquesta ronda, la seva carta queda anul·lada i no reben res.',
+    desc: 'La pròxima carta que usi l\'equip rival queda completament anul·lada sense efecte. Persisteix fins que s\'activi una carta rival.',
     playerAction: 'activate'
   },
   {
@@ -437,56 +437,12 @@ class BJCPGame {
       return { ok: false, message: "🃏 La teva carta ha estat bloquejada per l'equip rival!", shieldBlock: true };
     }
 
-    // Carta Mentida: applies to NEXT card used by rival (any type)
-    // For info cards → send false value; for other cards → consume lie silently
-    const mustLie = lieTeam && lieTeam !== teamId;
-    if (mustLie && !infoTypes.includes(cardType) && !['cancel','lie'].includes(cardType)) {
-      // Non-info card: consume the lie, notify lie-team what happened
-      await this.consumeCard(teamId, playerName, cardInstanceId);
-      await this.gameRef.child('activeLieTeam').set(null);
-      const def2 = ACTION_CARD_TYPES.find(a => a.id === cardType);
-      const lieTs = Date.now();
-      // Notify lie team
-      await this.gameRef.child(`messages/${lieTs}`).set({
-        from: 'Sistema', fromRole: 'system', toTeam: lieTeam, toPlayer: null,
-        text: `🤡 Mentida consumida! L'equip rival ha intentat usar "${def2?.name||cardType}" però l'has sabotejat. La carta ha estat consumida sense efecte!`,
-        ts: lieTs, isSystemAlert: true
-      });
-      // Victim gets generic blocked message (no detail)
-      await this.gameRef.child(`messages/${lieTs+1}`).set({
-        from: 'Sistema', fromRole: 'system', toTeam: teamId, toPlayer: null,
-        text: `🤡 Alguna cosa ha fallat amb la teva carta... (Carta Mentida en joc!)`,
-        ts: lieTs+1, isSystemAlert: true
-      });
-      return { ok: false, message: '🤡 La teva carta ha estat sabotejada!' };
-    }
+    // Carta Mentida: triggers on rival's next ELIGIBLE card
+    // NOT triggered by: cancel, lie, steal (per game rules)
+    const lieEligible = !['cancel','lie','steal'].includes(cardType);
+    const mustLie = lieTeam && lieTeam !== teamId && lieEligible;
 
     await this.consumeCard(teamId, playerName, cardInstanceId);
-
-    // If lie is active and this is a rival card (not info — those handle lie internally):
-    // Consume the lie, nullify the card effect, notify both teams
-    if (mustLie && !infoTypes.includes(cardType)) {
-      await this.gameRef.child('activeLieTeam').set(null); // consume lie
-      const lieLabels = {
-        yes_no: '❓ Sí o No', sensory: '🌾 Pista Sensorial', steal: '🦝 Robar Carta',
-        eliminate: '🃏 Descartar la Meitat', wildcard: '📞 Comodí Trucada'
-      };
-      const liedCardLabel = lieLabels[cardType] || cardType;
-      const lieTs = Date.now();
-      // Notify victim: their card failed silently
-      await this.gameRef.child(`messages/${lieTs}`).set({
-        from: 'Sistema', fromRole: 'system', toTeam: teamId, toPlayer: null,
-        text: `🤡 La vostra carta ${liedCardLabel} no ha funcionat! Un equip rival tenia una Carta Mentida activa.`,
-        ts: lieTs, isSystemAlert: true
-      });
-      // Notify lie team: their trap worked
-      await this.gameRef.child(`messages/${lieTs + 1}`).set({
-        from: 'Sistema', fromRole: 'system', toTeam: lieTeam, toPlayer: null,
-        text: `🤡 La trampa ha funcionat! La carta ${liedCardLabel} de l'equip rival ha fallat.`,
-        ts: lieTs + 1, isSystemAlert: true
-      });
-      return { ok: false, message: '🤡 La teva carta ha estat sabotejada per la Carta Mentida rival!' };
-    }
 
     switch (cardType) {
 
@@ -559,11 +515,20 @@ class BJCPGame {
       }
 
       case 'yes_no': {
-        // Place a pending question for master to answer
         await this.gameRef.child('currentBeer/pendingQuestion').set({
           teamId, playerName, question: extraData.question || '',
-          cardInstanceId, askedAt: Date.now(), answered: false
+          cardInstanceId, askedAt: Date.now(), answered: false,
+          mustLie: mustLie === true  // master sees this → inverts answer
         });
+        if (mustLie) {
+          await this.gameRef.child('activeLieTeam').set(null);
+          const lTs = Date.now();
+          await this.gameRef.child(`messages/${lTs}`).set({
+            from: 'Sistema', fromRole: 'system', toTeam: lieTeam, toPlayer: null,
+            text: `🤡 Mentida activa! El Master ha rebut la pregunta Sí/No de l'equip rival. La resposta es mostrarà INVERTIDA.`,
+            ts: lTs, isSystemAlert: true
+          });
+        }
         return { ok: true, message: 'Pregunta enviada al Master!' };
       }
 
@@ -619,7 +584,6 @@ class BJCPGame {
       }
 
       case 'eliminate': {
-        // Discard half of team's 'possible' cards that DON'T match the beer
         const myTeamData = state.teams[teamId] || {};
         const players    = myTeamData.players || {};
         const beerId     = beer.id;
@@ -634,10 +598,31 @@ class BJCPGame {
             }
           });
         });
-        // Wrong ones = possible but not the correct beer
-        const wrong = Object.keys(possibleMap).filter(id => id !== beerId);
-        // Discard half (random selection)
-        const toDiscard = wrong.sort(() => Math.random()-.5).slice(0, Math.max(1, Math.floor(wrong.length/2)));
+
+        let toDiscard;
+        if (mustLie) {
+          // Lie active: discard the CORRECT card (if marked possible), else discard GOOD cards
+          await this.gameRef.child('activeLieTeam').set(null);
+          if (possibleMap[beerId]) {
+            // Discard the correct card
+            toDiscard = [beerId];
+            const lTs = Date.now();
+            await this.gameRef.child(`messages/${lTs}`).set({
+              from: 'Sistema', fromRole: 'system', toTeam: lieTeam, toPlayer: null,
+              text: `🤡 Mentida activa! L'equip rival ha usat "Descartar la Meitat" però ha eliminat la carta CORRECTA!`,
+              ts: lTs, isSystemAlert: true
+            });
+          } else {
+            // Correct card not marked — discard half of the non-wrong ones (best possibles)
+            const nonWrong = Object.keys(possibleMap).filter(id => id === beerId);
+            toDiscard = Object.keys(possibleMap).sort(() => Math.random()-.5)
+              .slice(0, Math.max(1, Math.floor(Object.keys(possibleMap).length/2)));
+          }
+        } else {
+          // Normal: discard half of WRONG possible cards
+          const wrong = Object.keys(possibleMap).filter(id => id !== beerId);
+          toDiscard = wrong.sort(() => Math.random()-.5).slice(0, Math.max(1, Math.floor(wrong.length/2)));
+        }
 
         if (!toDiscard.length) {
           return { ok: false, message: 'No hi ha cartes possibles incorrectes per descartar.' };
@@ -659,13 +644,13 @@ class BJCPGame {
       }
 
       case 'wildcard': {
+        // Lie has NO effect on wildcard (per rules)
         const ts = Date.now();
         await this.gameRef.child(`messages/${ts}`).set({
           from: 'Sistema', fromRole: 'system', toTeam: 'master', toPlayer: null,
           text: `📞 COMODÍ TRUCADA! L'equip ${teamId} (${playerName}) ha usat el Comodí. Prepara la broma!`,
           ts, isSystemAlert: true, forMasterOnly: true
         });
-        // Open phone dialer on player's device
         return { ok: true, message: '📞 Comodí!', dialPhone: '699286930' };
       }
 

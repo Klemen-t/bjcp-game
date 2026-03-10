@@ -3,6 +3,11 @@
 // ═══════════════════════════════════════════════════════════════
 const APP_VERSION = 'v2025.03 · Build 10/03/2025 10:41';
 
+// Add popup slide-up animation
+const _popupStyle = document.createElement('style');
+_popupStyle.textContent = '@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:none;opacity:1}}';
+document.head && document.head.appendChild(_popupStyle);
+
 // ── Local state ────────────────────────────────────────────────
 let cardFilter    = 'all';
 let cardSearch    = '';
@@ -1307,6 +1312,26 @@ async function sendMsg() {
   showToast('✅ Enviat!');
 }
 
+let _lastMsgTs = 0;
+
+function showMsgPopup(text, icon) {
+  const existing = el('msg-popup');
+  if (existing) existing.remove();
+  const d = document.createElement('div');
+  d.id = 'msg-popup';
+  d.style.cssText = 'position:fixed;bottom:80px;left:12px;right:12px;z-index:9999;' +
+    'background:linear-gradient(135deg,rgba(23,19,12,.98),rgba(15,12,8,.99));' +
+    'border:1px solid var(--amber);border-radius:13px;padding:14px 16px;' +
+    'box-shadow:0 8px 40px rgba(0,0,0,.8),0 0 20px rgba(200,130,26,.2);' +
+    'animation:slideUp .25s ease;display:flex;align-items:flex-start;gap:10px;max-width:480px;margin:0 auto;';
+  d.innerHTML =
+    '<span style="font-size:1.3rem;flex-shrink:0">'+(icon||'📢')+'</span>' +
+    '<div style="flex:1;font-size:.82rem;line-height:1.5;color:var(--text)">'+text+'</div>' +
+    '<button onclick="this.parentElement.remove()" style="background:none;border:none;' +
+    'color:var(--muted);font-size:1.1rem;cursor:pointer;flex-shrink:0;padding:0 0 0 8px;line-height:1">✕</button>';
+  document.body.appendChild(d);
+}
+
 function renderMessages(msgs, viewRole) {
   const cId=viewRole==='master'?'master-msgs':'team-msgs';
   const g=el(cId); if (!g) return;
@@ -1315,11 +1340,23 @@ function renderMessages(msgs, viewRole) {
   // Master sees ALL messages; team sees only theirs
   const filtered = viewRole==='master' ? list : list.filter(m => {
     if (m.forMasterOnly) return false;
-    if (m.deliverNextRound) return false; // card grants held until next round starts
+    if (m.pendingReveal) return false;
+    if (m.deliverNextRound) return false;
     if (!m.toTeam||m.toTeam==='all') return true;
     if (m.toTeam===game.teamId&&(!m.toPlayer||m.toPlayer===game.playerName)) return true;
     return false;
   });
+
+  // Popup for new messages (team only)
+  if (viewRole !== 'master' && filtered.length > 0) {
+    const newest = filtered[filtered.length - 1];
+    if (newest.ts > _lastMsgTs) {
+      _lastMsgTs = newest.ts;
+      const icon = newest.isCardGrant ? '🃏' : newest.isInfoReveal ? '🔍'
+        : newest.isSystemAlert ? '⚠️' : newest.fromRole==='master' ? '👑' : '💬';
+      showMsgPopup(newest.text, icon);
+    }
+  }
 
   // Master also sees wildcard + system alerts
   const masterFiltered = viewRole==='master' ? list : filtered;
