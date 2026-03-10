@@ -261,7 +261,19 @@ select option{background:var(--bg3);}
       <div id="form-master" style="display:none">
         <div class="ig"><label>El teu nom</label><input type="text" id="master-name" placeholder="Master…" maxlength="20"></div>
         <div class="ig"><label>Contrassenya Master</label><input type="password" id="master-password" placeholder="••••••••"></div>
-        <button class="btn btn-primary" onclick="createGame()">✨ Crear Partida</button>
+        <div style="display:flex;gap:8px;margin-bottom:10px">
+          <button id="btn-mode-create" class="btn btn-primary" style="flex:1" onclick="setMasterMode('create')">✨ Crear Partida</button>
+          <button id="btn-mode-rejoin" class="btn btn-ghost" style="flex:1" onclick="setMasterMode('rejoin')">🔑 Recuperar</button>
+        </div>
+        <div id="master-rejoin-code" style="display:none">
+          <div class="ig"><label>Codi de partida a recuperar</label>
+            <input type="text" id="master-rejoin-input" placeholder="XXXXX" maxlength="5" style="text-transform:uppercase;letter-spacing:5px;font-size:1.3rem;text-align:center">
+          </div>
+          <button class="btn btn-primary" onclick="rejoinAsMaster()">🔑 Recuperar Partida</button>
+        </div>
+        <div id="master-create-btn">
+          <button class="btn btn-primary" onclick="createGame()">✨ Crear Partida Nova</button>
+        </div>
       </div>
       <div id="form-team" style="display:none">
         <div class="ig"><label>Codi de partida</label>
@@ -272,7 +284,7 @@ select option{background:var(--bg3);}
     </div>
     <div class="card" style="padding:11px;text-align:center">
       <p class="muted" style="font-size:.7rem;line-height:1.8">📱 Compatible amb tots els mòbils · 🌐 Sense instal·lació<br>🔄 La sessió es desa automàticament</p>
-      <p id="app-version" class="muted" style="font-size:.6rem;margin-top:5px;opacity:.5"></p>
+      <p id="app-version" style="font-size:.72rem;margin-top:8px;color:var(--amber);opacity:.75;font-family:'Cormorant Garamond',serif;letter-spacing:.5px"></p>
     </div>
   </div>
 </div>

@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
 //  UI.JS  —  Interface & interaction logic
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION = 'v2025.03 · Build 10/03/2025 10:41';
+const APP_VERSION = 'v2025.04 · 10/03/2025';
 
 // Add popup slide-up animation
 const _popupStyle = document.createElement('style');
@@ -63,10 +63,16 @@ function selectRole(role) {
   ['master','team'].forEach(r => el('form-'+r).style.display = r===role?'block':'none');
 }
 
-// ═══ CREATE ═══════════════════════════════════════════════════════
-// Password hash (SHA-256 of 'merderada' as hex) – computed at build time
-// sha256('merderada') = computed below at runtime once
-const MASTER_PW_HASH = 'a7b3c4f9e2d1a6e8c5f0b2d4a9e7c3f1b8d6a2e5c0f4b1d7a3e9c2f6b0d8a4e1'; // placeholder, replaced at runtime
+// ═══ CREATE / REJOIN ══════════════════════════════════════════════
+const MASTER_PW_HASH = 'placeholder';
+
+function setMasterMode(mode) {
+  const isRejoin = mode === 'rejoin';
+  el('master-rejoin-code').style.display = isRejoin ? 'block' : 'none';
+  el('master-create-btn').style.display  = isRejoin ? 'none'  : 'block';
+  el('btn-mode-create').className = isRejoin ? 'btn btn-ghost'   : 'btn btn-primary';
+  el('btn-mode-rejoin').className = isRejoin ? 'btn btn-primary' : 'btn btn-ghost';
+}
 
 async function _checkMasterPassword(input) {
   const enc = new TextEncoder().encode(input);
@@ -94,6 +100,34 @@ async function createGame() {
 }
 
 // ═══ JOIN ═════════════════════════════════════════════════════════
+async function rejoinAsMaster() {
+  const name = v('master-name');
+  const pw   = v('master-password');
+  const code = (v('master-rejoin-input')||'').toUpperCase().trim();
+  if (!name) return showToast('⚠️ Introdueix el teu nom');
+  if (!pw)   return showToast('⚠️ Introdueix la contrassenya');
+  if (code.length !== 5) return showToast('⚠️ Codi de 5 caràcters');
+  const ok = await _checkMasterPassword(pw);
+  if (!ok) return showToast('❌ Contrassenya incorrecta');
+  try {
+    showToast('⏳ Recuperant partida…');
+    if (!await game.checkGameExists(code)) return showToast('❌ Partida no trobada: ' + code);
+    // Re-connect as master to existing game
+    await game.initFirebase();
+    game.gameCode   = code;
+    game.role       = 'master';
+    game.playerName = name;
+    game.teamId     = null;
+    game.gameRef    = game.db.ref('games/' + code);
+    game.saveSession();
+    // Go straight to master play screen
+    showScreen('screen-play-master');
+    initMasterView();
+    listenGameState();
+    showToast('✅ Partida ' + code + ' recuperada!');
+  } catch(e) { showToast('❌ ' + e.message); console.error(e); }
+}
+
 async function loadTeamsForJoin() {
   const code = v('join-code').toUpperCase();
   const name = v('player-name');
