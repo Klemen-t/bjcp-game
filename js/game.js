@@ -238,7 +238,8 @@ class BJCPGame {
       winnerTeam: null, winnerPlayer: null, guesses: {},
       pendingQuestion: null, pendingAction: null
     });
-    await this.gameRef.update({ cardsLocked: false, activeLieTeam: null, cancelShieldTeam: null });
+    await this.gameRef.update({ cardsLocked: false, cancelShieldTeam: null });
+    // activeLieTeam persists until consumed
   }
 
   async nextRound() {
@@ -251,7 +252,7 @@ class BJCPGame {
       // Clear all player cardStates so new round starts fresh
       const updates = {
         currentRound: next, currentBeer: null, cardsLocked: true,
-        roundReset: Date.now(), activeLieTeam: null, cancelShieldTeam: null
+        roundReset: Date.now(), cancelShieldTeam: null
       };
       const teams = state.teams || {};
       Object.entries(teams).forEach(([tid, t]) => {
@@ -260,27 +261,51 @@ class BJCPGame {
         });
       });
       await this.gameRef.update(updates);
+      // Deliver pending cards (granted previous round) now that new round starts
+      await this.deliverPendingCards();
     }
   }
 
   // ── Card management: actionCards is now array of {id, type} ──
   async grantCard(teamId, playerName, cardType) {
+    // Store as pendingCard — delivered at next round start so player
+    // sees the win/lose animation BEFORE knowing which card they got
     const state = (await this.gameRef.once('value')).val();
-    const curCards = state.teams[teamId]?.players?.[playerName]?.actionCards || [];
-    const newCard  = { id: `card_${Date.now()}`, type: cardType };
-    await this.gameRef.child(`teams/${teamId}/players/${playerName}/actionCards`)
-      .set([...curCards, newCard]);
+    const pending = state.teams[teamId]?.players?.[playerName]?.pendingCards || [];
+    const newCard = { id: `card_${Date.now()}`, type: cardType };
+    await this.gameRef.child(`teams/${teamId}/players/${playerName}/pendingCards`)
+      .set([...pending, newCard]);
+    // Increment received count immediately (for stats), card arrives next round
     const rcv = state.teams[teamId]?.players?.[playerName]?.actionCardsReceived || 0;
     await this.gameRef.child(`teams/${teamId}/players/${playerName}/actionCardsReceived`).set(rcv + 1);
-    // Notify via message — marked pendingReveal so UI hides until master reveals
-    const ts = Date.now();
-    const def = ACTION_CARD_TYPES.find(a => a.type === cardType || a.id === cardType);
-    await this.gameRef.child(`messages/${ts}`).set({
-      from: 'Sistema', fromRole: 'system',
-      toTeam: teamId, toPlayer: playerName,
-      text: `🃏 Has rebut la carta: ${def?.icon||'🃏'} ${def?.name||cardType} — ${def?.desc||''}`,
-      ts, isCardGrant: true, pendingReveal: true
-    });
+  }
+
+  // Called by nextRound() — flush all pendingCards into actionCards for all players
+  async deliverPendingCards() {
+    const state = (await this.gameRef.once('value')).val();
+    const updates = {};
+    let ts = Date.now();
+    for (const [teamId, team] of Object.entries(state.teams || {})) {
+      for (const [playerName, pData] of Object.entries(team.players || {})) {
+        const pending = pData.pendingCards || [];
+        if (!pending.length) continue;
+        const current = pData.actionCards || [];
+        updates[`teams/${teamId}/players/${playerName}/actionCards`] = [...current, ...pending];
+        updates[`teams/${teamId}/players/${playerName}/pendingCards`] = [];
+        // Notify each player
+        for (const card of pending) {
+          const def = ACTION_CARD_TYPES.find(a => a.id === card.type);
+          updates[`messages/${ts}`] = {
+            from: 'Sistema', fromRole: 'system',
+            toTeam: teamId, toPlayer: playerName,
+            text: `🃏 Has rebut una carta de la ronda anterior: ${def?.icon||'🃏'} ${def?.name||card.type}`,
+            ts, isCardGrant: true
+          };
+          ts++;
+        }
+      }
+    }
+    if (Object.keys(updates).length) await this.gameRef.update(updates);
   }
 
   // Remove a specific card from a player's hand (move to usedCards history)
@@ -353,12 +378,8 @@ class BJCPGame {
 
   // ── Master manually triggers reveal to all players ────────────
   async revealResult() {
+    // Just reveal results — card notifications delivered at next round start
     await this.gameRef.child('currentBeer').update({ revealed: true, resultsVisible: true });
-    // Flip all pendingReveal messages to visible
-    const msgsSnap = await this.gameRef.child('messages').orderByChild('pendingReveal').equalTo(true).once('value');
-    const updates = {};
-    msgsSnap.forEach(child => { updates[`messages/${child.key}/pendingReveal`] = false; });
-    if (Object.keys(updates).length) await this.gameRef.update(updates);
   }
 
   // ── Reveal info (with lie support) ───────────────────────────
@@ -405,21 +426,67 @@ class BJCPGame {
       const ts = Date.now();
       await this.gameRef.child(`messages/${ts}`).set({
         from: 'Sistema', fromRole: 'system', toTeam: teamId, toPlayer: null,
-        text: `🚫 La vostra carta ${cardLabel} ha estat ANUL·LADA per l'equip rival!`,
-        ts, isSystemAlert: true
+        text: `🃏 L'equip rival ha bloquejat la teva carta ${cardLabel}! L'han anulada sense que ho sabies.`,
+        ts, isSystemAlert: true, isShieldBlock: true
       });
       await this.gameRef.child(`messages/${ts + 1}`).set({
         from: 'Sistema', fromRole: 'system', toTeam: cancelShield, toPlayer: null,
-        text: `✅ Escut activat! Has blocat la carta ${cardLabel} de l'equip ${teamId}.`,
+        text: `🃏 Èxit! Has bloquejat la carta ${cardLabel} de l'equip ${teamId}.`,
         ts: ts + 1, isSystemAlert: true
       });
-      return { ok: false, message: '🚫 Carta bloquejada per l\'escut rival!' };
+      return { ok: false, message: "🃏 La teva carta ha estat bloquejada per l'equip rival!", shieldBlock: true };
     }
 
-    // Determine if we must lie (lie card active for a different team that requested info)
-    const mustLie = lieTeam && lieTeam !== teamId && infoTypes.includes(cardType);
+    // Carta Mentida: applies to NEXT card used by rival (any type)
+    // For info cards → send false value; for other cards → consume lie silently
+    const mustLie = lieTeam && lieTeam !== teamId;
+    if (mustLie && !infoTypes.includes(cardType) && !['cancel','lie'].includes(cardType)) {
+      // Non-info card: consume the lie, notify lie-team what happened
+      await this.consumeCard(teamId, playerName, cardInstanceId);
+      await this.gameRef.child('activeLieTeam').set(null);
+      const def2 = ACTION_CARD_TYPES.find(a => a.id === cardType);
+      const lieTs = Date.now();
+      // Notify lie team
+      await this.gameRef.child(`messages/${lieTs}`).set({
+        from: 'Sistema', fromRole: 'system', toTeam: lieTeam, toPlayer: null,
+        text: `🤡 Mentida consumida! L'equip rival ha intentat usar "${def2?.name||cardType}" però l'has sabotejat. La carta ha estat consumida sense efecte!`,
+        ts: lieTs, isSystemAlert: true
+      });
+      // Victim gets generic blocked message (no detail)
+      await this.gameRef.child(`messages/${lieTs+1}`).set({
+        from: 'Sistema', fromRole: 'system', toTeam: teamId, toPlayer: null,
+        text: `🤡 Alguna cosa ha fallat amb la teva carta... (Carta Mentida en joc!)`,
+        ts: lieTs+1, isSystemAlert: true
+      });
+      return { ok: false, message: '🤡 La teva carta ha estat sabotejada!' };
+    }
 
     await this.consumeCard(teamId, playerName, cardInstanceId);
+
+    // If lie is active and this is a rival card (not info — those handle lie internally):
+    // Consume the lie, nullify the card effect, notify both teams
+    if (mustLie && !infoTypes.includes(cardType)) {
+      await this.gameRef.child('activeLieTeam').set(null); // consume lie
+      const lieLabels = {
+        yes_no: '❓ Sí o No', sensory: '🌾 Pista Sensorial', steal: '🦝 Robar Carta',
+        eliminate: '🃏 Descartar la Meitat', wildcard: '📞 Comodí Trucada'
+      };
+      const liedCardLabel = lieLabels[cardType] || cardType;
+      const lieTs = Date.now();
+      // Notify victim: their card failed silently
+      await this.gameRef.child(`messages/${lieTs}`).set({
+        from: 'Sistema', fromRole: 'system', toTeam: teamId, toPlayer: null,
+        text: `🤡 La vostra carta ${liedCardLabel} no ha funcionat! Un equip rival tenia una Carta Mentida activa.`,
+        ts: lieTs, isSystemAlert: true
+      });
+      // Notify lie team: their trap worked
+      await this.gameRef.child(`messages/${lieTs + 1}`).set({
+        from: 'Sistema', fromRole: 'system', toTeam: lieTeam, toPlayer: null,
+        text: `🤡 La trampa ha funcionat! La carta ${liedCardLabel} de l'equip rival ha fallat.`,
+        ts: lieTs + 1, isSystemAlert: true
+      });
+      return { ok: false, message: '🤡 La teva carta ha estat sabotejada per la Carta Mentida rival!' };
+    }
 
     switch (cardType) {
 
@@ -473,7 +540,7 @@ class BJCPGame {
         const ts = Date.now();
         await this.gameRef.child(`messages/${ts}`).set({
           from: 'Sistema', fromRole: 'system', toTeam: teamId, toPlayer: null,
-          text: `🤡 Carta Mentida activada! Si un equip rival demana info aquesta ronda, rebran dades FALSES.`,
+          text: `🤡 Carta Mentida activada! La propera carta que usi qualsevol equip rival serà sabotejada. Persisteix entre rondes.`,
           ts, isSystemAlert: true
         });
         return { ok: true, message: '🤡 Carta Mentida activada silenciosament!' };
@@ -482,25 +549,13 @@ class BJCPGame {
       case 'cancel': {
         await this.gameRef.child('cancelShieldTeam').set(teamId);
         const ts = Date.now();
-        // Notify own team
+        // Only notify OWN team — rivals find out ONLY when their card gets blocked
         await this.gameRef.child(`messages/${ts}`).set({
           from: 'Sistema', fromRole: 'system', toTeam: teamId, toPlayer: null,
-          text: `🛡️ Escut activat! La pròxima carta que tiri qualsevol equip rival quedarà bloquejada.`,
+          text: `🛡️ Carta Anular Ajuda activada! La pròxima carta que tiri qualsevol equip rival quedarà bloquejada. Ells no ho saben.`,
           ts, isSystemAlert: true
         });
-        // Notify all rival teams that an annul card is active
-        const allTeams = Object.keys(state.teams || {});
-        let notifTs = ts + 1;
-        for (const tid of allTeams) {
-          if (tid === teamId) continue;
-          await this.gameRef.child(`messages/${notifTs}`).set({
-            from: 'Sistema', fromRole: 'system', toTeam: tid, toPlayer: null,
-            text: `⚠️ L'equip rival ha activat una Carta d'Anul·lació. La propera carta que tireu serà bloquejada!`,
-            ts: notifTs, isSystemAlert: true
-          });
-          notifTs++;
-        }
-        return { ok: true, message: '🛡️ Escut activat! Els rivals ja saben que estan en perill.' };
+        return { ok: true, message: '🛡️ Escut activat en secret!' };
       }
 
       case 'yes_no': {

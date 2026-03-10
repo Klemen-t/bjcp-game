@@ -357,7 +357,25 @@ function initTeamView(s) {
   if (teamViewInited) return;
   teamViewInited = true;
   buildGuessOptions();
-  game.gameRef.child('messages').on('value', snap => renderMessages(snap.val(), 'team'));
+  // Listen for new messages — show popup for shield alerts
+  game.gameRef.child('messages').on('value', snap => {
+    const msgs = snap.val() || {};
+    renderMessages(msgs, 'team');
+    // Check for new shield alert directed at my team
+    const now = Date.now();
+    Object.values(msgs).forEach(m => {
+      if (m.isShieldAlert && m.toTeam === game.teamId && m.ts > (window._lastShieldCheck||0)) {
+        window._lastShieldCheck = now;
+        // Show prominent popup
+        showModal('🃏🤡 Carta Anul·lada!', `
+          <div style="text-align:center;padding:10px 0">
+            <div style="font-size:3rem;margin-bottom:10px">🃏🤡</div>
+            <div style="font-size:.9rem;line-height:1.6;color:var(--text)">${m.text}</div>
+            <button class="btn btn-primary mt-12" onclick="closeModal()">Entès</button>
+          </div>`);
+      }
+    });
+  });
 }
 
 function updateTeamView(s) {
@@ -532,9 +550,15 @@ async function confirmUseCard(cardInstanceId, cardType) {
     if (result.ok) {
       showToast('✅ ' + (result.message || 'Carta usada!'), 3500);
       if (result.dialPhone) {
-        // Open phone dialer
         setTimeout(() => { window.location.href = `tel:${result.dialPhone}`; }, 400);
       }
+    } else if (result.shieldBlock) {
+      showModal('🃏 Carta Bloquejada!', `
+        <div style="text-align:center;padding:12px 0">
+          <div style="font-size:3rem;margin-bottom:10px">🃏</div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:1.2rem;font-weight:700;color:var(--amber-l);margin-bottom:10px">L'equip rival ha anulat la teva carta!</div>
+          <p class="muted" style="font-size:.82rem;line-height:1.6">Tenien activada la Carta Anular Ajuda en secret.<br>La teva carta s'ha consumit sense efecte.</p>
+        </div>`);
     } else {
       showToast('⚠️ ' + (result.message || "No s'ha pogut usar"), 3500);
     }
@@ -1257,7 +1281,7 @@ function renderMessages(msgs, viewRole) {
   // Master sees ALL messages; team sees only theirs
   const filtered = viewRole==='master' ? list : list.filter(m => {
     if (m.forMasterOnly) return false;
-    if (m.pendingReveal) return false; // hidden until master reveals result
+    if (m.deliverNextRound) return false; // card grants held until next round starts
     if (!m.toTeam||m.toTeam==='all') return true;
     if (m.toTeam===game.teamId&&(!m.toPlayer||m.toPlayer===game.playerName)) return true;
     return false;
