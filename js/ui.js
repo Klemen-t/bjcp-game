@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
 //  UI.JS  —  Interface & interaction logic
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION = 'v2025.04 · 10/03/2025';
+const APP_VERSION = 'v2025.05 · 10/03/2025';
 
 // Add popup slide-up animation
 const _popupStyle = document.createElement('style');
@@ -111,19 +111,28 @@ async function rejoinAsMaster() {
   if (!ok) return showToast('❌ Contrassenya incorrecta');
   try {
     showToast('⏳ Recuperant partida…');
-    if (!await game.checkGameExists(code)) return showToast('❌ Partida no trobada: ' + code);
-    // Re-connect as master to existing game
     await game.initFirebase();
+    if (!await game.checkGameExists(code)) return showToast('❌ Partida no trobada: ' + code);
+    // Reconnect as master
     game.gameCode   = code;
     game.role       = 'master';
     game.playerName = name;
     game.teamId     = null;
     game.gameRef    = game.db.ref('games/' + code);
     game.saveSession();
-    // Go straight to master play screen
-    showScreen('screen-play-master');
-    initMasterView();
-    listenGameState();
+    // Load current state to decide which screen
+    const snap  = await game.gameRef.once('value');
+    const state = snap.val();
+    gameState   = state;
+    setEl('display-code', code);
+    if (!state || state.status === 'lobby') {
+      showScreen('screen-lobby-master');
+      listenLobby();
+    } else {
+      showScreen('screen-game-master');
+      listenLobby();
+      initMasterView();
+    }
     showToast('✅ Partida ' + code + ' recuperada!');
   } catch(e) { showToast('❌ ' + e.message); console.error(e); }
 }
