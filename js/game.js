@@ -707,7 +707,7 @@ class BJCPGame {
     const labels = { ibu: '🌿 IBU', abv: '🍺 Alcohol', srm: '🎨 Color SRM', category: '📂 Categoria' };
     await this.gameRef.child(`messages/${ts}`).set({
       from: 'Master', fromRole: 'master', toTeam: pa.teamId, toPlayer: null,
-      text: `${labels[pa.type] || pa.type}: ${finalVal}${mustLie ? ' 🤥' : ''}`,
+      text: `${labels[pa.type] || pa.type}: ${finalVal}`,  // no hint it's a lie
       ts, isInfoReveal: true
     });
   }

@@ -1,6 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
 //  UI.JS  —  Interface & interaction logic
 // ═══════════════════════════════════════════════════════════════
+const APP_VERSION = 'v2025.03 · Build 10/03/2025 10:41';
 
 // ── Local state ────────────────────────────────────────────────
 let cardFilter    = 'all';
@@ -382,7 +383,19 @@ function updateTeamView(s) {
   if (!s) return;
   const myTeam  = s.teams?.[game.teamId]||{};
   const myPlayer = myTeam.players?.[game.playerName]||{};
-  const myCards  = myPlayer.actionCards || [];  // array of {id, type}
+  const allMyCards = myPlayer.actionCards || [];
+  // Filter out cards that are pending reveal (not yet shown to player)
+  // A card is pending if there's a pendingReveal message for this player
+  const pendingMsgs = Object.values(s.messages || {}).filter(
+    m => m.pendingReveal && m.toTeam === game.teamId &&
+         (!m.toPlayer || m.toPlayer === game.playerName) && m.isCardGrant
+  );
+  // Cards granted after the latest pending message are not yet revealed
+  // Simple heuristic: if ANY pendingReveal card grant exists, hide the newest card
+  const hiddenCount = pendingMsgs.length;
+  const myCards = hiddenCount > 0
+    ? allMyCards.slice(0, Math.max(0, allMyCards.length - hiddenCount))
+    : allMyCards;
   const round    = s.currentRound||1;
   const total    = s.totalRounds||6;
 
@@ -601,27 +614,48 @@ function buildTeamCardMap() {
   return out;
 }
 
+// Parse a revealed info string into a numeric range [min, max]
+// Handles: "35", "35 IBU", "30–45", "30–45 IBU", "8.5%", "4.4–5.8%", "SRM 19", "SRM 8–14"
+function parseInfoRange(str) {
+  if (!str) return null;
+  const clean = str.replace(/IBU|SRM|%/gi,'').trim();
+  const parts = clean.split(/[–-]/).map(s => parseFloat(s.trim()));
+  if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) return [parts[0], parts[1]];
+  if (parts.length === 1 && !isNaN(parts[0])) return [parts[0], parts[0]]; // single value
+  return null;
+}
+
+// Check if a card's range overlaps with a revealed value/range
+function rangeOverlaps(cardMin, cardMax, revMin, revMax) {
+  return cardMax >= revMin && cardMin <= revMax;
+}
+
 function getRevealStatus(card, info, teamInfo) {
   const combined = { ...info, ...teamInfo };
   const checks = [];
+
   if (combined.ibu) {
-    const [a,b] = combined.ibu.split('–').map(Number);
-    if (card.ibuMin!=null) checks.push(card.ibuMax>=a && card.ibuMin<=b);
+    const r = parseInfoRange(combined.ibu);
+    if (r && card.ibuMin != null) checks.push(rangeOverlaps(card.ibuMin, card.ibuMax, r[0], r[1]));
+    else if (!r && card.ibuMin == null) checks.push(true); // unknown field, no check
   }
   if (combined.abv) {
-    const [a,b] = combined.abv.replace('%','').split('–').map(Number);
-    if (card.abvMin!=null) checks.push(card.abvMax>=a && card.abvMin<=b);
+    const r = parseInfoRange(combined.abv);
+    if (r && card.abvMin != null) checks.push(rangeOverlaps(card.abvMin, card.abvMax, r[0], r[1]));
+    else if (!r && card.abvMin == null) checks.push(true);
   }
   if (combined.srm) {
-    const [a,b] = combined.srm.replace('SRM ','').split('–').map(Number);
-    if (card.srmMin!=null) checks.push(card.srmMax>=a && card.srmMin<=b);
+    const r = parseInfoRange(combined.srm);
+    if (r && card.srmMin != null) checks.push(rangeOverlaps(card.srmMin, card.srmMax, r[0], r[1]));
+    else if (!r && card.srmMin == null) checks.push(true);
   }
   if (combined.category) {
-    const num = combined.category.replace(/\D/g,'');
-    checks.push(String(card.categoryNumber)===num);
+    const num = parseInt(combined.category.replace(/\D/g,''), 10);
+    if (!isNaN(num)) checks.push(card.categoryNumber === num);
   }
+
   if (!checks.length) return null;
-  return checks.every(Boolean)?'match':checks.some(v=>v===false)?'nomatch':null;
+  return checks.every(Boolean) ? 'match' : 'nomatch';
 }
 
 function renderBeerCards() {
@@ -1355,6 +1389,9 @@ function showPlayerSettings() {
 
 // ═══ INIT ════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', async () => {
+  // Show version
+  const vEl = el('app-version');
+  if (vEl) vEl.textContent = APP_VERSION;
   const restored = await tryRestoreSession();
   if (!restored) showScreen('screen-welcome');
 });
