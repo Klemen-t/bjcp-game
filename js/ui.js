@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
 //  UI.JS  —  Interface & interaction logic
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION = 'v2025.09 · 12/03/2025';
+const APP_VERSION = 'v2025.10 · 12/03/2025';
 
 // Add popup slide-up animation
 const _popupStyle = document.createElement('style');
@@ -627,17 +627,17 @@ function showResultOverlay(s) {
   if (myWinners)        teamDetail += `<br>${myWinners}`;
   if (rivalWon)         teamDetail += `<br><span style="opacity:.7">Rivals: ${rivWinners}</span>`;
 
-  // Apply to DOM
+  // Apply to DOM — use setHTML for fields that may contain markup
   overlay.style.display = 'flex';
   overlay.className = `result-overlay ${persClass} ${teamClass}`;
-  setEl('res-personal-icon',   persIcon);
-  setEl('res-personal-title',  persTitle);
-  setEl('res-personal-detail', persDetail);
-  el('res-personal-icon').classList.toggle('res-bounce', iWon);
-  setEl('res-team-icon',   teamIcon);
-  setEl('res-team-title',  teamTitle);
-  setEl('res-team-detail', teamDetail);
-  setEl('res-beer', `🍺 ${beer?.name||'—'}`);
+  setHTML('res-personal-icon',   persIcon);
+  setEl ('res-personal-title',   persTitle);
+  setHTML('res-personal-detail', persDetail);
+  el('res-personal-icon')?.classList.toggle('res-bounce', iWon);
+  setHTML('res-team-icon',   teamIcon);
+  setEl ('res-team-title',   teamTitle);
+  setHTML('res-team-detail', teamDetail);
+  setEl ('res-beer', `🍺 ${beer?.name||'—'}`);
   clearTimeout(overlay._t);
 }
 
