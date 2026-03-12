@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>BJCP Beer Game 🍺</title>
+<title>BJCP El Joc de la Cervesa! 🍺</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -380,7 +380,7 @@ select option{background:var(--bg3);}
       <div id="cards-lock-banner" style="display:none;background:rgba(80,60,20,.12);border:1px solid rgba(200,130,26,.2);border-radius:var(--r);padding:20px;text-align:center;margin-bottom:10px">
         <div style="font-size:2rem;margin-bottom:6px">🔒</div>
         <div style="font-weight:700">Cartes bloquejades</div>
-        <div class="muted" style="font-size:.76rem;margin-top:4px">Esperant que el Master seleccioni la cervesa de la ronda</div>
+        <div class="muted" style="font-size:.76rem;margin-top:4px">Esperant que el Master seleccioni la cervesa de la ronda...</div>
       </div>
       <!-- Round bar -->
       <div class="round-bar" id="round-bar" style="display:none">
@@ -398,7 +398,7 @@ select option{background:var(--bg3);}
 
       <!-- Cancel shield own -->
       <div id="cancel-shield-info" class="pending-banner pending-cancel" style="display:none">
-        🚫 <strong>Escut actiu!</strong> La pròxima carta d'info rival quedarà bloquejada.
+        🚫 <strong>Escut actiu!</strong> La pròxima carta d'info rival quedarà bloquejada. Veuràs quina cara se'ls queda!
       </div>
       <!-- Sent proposals panel — always visible in Possibles filter -->
       <div id="team-guesses-wrap" style="display:none;margin:0 0 10px">
@@ -449,7 +449,7 @@ select option{background:var(--bg3);}
     <!-- TAB RONDA -->
     <div id="mtab-round">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:11px">
-        <div class="sec-title" style="margin:0">👑 Panel Master</div>
+        <div class="sec-title" style="margin:0">👑 Panell Master</div>
         <div style="display:flex;gap:6px;align-items:center">
           <span class="muted" style="font-size:.72rem" id="master-round">Ronda 1/6</span>
           <button class="btn btn-ghost" onclick="showSettings()">⚙️</button>
