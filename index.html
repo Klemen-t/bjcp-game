@@ -185,15 +185,17 @@ select option{background:var(--bg3);}
 .modal-title{font-family:'Cormorant Garamond',serif;font-size:1.25rem;font-weight:700;color:var(--amber-l);margin-bottom:13px;}
 
 /* RESULT OVERLAY */
-.result-overlay{position:fixed;inset:0;z-index:900;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px;animation:rin .38s ease;}
-@keyframes rin{from{opacity:0;transform:scale(.82);}to{opacity:1;transform:none;}}
-.result-win{background:radial-gradient(ellipse at center,rgba(34,100,50,.97) 0%,rgba(12,36,18,.99) 100%);}
-.result-team{background:radial-gradient(ellipse at center,rgba(160,90,10,.97) 0%,rgba(60,30,4,.99) 100%);}
-.result-lose{background:radial-gradient(ellipse at center,rgba(80,18,18,.97) 0%,rgba(20,6,6,.99) 100%);}
-#res-emoji{font-size:5.5rem;margin-bottom:12px;animation:bounce .55s ease infinite alternate;}
-@keyframes bounce{from{transform:translateY(0);}to{transform:translateY(-10px);}}
-#res-title{font-family:'Cormorant Garamond',serif;font-size:1.9rem;font-weight:700;color:#fff;margin-bottom:7px;}
-#res-beer{font-size:.9rem;color:rgba(255,255,255,.65);}
+.result-overlay{position:fixed;inset:0;z-index:900;display:none;flex-direction:column;animation:rin .38s ease;}
+@keyframes rin{from{opacity:0;transform:scale(.92);}to{opacity:1;transform:none;}}
+/* Personal half colours */
+.res-pers-win  #res-personal{background:radial-gradient(ellipse at 50% 80%,rgba(34,110,55,.98),rgba(12,40,20,.99));}
+.res-pers-lose #res-personal{background:radial-gradient(ellipse at 50% 80%,rgba(100,20,20,.98),rgba(30,8,8,.99));}
+/* Team half colours: green=gained more, orange=same, red=less */
+.res-team-win  #res-team-half{background:radial-gradient(ellipse at 50% 20%,rgba(34,110,55,.98),rgba(12,40,20,.99));}
+.res-team-tie  #res-team-half{background:radial-gradient(ellipse at 50% 20%,rgba(160,90,10,.98),rgba(60,30,4,.99));}
+.res-team-lose #res-team-half{background:radial-gradient(ellipse at 50% 20%,rgba(100,20,20,.98),rgba(30,8,8,.99));}
+@keyframes bounce{from{transform:translateY(0);}to{transform:translateY(-8px);}}
+.res-bounce{animation:bounce .55s ease infinite alternate;}
 
 /* SETTINGS */
 .settings-code-box{background:rgba(255,255,255,.04);border-radius:var(--rs);padding:14px;margin-bottom:10px;text-align:center;}
@@ -238,11 +240,21 @@ select option{background:var(--bg3);}
 <body>
 
 <!-- RESULT OVERLAY -->
-<div id="result-overlay" class="result-overlay">
-  <div id="res-emoji">🎉</div>
-  <div id="res-title">Encert!</div>
-  <div id="res-beer"></div>
-  <button class="btn btn-ghost" style="margin-top:24px;width:auto" onclick="document.getElementById('result-overlay').style.display='none'">Tancar</button>
+<div id="result-overlay" class="result-overlay" style="padding:0;flex-direction:column">
+  <!-- Top half: personal result -->
+  <div id="res-personal" style="flex:1;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 24px 16px;border-bottom:1px solid rgba(255,255,255,.12)">
+    <div id="res-personal-icon" style="font-size:3.8rem;margin-bottom:8px">🎯</div>
+    <div id="res-personal-title" style="font-family:'Cormorant Garamond',serif;font-size:1.7rem;font-weight:700;color:#fff;margin-bottom:5px"></div>
+    <div id="res-personal-detail" style="font-size:.82rem;color:rgba(255,255,255,.65);line-height:1.5;text-align:center"></div>
+  </div>
+  <!-- Bottom half: team result -->
+  <div id="res-team-half" style="flex:1;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 24px 24px">
+    <div id="res-team-icon" style="font-size:3.2rem;margin-bottom:6px">🍻</div>
+    <div id="res-team-title" style="font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:700;color:#fff;margin-bottom:5px"></div>
+    <div id="res-team-detail" style="font-size:.82rem;color:rgba(255,255,255,.65);line-height:1.5;text-align:center"></div>
+    <div id="res-beer" style="font-size:.78rem;color:rgba(255,255,255,.5);margin-top:8px"></div>
+  </div>
+  <button class="btn btn-ghost" style="position:absolute;top:14px;right:14px;width:auto;padding:6px 14px;font-size:.8rem" onclick="document.getElementById('result-overlay').style.display='none'">✕ Tancar</button>
 </div>
 
 <!-- ══ WELCOME ══ -->

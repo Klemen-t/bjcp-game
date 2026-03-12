@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
 //  UI.JS  —  Interface & interaction logic
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION = 'v2025.08 · 12/03/2025';
+const APP_VERSION = 'v2025.09 · 12/03/2025';
 
 // Add popup slide-up animation
 const _popupStyle = document.createElement('style');
@@ -463,11 +463,12 @@ function switchTab(tab) {
   if (tab==='messages') { unreadMsgs=0; updMsgBadge(); }
 }
 function switchMasterTab(tab) {
-  ['round','ranking','teams','messages'].forEach(t => {
+  ['round','ranking','teams','messages','log'].forEach(t => {
     el('mtab-'+t) && (el('mtab-'+t).style.display = t===tab?'block':'none');
     el('mnav-'+t)?.classList.toggle('active', t===tab);
   });
   if (tab==='messages') { unreadMsgs=0; updMsgBadge(); }
+  if (tab==='log') renderMasterLog(gameState);
 }
 
 // ═══ TEAM VIEW ════════════════════════════════════════════════════
@@ -567,53 +568,75 @@ function showResultOverlay(s) {
   const overlay = el('result-overlay');
   if (!overlay) return;
 
-  // Use judged.correct directly — not filtered by pts (pts can be 0 with help)
-  const judgedGuesses = guesses.filter(g => g.judged);
-  const myGuess       = judgedGuesses.find(g => g.playerName === game.playerName && g.teamId === game.teamId);
-  const iWon          = myGuess?.correct === true;
-  const myTeamCorrect = judgedGuesses.filter(g => g.teamId === game.teamId && g.correct === true);
-  const myTeamWon     = myTeamCorrect.length > 0;
-  const rivalCorrect  = judgedGuesses.filter(g => g.teamId !== game.teamId && g.correct === true);
-  const rivalWon      = rivalCorrect.length > 0;
+  const judged    = guesses.filter(g => g.judged);
+  const myGuess   = judged.find(g => g.playerName === game.playerName && g.teamId === game.teamId);
+  const iWon      = myGuess?.correct === true;
+  const iLost     = myGuess && !myGuess.correct;
+  const myPts     = myGuess?.points ?? null;
 
-  // If I have no judged guess → I didn't participate this round
-  const iParticipated = !!myGuess;
-
-  let state, emoji, title;
-  if (iWon && !rivalWon) {
-    state = 'result-win'; emoji = '🥳';
-    const pts = myGuess.points || 0;
-    title = `Has encertat! +${pts}pt${pts!==1?'s':''}`;
-  } else if (iWon && rivalWon) {
-    state = 'result-team'; emoji = '🤝';
-    const pts = myGuess.points || 0;
-    title = `Has encertat (+${pts}pt) — però un rival també!`;
-  } else if (!iParticipated && myTeamWon && !rivalWon) {
-    state = 'result-team'; emoji = '🎉';
-    title = `${myTeamCorrect[0].playerName} del teu equip ha encertat!`;
-  } else if (!iParticipated && myTeamWon && rivalWon) {
-    state = 'result-team'; emoji = '🤝';
-    title = `El teu equip ha encertat, però un rival també!`;
-  } else if (iParticipated && !iWon && myTeamWon) {
-    // I guessed wrong but teammate was right
-    state = 'result-team'; emoji = '🎉';
-    title = `${myTeamCorrect[0].playerName} del teu equip ha encertat!`;
-  } else if (!myTeamWon && rivalWon) {
-    state = 'result-lose'; emoji = '😔';
-    const rival = rivalCorrect[0];
-    title = `Ha guanyat ${rival.playerName} (${rival.teamId})`;
-  } else if (iParticipated && !iWon && !myTeamWon) {
-    state = 'result-lose'; emoji = '😔';
-    title = rivalWon ? `Ha guanyat l'equip rival` : 'No has encertat aquesta ronda';
+  // ── Personal half ─────────────────────────────────────────────
+  let persIcon, persTitle, persDetail, persClass;
+  if (iWon) {
+    persIcon  = '🎯';
+    persTitle = 'Has encertat!';
+    persDetail = myPts !== null ? `+${myPts} punt${myPts!==1?'s':''}` : '';
+    persClass = 'res-pers-win';
+  } else if (iLost) {
+    persIcon  = '❌';
+    persTitle = 'No has encertat';
+    const myCard = BJCP_CARDS.find(c => c.id === myGuess.guessId);
+    const correctCard = BJCP_CARDS.find(c => c.id === beer?.id);
+    persDetail = `Has triat: ${myCard?.name || myGuess.guess || '?'}<br>Cervesa correcta: <strong>${correctCard?.name || beer?.name || '?'}</strong>`;
+    persClass = 'res-pers-lose';
   } else {
-    state = 'result-lose'; emoji = '😶';
-    title = 'Ningú ha encertat aquesta ronda';
+    persIcon  = '⏸️';
+    persTitle = 'No has fet proposta';
+    persDetail = `Cervesa: ${beer?.name || '?'}`;
+    persClass = 'res-pers-lose';
   }
 
+  // ── Team half ─────────────────────────────────────────────────
+  // Compare team pts before and after this round using all judged guesses
+  const myTeamGuesses  = judged.filter(g => g.teamId === game.teamId);
+  const rivTeamGuesses = judged.filter(g => g.teamId !== game.teamId);
+  const myTeamPts   = myTeamGuesses.reduce((s,g) => s + (g.points||0), 0);
+  const rivTeamPts  = rivTeamGuesses.reduce((s,g) => s + (g.points||0), 0);
+  const myTeamWon   = myTeamGuesses.some(g => g.correct);
+  const rivalWon    = rivTeamGuesses.some(g => g.correct);
+
+  let teamIcon, teamTitle, teamDetail, teamClass;
+  if (myTeamPts > rivTeamPts) {
+    teamIcon  = '🏆'; teamClass = 'res-team-win';
+    teamTitle = `Victòria d'equip!`;
+  } else if (myTeamPts === rivTeamPts && myTeamPts > 0) {
+    teamIcon  = '🤝'; teamClass = 'res-team-tie';
+    teamTitle = `Empat!`;
+  } else if (myTeamPts === rivTeamPts && myTeamPts === 0) {
+    teamIcon  = '😶'; teamClass = 'res-team-tie';
+    teamTitle = `Ningú ha puntuat`;
+  } else {
+    teamIcon  = '😔'; teamClass = 'res-team-lose';
+    teamTitle = `L'equip rival ha guanyat`;
+  }
+
+  // Detail: pts breakdown
+  const myWinners  = myTeamGuesses.filter(g=>g.correct).map(g=>`${g.playerName} (+${g.points}pt)`).join(', ');
+  const rivWinners = rivTeamGuesses.filter(g=>g.correct).map(g=>`${g.playerName} (${g.teamId})`).join(', ');
+  teamDetail = '';
+  if (myTeamPts !== 0)  teamDetail += `El teu equip: <strong>${myTeamPts >= 0 ? '+' : ''}${myTeamPts}pt</strong>`;
+  if (myWinners)        teamDetail += `<br>${myWinners}`;
+  if (rivalWon)         teamDetail += `<br><span style="opacity:.7">Rivals: ${rivWinners}</span>`;
+
+  // Apply to DOM
   overlay.style.display = 'flex';
-  overlay.className = 'result-overlay ' + state;
-  setEl('res-emoji', emoji);
-  setEl('res-title', title);
+  overlay.className = `result-overlay ${persClass} ${teamClass}`;
+  setEl('res-personal-icon',   persIcon);
+  setEl('res-personal-title',  persTitle);
+  setEl('res-personal-detail', persDetail);
+  el('res-personal-icon').classList.toggle('res-bounce', iWon);
+  setEl('res-team-icon',   teamIcon);
+  setEl('res-team-title',  teamTitle);
+  setEl('res-team-detail', teamDetail);
   setEl('res-beer', `🍺 ${beer?.name||'—'}`);
   clearTimeout(overlay._t);
 }
