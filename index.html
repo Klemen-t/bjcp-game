@@ -263,18 +263,28 @@ select option{background:var(--bg3);}
       <div id="form-master" style="display:none">
         <div class="ig"><label>El teu nom</label><input type="text" id="master-name" placeholder="Master…" maxlength="20"></div>
         <div class="ig"><label>Contrassenya Master</label><input type="password" id="master-password" placeholder="••••••••"></div>
-        <div style="display:flex;gap:8px;margin-bottom:10px">
-          <button id="btn-mode-create" class="btn btn-primary" style="flex:1" onclick="setMasterMode('create')">✨ Crear Partida</button>
-          <button id="btn-mode-rejoin" class="btn btn-ghost" style="flex:1" onclick="setMasterMode('rejoin')">🔑 Recuperar</button>
+        <!-- Mode toggle -->
+        <div style="display:flex;background:rgba(255,255,255,.06);border-radius:9px;padding:3px;gap:3px;margin-bottom:12px">
+          <button id="btn-mode-create" onclick="setMasterMode('create')"
+            style="flex:1;padding:8px;border-radius:7px;border:none;cursor:pointer;font-size:.8rem;font-weight:700;background:var(--amber);color:#1a0f00;transition:.2s">
+            ✨ Crear Partida</button>
+          <button id="btn-mode-rejoin" onclick="setMasterMode('rejoin')"
+            style="flex:1;padding:8px;border-radius:7px;border:none;cursor:pointer;font-size:.8rem;font-weight:700;background:transparent;color:var(--muted);transition:.2s">
+            🔑 Recuperar</button>
         </div>
-        <div id="master-rejoin-code" style="display:none">
-          <div class="ig"><label>Codi de partida a recuperar</label>
-            <input type="text" id="master-rejoin-input" placeholder="XXXXX" maxlength="5" style="text-transform:uppercase;letter-spacing:5px;font-size:1.3rem;text-align:center">
+        <!-- Create mode -->
+        <div id="master-create-section">
+          <button class="btn btn-primary" onclick="createGame()">✨ Crear Partida</button>
+        </div>
+        <!-- Rejoin mode -->
+        <div id="master-rejoin-section" style="display:none">
+          <button class="btn btn-ghost" style="width:100%;margin-bottom:8px" onclick="loadExistingGames()">🔍 Cercar partides existents</button>
+          <div id="existing-games-list" style="max-height:220px;overflow-y:auto;margin-bottom:8px"></div>
+          <div class="ig" style="margin-bottom:8px"><label>O introdueix el codi manualment</label>
+            <input type="text" id="master-rejoin-input" placeholder="XXXXX" maxlength="5"
+              style="text-transform:uppercase;letter-spacing:5px;font-size:1.3rem;text-align:center">
           </div>
           <button class="btn btn-primary" onclick="rejoinAsMaster()">🔑 Recuperar Partida</button>
-        </div>
-        <div id="master-create-btn">
-          <button class="btn btn-primary" onclick="createGame()">✨ Crear Partida Nova</button>
         </div>
       </div>
       <div id="form-team" style="display:none">
@@ -477,6 +487,7 @@ select option{background:var(--bg3);}
           <input type="text" id="master-search" placeholder="Filtrar…" oninput="filterMasterBeers()" style="padding-left:34px"></div>
         <div class="beer-grid" id="beer-grid"></div>
         <button class="btn btn-primary" id="btn-set-beer" onclick="setCurrentBeer()" disabled style="margin-top:9px">🚀 Iniciar ronda amb aquesta cervesa</button>
+        <div id="round-active-hint" class="muted" style="display:none;font-size:.74rem;text-align:center;margin-top:6px">✅ Ronda en curs — espera que tots enviïn la proposta</div>
       </div>
 
       <!-- Reveal panel (manual reveals available for master) -->
@@ -496,7 +507,7 @@ select option{background:var(--bg3);}
       </div>
 
       <div class="g2 mb-11">
-        <button class="btn btn-info"      onclick="nextRound()">⏭️ Pròxima Ronda</button>
+        <button id="btn-next-round" class="btn btn-info" onclick="nextRound()" style="display:none">⏭️ Pròxima Ronda</button>
         <button class="btn btn-secondary" onclick="openSendMessage()">📩 Missatge</button>
       </div>
     </div>

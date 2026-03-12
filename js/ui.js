@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
 //  UI.JS  —  Interface & interaction logic
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION = 'v2025.05 · 10/03/2025';
+const APP_VERSION = 'v2025.06 · 12/03/2025';
 
 // Add popup slide-up animation
 const _popupStyle = document.createElement('style');
@@ -68,10 +68,63 @@ const MASTER_PW_HASH = 'placeholder';
 
 function setMasterMode(mode) {
   const isRejoin = mode === 'rejoin';
-  el('master-rejoin-code').style.display = isRejoin ? 'block' : 'none';
-  el('master-create-btn').style.display  = isRejoin ? 'none'  : 'block';
-  el('btn-mode-create').className = isRejoin ? 'btn btn-ghost'   : 'btn btn-primary';
-  el('btn-mode-rejoin').className = isRejoin ? 'btn btn-primary' : 'btn btn-ghost';
+  el('master-rejoin-section').style.display = isRejoin ? 'block' : 'none';
+  el('master-create-section').style.display = isRejoin ? 'none'  : 'block';
+  // Toggle button styles
+  const amber = 'var(--amber)', dark = '#1a0f00', muted = 'var(--muted)';
+  const btnC = el('btn-mode-create'), btnR = el('btn-mode-rejoin');
+  if (btnC) { btnC.style.background = isRejoin ? 'transparent' : amber; btnC.style.color = isRejoin ? muted : dark; }
+  if (btnR) { btnR.style.background = isRejoin ? amber : 'transparent'; btnR.style.color = isRejoin ? dark : muted; }
+}
+
+async function loadExistingGames() {
+  const pw = v('master-password');
+  if (!pw) return showToast('⚠️ Introdueix la contrassenya primer');
+  const ok = await _checkMasterPassword(pw);
+  if (!ok) return showToast('❌ Contrassenya incorrecta');
+  const listEl = el('existing-games-list');
+  listEl.innerHTML = '<p class="muted" style="font-size:.75rem;text-align:center">⏳ Cercant…</p>';
+  try {
+    await game.initFirebase();
+    const snap = await game.db.ref('games').once('value');
+    const all  = snap.val() || {};
+    const active = Object.entries(all)
+      .filter(([, g]) => g && !g.terminated && g.status !== 'finished')
+      .sort(([, a], [, b]) => (b.createdAt || 0) - (a.createdAt || 0));
+    if (!active.length) {
+      listEl.innerHTML = '<p class="muted" style="font-size:.75rem;text-align:center">Cap partida activa trobada</p>';
+      return;
+    }
+    listEl.innerHTML = active.map(([code, g]) => {
+      const dt   = g.createdAt ? new Date(g.createdAt) : null;
+      const date = dt ? dt.toLocaleDateString('ca',{day:'2-digit',month:'2-digit'}) + ' ' +
+                        dt.toLocaleTimeString('ca',{hour:'2-digit',minute:'2-digit'}) : '—';
+      const teams  = Object.keys(g.teams || {}).join(', ') || 'Sense equips';
+      const round  = g.currentRound || 1;
+      const status = g.status === 'playing' ? `Ronda ${round}` : g.status || '?';
+      return `<button onclick="pickExistingGame('${code}')"
+        style="width:100%;text-align:left;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
+               border-radius:9px;padding:10px 12px;margin-bottom:6px;cursor:pointer;transition:.15s"
+        onmouseover="this.style.borderColor='var(--amber)'" onmouseout="this.style.borderColor='rgba(255,255,255,.1)'">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-family:'Cormorant Garamond',serif;font-size:1.3rem;font-weight:700;color:var(--amber);letter-spacing:3px">${code}</span>
+          <span class="muted" style="font-size:.68rem">${date}</span>
+        </div>
+        <div style="font-size:.72rem;color:var(--muted);margin-top:2px">${teams} · ${status}</div>
+      </button>`;
+    }).join('');
+  } catch(e) { listEl.innerHTML = `<p class="muted" style="font-size:.75rem">Error: ${e.message}</p>`; }
+}
+
+function pickExistingGame(code) {
+  const inp = el('master-rejoin-input');
+  if (inp) inp.value = code;
+  // Highlight selected
+  el('existing-games-list').querySelectorAll('button').forEach(b => {
+    b.style.borderColor = b.textContent.includes(code) ? 'var(--amber)' : 'rgba(255,255,255,.1)';
+    b.style.background  = b.textContent.includes(code) ? 'rgba(200,130,26,.12)' : 'rgba(255,255,255,.05)';
+  });
+  showToast('Seleccionat: ' + code);
 }
 
 async function _checkMasterPassword(input) {
@@ -1012,6 +1065,13 @@ function renderTeamGuesses(s) {
 function initMasterView() {
   if (masterViewInited) return;
   masterViewInited = true;
+  // If a beer is already active when master loads, show correct button state
+  if (gameState?.currentBeer && !gameState.currentBeer.revealed) {
+    const sb = el('btn-set-beer'); if (sb) sb.style.display = 'none';
+    const hint = el('round-active-hint'); if (hint) hint.style.display = 'block';
+    const nr = el('btn-next-round'); if (nr) nr.style.display = 'block';
+    el('reveal-panel') && (el('reveal-panel').style.display = 'block');
+  }
   renderMasterBeerGrid();
   game.gameRef.on('value', snap => {
     const s=snap.val(); if(!s) return;
@@ -1299,8 +1359,12 @@ async function nextRound() {
     selectedBeer=null;
     el('reveal-panel').style.display='none';
     document.querySelectorAll('.beer-item').forEach(e=>e.classList.remove('selected'));
-    el('btn-set-beer').disabled=true;
-    renderMasterBeerGrid(); // refresh with current card pool
+    // Reset round controls: show "Iniciar ronda" again, hide "Pròxima Ronda"
+    el('btn-set-beer').style.display = 'block';
+    el('btn-set-beer').disabled = true;
+    const hint = el('round-active-hint'); if (hint) hint.style.display = 'none';
+    const nr = el('btn-next-round'); if (nr) nr.style.display = 'none';
+    renderMasterBeerGrid();
     showToast('⏭️ Pròxima ronda!');
   } catch(e) { showToast('❌ '+e.message); }
 }
