@@ -26,14 +26,14 @@ const ACTION_CARD_TYPES = [
     id: 'lie',
     name: 'Carta Mentida',
     icon: '🤥',
-    desc: 'La pròxima carta d\'ajuda de l\'equip rival quedarà sabotejada (info falsa, acció invertida…). Persisteix fins que s\'activi una carta rival.',
+    desc: 'La pròxima carta d\'ajuda de l\'equip rival quedarà sabotejada (info falsa, acció invertida…). Persisteix fins que s\'activi una carta rival, incloent rondes posteriors.',
     playerAction: 'activate'
   },
   {
     id: 'cancel',
     name: 'Anul·lar Ajuda',
     icon: '🚫',
-    desc: 'La pròxima carta que usi l\'equip rival queda completament anul·lada sense efecte. Persisteix fins que s\'activi una carta rival.',
+    desc: 'La pròxima carta que usi l\'equip rival queda completament anul·lada sense efecte. Persisteix fins que s\'activi una carta rival, incloent rondes posteriors.',
     playerAction: 'activate'
   },
   {
@@ -89,7 +89,7 @@ const ACTION_CARD_TYPES = [
     id: 'wildcard',
     name: 'Comodí Trucada',
     icon: '📞',
-    desc: 'Sense efecte mecànic. El Master rebrà un avís per preparar una broma o sorpresa!',
+    desc: 'Clàssic comodí de la trucada. Riures assegurats!',
     playerAction: 'auto'
   },
 ];
@@ -426,7 +426,7 @@ class BJCPGame {
       const ts = Date.now();
       await this.gameRef.child(`messages/${ts}`).set({
         from: 'Sistema', fromRole: 'system', toTeam: teamId, toPlayer: null,
-        text: `🃏 L'equip rival ha bloquejat la teva carta ${cardLabel}! L'han anulada sense que ho sabies.`,
+        text: `🃏 L'equip rival ha bloquejat la teva carta ${cardLabel}! L'han anulada sense avisar-vos, QUÈ CABRONS!.`,
         ts, isSystemAlert: true, isShieldBlock: true
       });
       await this.gameRef.child(`messages/${ts + 1}`).set({
