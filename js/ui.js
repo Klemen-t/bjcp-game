@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
 //  UI.JS  —  Interface & interaction logic
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION = 'v2025.06 · 12/03/2025';
+const APP_VERSION = 'v2025.07 · 12/03/2025';
 
 // Add popup slide-up animation
 const _popupStyle = document.createElement('style');
@@ -102,18 +102,34 @@ async function loadExistingGames() {
       const teams  = Object.keys(g.teams || {}).join(', ') || 'Sense equips';
       const round  = g.currentRound || 1;
       const status = g.status === 'playing' ? `Ronda ${round}` : g.status || '?';
-      return `<button onclick="pickExistingGame('${code}')"
-        style="width:100%;text-align:left;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
-               border-radius:9px;padding:10px 12px;margin-bottom:6px;cursor:pointer;transition:.15s"
-        onmouseover="this.style.borderColor='var(--amber)'" onmouseout="this.style.borderColor='rgba(255,255,255,.1)'">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <span style="font-family:'Cormorant Garamond',serif;font-size:1.3rem;font-weight:700;color:var(--amber);letter-spacing:3px">${code}</span>
-          <span class="muted" style="font-size:.68rem">${date}</span>
-        </div>
-        <div style="font-size:.72rem;color:var(--muted);margin-top:2px">${teams} · ${status}</div>
-      </button>`;
+      return `<div style="display:flex;gap:6px;margin-bottom:6px;align-items:stretch">
+        <button onclick="pickExistingGame('${code}')"
+          style="flex:1;text-align:left;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
+                 border-radius:9px;padding:10px 12px;cursor:pointer;transition:.15s"
+          onmouseover="this.style.borderColor='var(--amber)'" onmouseout="this.style.borderColor='rgba(255,255,255,.1)'">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-family:'Cormorant Garamond',serif;font-size:1.3rem;font-weight:700;color:var(--amber);letter-spacing:3px">${code}</span>
+            <span class="muted" style="font-size:.68rem">${date}</span>
+          </div>
+          <div style="font-size:.72rem;color:var(--muted);margin-top:2px">${teams} · ${status}</div>
+        </button>
+        <button onclick="deleteGame('${code}')"
+          style="background:rgba(139,32,32,.25);border:1px solid rgba(139,32,32,.4);border-radius:9px;
+                 padding:0 12px;cursor:pointer;color:#e07070;font-size:1rem;flex-shrink:0"
+          title="Esborrar partida">🗑️</button>
+      </div>`;
     }).join('');
   } catch(e) { listEl.innerHTML = `<p class="muted" style="font-size:.75rem">Error: ${e.message}</p>`; }
+}
+
+async function deleteGame(code) {
+  if (!confirm(`Segur que vols esborrar la partida ${code}? Aquesta acció no es pot desfer.`)) return;
+  try {
+    await game.initFirebase();
+    await game.db.ref('games/' + code).remove();
+    showToast('🗑️ Partida ' + code + ' esborrada');
+    loadExistingGames(); // refresh list
+  } catch(e) { showToast('❌ ' + e.message); }
 }
 
 function pickExistingGame(code) {
@@ -1065,11 +1081,10 @@ function renderTeamGuesses(s) {
 function initMasterView() {
   if (masterViewInited) return;
   masterViewInited = true;
-  // If a beer is already active when master loads, show correct button state
+  // If a beer is already active when master loads, hide "Iniciar ronda"
   if (gameState?.currentBeer && !gameState.currentBeer.revealed) {
     const sb = el('btn-set-beer'); if (sb) sb.style.display = 'none';
     const hint = el('round-active-hint'); if (hint) hint.style.display = 'block';
-    const nr = el('btn-next-round'); if (nr) nr.style.display = 'block';
     el('reveal-panel') && (el('reveal-panel').style.display = 'block');
   }
   renderMasterBeerGrid();
@@ -1359,11 +1374,10 @@ async function nextRound() {
     selectedBeer=null;
     el('reveal-panel').style.display='none';
     document.querySelectorAll('.beer-item').forEach(e=>e.classList.remove('selected'));
-    // Reset round controls: show "Iniciar ronda" again, hide "Pròxima Ronda"
+    // Show "Iniciar ronda" again for the new round
     el('btn-set-beer').style.display = 'block';
     el('btn-set-beer').disabled = true;
     const hint = el('round-active-hint'); if (hint) hint.style.display = 'none';
-    const nr = el('btn-next-round'); if (nr) nr.style.display = 'none';
     renderMasterBeerGrid();
     showToast('⏭️ Pròxima ronda!');
   } catch(e) { showToast('❌ '+e.message); }
