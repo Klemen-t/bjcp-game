@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
 //  UI.JS  —  Interface & interaction logic
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION = 'v2025.07 · 12/03/2025';
+const APP_VERSION = 'v2025.08 · 12/03/2025';
 
 // Add popup slide-up animation
 const _popupStyle = document.createElement('style');
@@ -567,48 +567,47 @@ function showResultOverlay(s) {
   const overlay = el('result-overlay');
   if (!overlay) return;
 
-  // Find all winners (correct guesses with pts > 0)
-  const winners = guesses.filter(g => g.correct && (g.points||0) > 0);
-  const myGuess = guesses.find(g => g.playerName === game.playerName && g.teamId === game.teamId);
-  const myTeamWinners = winners.filter(g => g.teamId === game.teamId);
-  const iWon    = myGuess?.correct && (myGuess?.points||0) > 0;
-  const myTeamWon = myTeamWinners.length > 0;
-  const rivalWon  = winners.some(g => g.teamId !== game.teamId);
+  // Use judged.correct directly — not filtered by pts (pts can be 0 with help)
+  const judgedGuesses = guesses.filter(g => g.judged);
+  const myGuess       = judgedGuesses.find(g => g.playerName === game.playerName && g.teamId === game.teamId);
+  const iWon          = myGuess?.correct === true;
+  const myTeamCorrect = judgedGuesses.filter(g => g.teamId === game.teamId && g.correct === true);
+  const myTeamWon     = myTeamCorrect.length > 0;
+  const rivalCorrect  = judgedGuesses.filter(g => g.teamId !== game.teamId && g.correct === true);
+  const rivalWon      = rivalCorrect.length > 0;
 
-  // State logic:
-  // GREEN  = my team won (regardless of rivals) AND I personally won
-  // YELLOW = my team won but I didn't, OR I won but a rival also won (split)
-  // RED    = my team lost (no correct guess) or only rivals won
+  // If I have no judged guess → I didn't participate this round
+  const iParticipated = !!myGuess;
 
   let state, emoji, title;
-  if (iWon && myTeamWon && !rivalWon) {
-    // Pure win: my team correct, no rival won
+  if (iWon && !rivalWon) {
     state = 'result-win'; emoji = '🥳';
-    const pts = myGuess?.points || 0;
+    const pts = myGuess.points || 0;
     title = `Has encertat! +${pts}pt${pts!==1?'s':''}`;
-  } else if (myTeamWon && !iWon && !rivalWon) {
-    // Teammate won, I didn't guess or was wrong
-    state = 'result-team'; emoji = '🎉';
-    const w = myTeamWinners[0];
-    title = `${w.playerName} del teu equip ha encertat!`;
   } else if (iWon && rivalWon) {
-    // I won but rival also won → yellow (split round)
     state = 'result-team'; emoji = '🤝';
-    const pts = myGuess?.points || 0;
-    title = `Has encertat! (+${pts}pt) — però un rival també!`;
-  } else if (myTeamWon && rivalWon) {
-    // Team won but rival also won
+    const pts = myGuess.points || 0;
+    title = `Has encertat (+${pts}pt) — però un rival també!`;
+  } else if (!iParticipated && myTeamWon && !rivalWon) {
+    state = 'result-team'; emoji = '🎉';
+    title = `${myTeamCorrect[0].playerName} del teu equip ha encertat!`;
+  } else if (!iParticipated && myTeamWon && rivalWon) {
     state = 'result-team'; emoji = '🤝';
     title = `El teu equip ha encertat, però un rival també!`;
-  } else if (!myTeamWon && !rivalWon) {
-    // Nobody won
+  } else if (iParticipated && !iWon && myTeamWon) {
+    // I guessed wrong but teammate was right
+    state = 'result-team'; emoji = '🎉';
+    title = `${myTeamCorrect[0].playerName} del teu equip ha encertat!`;
+  } else if (!myTeamWon && rivalWon) {
+    state = 'result-lose'; emoji = '😔';
+    const rival = rivalCorrect[0];
+    title = `Ha guanyat ${rival.playerName} (${rival.teamId})`;
+  } else if (iParticipated && !iWon && !myTeamWon) {
+    state = 'result-lose'; emoji = '😔';
+    title = rivalWon ? `Ha guanyat l'equip rival` : 'No has encertat aquesta ronda';
+  } else {
     state = 'result-lose'; emoji = '😶';
     title = 'Ningú ha encertat aquesta ronda';
-  } else {
-    // Rival won, my team didn't
-    state = 'result-lose'; emoji = '😔';
-    const rival = winners.find(g => g.teamId !== game.teamId);
-    title = `Ha guanyat ${rival?.playerName||'un rival'} (${rival?.teamId||''})`;
   }
 
   overlay.style.display = 'flex';
@@ -1165,7 +1164,6 @@ function updateMasterView(s) {
   renderTeamScores(s);
   renderPendingItems(s);
   renderMasterGuesses(s);
-  updateRanking(s,'master-team-ranking','master-player-ranking');
   renderTeamsDetail(s);
   // Re-render beer grid if card pool changed
   const newIds = JSON.stringify(s.activeCardIds||null);
@@ -1386,27 +1384,149 @@ async function nextRound() {
 // ── Teams detail ─────────────────────────────────────────────────
 function renderTeamsDetail(s) {
   const g=el('teams-detail'); if (!g) return;
-  g.innerHTML=Object.entries(s.teams||{}).map(([tid,t])=>{
-    const players=Object.values(t.players||{});
-    return `<div class="card mb-12">
+  // Sort teams by points descending
+  const sorted = Object.entries(s.teams||{}).sort(([,a],[,b])=>(b.points||0)-(a.points||0));
+  g.innerHTML = sorted.map(([tid,t], ti) => {
+    const medal = ['🥇','🥈','🥉'][ti] || '';
+    // Sort players by pts
+    const players = Object.entries(t.players||{}).sort(([,a],[,b])=>(b.points||0)-(a.points||0));
+    return `<div class="card mb-10">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <div class="sec-title" style="margin:0">🍻 ${tid}</div>
-        <div style="font-family:'Cormorant Garamond',serif;font-size:1.4rem;color:var(--amber-l)">${t.points||0}pt</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:1.3rem">${medal}</span>
+          <div class="sec-title" style="margin:0">🍻 ${tid}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <button onclick="adjustPoints('team','${tid}',null,-1)" style="background:rgba(139,32,32,.3);border:1px solid rgba(180,50,50,.4);border-radius:5px;width:24px;height:24px;color:#e07070;cursor:pointer;font-size:.9rem">−</button>
+          <span style="font-family:'Cormorant Garamond',serif;font-size:1.4rem;color:var(--amber-l);min-width:32px;text-align:center">${t.points||0}pt</span>
+          <button onclick="adjustPoints('team','${tid}',null,+1)" style="background:rgba(32,100,50,.3);border:1px solid rgba(50,160,80,.4);border-radius:5px;width:24px;height:24px;color:#6DBF7E;cursor:pointer;font-size:.9rem">+</button>
+        </div>
       </div>
-      ${players.map(p=>`
-        <div class="player-row">
-          <div class="p-avatar">${p.name[0].toUpperCase()}</div>
-          <div style="flex:1">
-            <div style="font-weight:700">${p.name}</div>
-            <div class="muted" style="font-size:.68rem">${p.correctGuesses||0} encerts · ${p.actionCardsReceived||0} cartes rebudes</div>
-            ${(p.actionCards||[]).length?`<div style="font-size:.65rem;margin-top:3px">${(p.actionCards||[]).map(c=>{const d=ACTION_CARD_TYPES.find(a=>a.id===c.type)||{}; return `${d.icon||'🃏'} ${d.name||c.type}`;}).join(', ')}</div>`:''}
+      ${players.map(([pName,p])=>`
+        <div class="player-row" style="padding:7px 0;border-top:1px solid rgba(255,255,255,.05)">
+          <div class="p-avatar">${pName[0].toUpperCase()}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:700;font-size:.88rem">${pName}</div>
+            <div class="muted" style="font-size:.67rem">${p.correctGuesses||0} encerts · ${p.actionCardsReceived||0} cartes rebudes</div>
+            ${(p.actionCards||[]).length ? `<div style="font-size:.63rem;margin-top:2px;color:var(--amber)">${(p.actionCards||[]).map(c=>{const d=ACTION_CARD_TYPES.find(a=>a.id===c.type)||{}; return `${d.icon||'🃏'} ${d.name||c.type}`;}).join(' · ')}</div>` : ''}
           </div>
-          <div style="font-family:'Cormorant Garamond',serif;font-size:1.2rem;color:var(--amber-l)">${p.points||0}pt</div>
+          <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
+            <button onclick="adjustPoints('player','${tid}','${pName}',-1)" style="background:rgba(139,32,32,.3);border:1px solid rgba(180,50,50,.4);border-radius:5px;width:22px;height:22px;color:#e07070;cursor:pointer;font-size:.8rem">−</button>
+            <span style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:var(--amber-l);min-width:28px;text-align:center">${p.points||0}</span>
+            <button onclick="adjustPoints('player','${tid}','${pName}',+1)" style="background:rgba(32,100,50,.3);border:1px solid rgba(50,160,80,.4);border-radius:5px;width:22px;height:22px;color:#6DBF7E;cursor:pointer;font-size:.8rem">+</button>
+          </div>
         </div>`).join('')}
     </div>`;
-  }).join('')||emptyState('👥','Cap equip');
+  }).join('') || emptyState('👥','Cap equip');
 }
 
+async function adjustPoints(type, teamId, playerName, delta) {
+  try {
+    const s    = gameState;
+    const team = s?.teams?.[teamId];
+    if (!team) return;
+    const updates = {};
+    if (type === 'team') {
+      const cur = team.points || 0;
+      updates[`teams/${teamId}/points`] = Math.max(0, cur + delta);
+    } else {
+      const p   = team.players?.[playerName] || {};
+      const cur = p.points || 0;
+      updates[`teams/${teamId}/players/${playerName}/points`] = Math.max(0, cur + delta);
+      // Keep team total in sync
+      const newTeamPts = Object.entries(team.players||{}).reduce((sum,[pn,pd])=>{
+        return sum + (pn===playerName ? Math.max(0, (pd.points||0)+delta) : (pd.points||0));
+      }, 0);
+      updates[`teams/${teamId}/points`] = Math.max(0, newTeamPts);
+    }
+    await game.gameRef.update(updates);
+  } catch(e) { showToast('❌ '+e.message); }
+}
+
+
+// ═══ MASTER LOG ═══════════════════════════════════════════════════
+function renderMasterLog(s) {
+  const g = el('master-log'); if (!g) return;
+  if (!s) { g.innerHTML = emptyState('📋','Cap dada de partida'); return; }
+
+  const teams = s.teams || {};
+  const rounds = []; // collect all round snapshots from guesses history
+
+  // Build round log from guesses (grouped by round — we use submittedAt order)
+  const allGuesses = Object.values(s.currentBeer?.guesses || {});
+
+  // We use messages to reconstruct history (card grants, info reveals, actions)
+  const allMsgs = Object.values(s.messages || {}).sort((a,b)=>a.ts-b.ts);
+
+  // ── Current round summary ──────────────────────────────────────
+  const beer = s.currentBeer;
+  let html = '';
+
+  if (beer) {
+    html += `<div class="card mb-10" style="border-color:var(--amber)">
+      <div class="sec-title" style="margin-bottom:8px">🍺 Ronda actual — ${beer.name||'?'}</div>`;
+
+    // Proposals
+    const guesses = Object.values(beer.guesses||{}).sort((a,b)=>a.submittedAt-b.submittedAt);
+    if (guesses.length) {
+      html += `<div style="font-size:.75rem;font-weight:700;margin-bottom:5px;color:var(--amber)">📨 Propostes</div>`;
+      html += guesses.map(g => {
+        const icon = !g.judged ? '⏳' : g.correct ? '✅' : '❌';
+        const pts  = g.judged ? ` (${g.points>=0?'+':''}${g.points}pt)` : '';
+        return `<div style="font-size:.76rem;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.05)">
+          ${icon} <strong>${g.playerName}</strong> <span class="muted">(${g.teamId})</span> → ${g.guess}${pts}</div>`;
+      }).join('');
+    }
+
+    // Info revealed this round
+    const revInfo = {...(beer.revealedInfo||{})};
+    const teamInfos = beer.teamInfo || {};
+    const allRevs = [];
+    Object.entries(revInfo).forEach(([k,v])=>allRevs.push({k,v,who:'Tots'}));
+    Object.entries(teamInfos).forEach(([tid,info])=>Object.entries(info).forEach(([k,v])=>allRevs.push({k,v,who:tid})));
+    if (allRevs.length) {
+      html += `<div style="font-size:.75rem;font-weight:700;margin:8px 0 5px;color:var(--amber)">👁️ Info revelada</div>`;
+      html += allRevs.map(r=>`<div style="font-size:.74rem;padding:2px 0"><span class="muted">${r.who}:</span> ${r.k.toUpperCase()} = ${r.v}</div>`).join('');
+    }
+    html += `</div>`;
+  }
+
+  // ── Card activity log from messages ───────────────────────────
+  const cardMsgs = allMsgs.filter(m => m.isCardGrant || m.isInfoReveal || m.isSystemAlert);
+  if (cardMsgs.length) {
+    html += `<div class="card mb-10">
+      <div class="sec-title" style="margin-bottom:8px">📜 Activitat de cartes</div>`;
+    html += cardMsgs.slice(-40).reverse().map(m => {
+      const t  = new Date(m.ts).toLocaleTimeString('ca',{hour:'2-digit',minute:'2-digit'});
+      const who = m.toPlayer ? `${m.toPlayer} (${m.toTeam})` : m.toTeam || 'Tots';
+      return `<div style="font-size:.73rem;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.05)">
+        <span class="muted" style="font-size:.66rem">${t}</span>
+        <span style="margin-left:5px;color:var(--muted)">→ ${who}:</span>
+        <span style="margin-left:4px">${m.text}</span></div>`;
+    }).join('');
+    html += `</div>`;
+  }
+
+  // ── Player card inventory ──────────────────────────────────────
+  html += `<div class="card mb-10">
+    <div class="sec-title" style="margin-bottom:8px">🃏 Inventari de cartes per jugador</div>`;
+  Object.entries(teams).forEach(([tid, t]) => {
+    Object.entries(t.players||{}).forEach(([pName, p]) => {
+      const active = (p.actionCards||[]).map(c=>{const d=ACTION_CARD_TYPES.find(a=>a.id===c.type)||{}; return `${d.icon||'🃏'} ${d.name||c.type}`;});
+      const used   = (p.usedCards||[]).map(c=>{const d=ACTION_CARD_TYPES.find(a=>a.id===c.type)||{}; return `${d.icon||'🃏'} ${d.name||c.type}`;});
+      html += `<div style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05)">
+        <div style="font-size:.78rem;font-weight:700">${pName} <span class="muted" style="font-weight:400">(${tid})</span></div>
+        <div style="font-size:.68rem;margin-top:2px">
+          ${active.length ? `✅ Actives: ${active.join(', ')}` : '<span class="muted">Sense cartes actives</span>'}
+        </div>
+        ${used.length ? `<div style="font-size:.67rem;color:var(--muted)">Usades: ${used.join(', ')}</div>` : ''}
+      </div>`;
+    });
+  });
+  html += `</div>`;
+
+  g.innerHTML = html || emptyState('📋','Sense activitat encara');
+}
 // ═══ MESSAGING ════════════════════════════════════════════════════
 function openSendMessage() {
   const teams=Object.keys(gameState?.teams||{});
