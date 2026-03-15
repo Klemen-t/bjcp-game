@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
 //  UI.JS  —  Interface & interaction logic
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION = 'v2026.16 · 15/03/2026';
+const APP_VERSION = 'v2026.17 · 15/03/2026';
 
 // Add popup slide-up animation
 const _popupStyle = document.createElement('style');
@@ -477,7 +477,6 @@ function renderMapView() {
     });
 
     // ── Pinch-zoom + pan ─────────────────────────────────────────
-    let _pinch0 = null, _pan0 = null;
 
     // Convert canvas CSS-pixel position → data (ibu, abv)
     function pxToData(px, py) {
