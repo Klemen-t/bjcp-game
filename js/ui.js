@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
 //  UI.JS  —  Interface & interaction logic
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION = 'v2026.14 · 15/03/2026';
+const APP_VERSION = 'v2026.15 · 15/03/2026';
 
 // Add popup slide-up animation
 const _popupStyle = document.createElement('style');
@@ -33,21 +33,49 @@ function getCardMeta() {
   _cardMeta = {};
   BJCP_CARDS.forEach(c => {
     const tags = (c.tags||'').split(',').map(t=>t.trim());
+    const mf   = (c.mouthfeel||'').toLowerCase();
+    const fl   = (c.flavor||'').toLowerCase();
+    const ar   = (c.aroma||'').toLowerCase();
+    const all  = [mf, fl, ar, (c.overallImpression||'').toLowerCase(), (c.tags||'').toLowerCase()].join(' ');
+
+    // Fermentation type
     let ferm = 'hybrid';
     if (tags.includes('top-fermented') && !tags.includes('bottom-fermented') && !tags.includes('lagered')) ferm='ale';
     else if (tags.includes('bottom-fermented') || (tags.includes('lagered') && !tags.includes('top-fermented'))) ferm='lager';
     else if (tags.includes('wild-fermented')||tags.includes('wild-fermentation')) ferm='wild';
     else if (tags.includes('top-fermented') && tags.includes('lagered')) ferm='hybrid';
-    const mf = (c.mouthfeel||'').toLowerCase();
+
+    // Body from mouthfeel
     let body = 'medium';
-    if (/lleuger|light|thin|lleugera/.test(mf)) body='light';
-    else if (/ple|full|alta|pesada/.test(mf)) body='full';
+    if (/cos lleuger|cos molt lleuger|cos baix|light[- ]bod|thin/.test(mf)) body='light';
+    else if (/cos (mitjà[- ])?ple|cos (mig )?ple|cos (sencer|complet)|full[- ]bod|heavy/.test(mf)) body='full';
+
+    // Dry finish: "final sec", "sequedat", "sec i refrescant", "crisp and dry"
+    const dry = /final sec|sequedat|sec i |cruixent i sec|sec\.|\bdry\b|\bcrisp\b/.test(mf+' '+fl);
+
+    // Sweet/residual: clear residual sweetness in flavor/mouthfeel
+    const sweet = /dolçor res|dolçor final|dolçor de malt|residual sweet|residual dolç|final dolç|sweet finish|sweet malt|malt sweet|sweet resid|\bsweet\b/.test(fl+' '+mf)
+                  || tags.includes('sweet');
+
+    // Fruity: esters, fruit notes
+    const fruity = /afruitat|fruites|fruita|fruit|èsters|ester[a-z]|estèric|notes de fruita|afruïts/.test(all);
+
+    // Spice/herbal
+    const spice = /espèci|especiat|spice|spicy|herbal|herbes|pepper|pebr|fenòlic|fenolic/.test(all)
+                  || tags.includes('spice');
+
+    // Smoke
+    const smoke = tags.includes('smoke') || /fumat|\bfum\b|smoke|smoked/.test(all);
+
+    // High carbonation
+    const hicarb = /molt alta carbonac|alta carbonac.*molt|molt carbonat|efervesc|highly carb|very carb|very highly/.test(mf);
+
     _cardMeta[c.id] = {
-      ferm, body,
+      ferm, body, dry, sweet, fruity, spice, smoke, hicarb,
       malty:  tags.includes('malty'),
       hoppy:  tags.includes('hoppy'),
       roasty: tags.includes('roasty'),
-      sour:   tags.includes('sour') || tags.includes('wild'),
+      sour:   tags.includes('sour') || tags.includes('wild-fermented') || tags.includes('wild-fermentation'),
     };
   });
   return _cardMeta;
@@ -102,18 +130,46 @@ function explorerScoreCard(c) {
     total += 1;
     if (meta[ch]) score += 1;
   });
+  // Note: dry/sweet/fruity/spice/smoke/hicarb are all in meta[ch] via the new getCardMeta()
 
   if (total === 0) return -1;
   return Math.round((score / total) * 100);
 }
 
-// ── Color coding: verd≥70, groc 40-69, vermell <40 ────────────
+// ── Color coding: continuous gradient verd→taronja→vermell ─────
 function matchClass(pct, isDiscarded) {
   if (isDiscarded) return { card:'mc-grey', badge:'mpb-grey', color:'#555' };
-  if (pct < 0)     return { card:'', badge:'', color:'rgba(255,255,255,.25)' }; // no filter
-  if (pct >= 70)   return { card:'mc-green',  badge:'mpb-green',  color:'#2E8040' };
-  if (pct >= 40)   return { card:'mc-yellow', badge:'mpb-yellow', color:'#B8A010' };
-  return              { card:'mc-red',    badge:'mpb-red',    color:'#8A0B21' };
+  if (pct < 0)     return { card:'', badge:'', color:'rgba(255,255,255,.22)' }; // no filter
+
+  // Interpolate: 0%=dark red → 40%=orange-red → 70%=yellow-green → 100%=bright green
+  let r, g, b;
+  if (pct >= 70) {
+    // 70–100: yellow-green (#8BC34A) → bright green (#2E8040)
+    const t = (pct - 70) / 30;
+    r = Math.round(139 - (139-46)  * t);
+    g = Math.round(195 - (195-128) * t);
+    b = Math.round(74  - (74-64)   * t);
+  } else if (pct >= 40) {
+    // 40–70: orange (#D4700A) → yellow-green (#8BC34A)
+    const t = (pct - 40) / 30;
+    r = Math.round(212 - (212-139) * t);
+    g = Math.round(112 + (195-112) * t);
+    b = Math.round(10  + (74-10)   * t);
+  } else {
+    // 0–40: dark red (#5A0A12) → orange (#D4700A)
+    const t = pct / 40;
+    r = Math.round(90  + (212-90)  * t);
+    g = Math.round(10  + (112-10)  * t);
+    b = Math.round(18  + (10-18)   * t);
+  }
+  const color = `rgb(${r},${g},${b})`;
+
+  // CSS class buckets (for background tints)
+  let card, badge;
+  if (pct >= 70) { card='mc-green';  badge='mpb-green'; }
+  else if (pct >= 40) { card='mc-yellow'; badge='mpb-yellow'; }
+  else { card='mc-red'; badge='mpb-red'; }
+  return { card, badge, color };
 }
 
 // ── SRM color helper ───────────────────────────────────────────
@@ -256,6 +312,9 @@ function renderCurrentCardView() {
 
 // ── MAP VIEW ──────────────────────────────────────────────────
 let _mapHits = [];
+// Map viewport (for pinch zoom + pan)
+const _mapVP = { ibuMin:0, ibuMax:100, abvMin:2, abvMax:12 };
+
 function renderMapView() {
   const canvas = el('map-cv'); if (!canvas) return;
   const W = canvas.parentElement.clientWidth || 320;
@@ -266,36 +325,39 @@ function renderMapView() {
   const ctx = canvas.getContext('2d');
   ctx.scale(devicePixelRatio, devicePixelRatio);
 
-  const PAD = { l:38, r:12, t:14, b:30 };
+  const MAP_IBU_MIN = _mapVP.ibuMin, MAP_IBU_MAX = _mapVP.ibuMax;
+  const MAP_ABV_MIN = _mapVP.abvMin, MAP_ABV_MAX = _mapVP.abvMax;
+  const PAD = { l:36, r:10, t:14, b:28 };
   const CW = W-PAD.l-PAD.r, CH = H-PAD.t-PAD.b;
+
+  function ibuToX(ibu) { return PAD.l + (Math.min(Math.max(ibu,MAP_IBU_MIN),MAP_IBU_MAX)-MAP_IBU_MIN)/(MAP_IBU_MAX-MAP_IBU_MIN)*CW; }
+  function abvToY(abv) { return PAD.t + CH - (Math.min(Math.max(abv,MAP_ABV_MIN),MAP_ABV_MAX)-MAP_ABV_MIN)/(MAP_ABV_MAX-MAP_ABV_MIN)*CH; }
 
   ctx.fillStyle='#0f0f0f'; ctx.fillRect(0,0,W,H);
 
   // Grid
   ctx.strokeStyle='rgba(255,255,255,.05)'; ctx.lineWidth=1;
-  for (let ibu=0;ibu<=120;ibu+=20) {
-    const x=PAD.l+(ibu/120)*CW;
+  for (const ibu of [0,10,20,30,40,50,60,70,80,90,100]) {
+    const x=ibuToX(ibu);
     ctx.beginPath(); ctx.moveTo(x,PAD.t); ctx.lineTo(x,PAD.t+CH); ctx.stroke();
-    ctx.fillStyle='rgba(255,255,255,.22)';
-    ctx.font='bold 8px Barlow Condensed,sans-serif';
-    ctx.textAlign='center'; ctx.fillText(ibu, x, PAD.t+CH+12);
+    ctx.fillStyle='rgba(255,255,255,.22)'; ctx.font='bold 7px Barlow Condensed,sans-serif';
+    ctx.textAlign='center'; ctx.fillText(ibu, x, PAD.t+CH+11);
   }
-  for (let abv=0;abv<=15;abv+=5) {
-    const y=PAD.t+CH-(abv/15)*CH;
+  for (const abv of [2,3,4,5,6,7,8,9,10,11,12]) {
+    const y=abvToY(abv);
     ctx.beginPath(); ctx.moveTo(PAD.l,y); ctx.lineTo(PAD.l+CW,y); ctx.stroke();
-    ctx.fillStyle='rgba(255,255,255,.22)';
-    ctx.font='bold 8px Barlow Condensed,sans-serif';
-    ctx.textAlign='right'; ctx.fillText(abv+'%', PAD.l-4, y+3);
+    ctx.fillStyle='rgba(255,255,255,.22)'; ctx.font='bold 7px Barlow Condensed,sans-serif';
+    ctx.textAlign='right'; ctx.fillText(abv+'%', PAD.l-3, y+3);
   }
   ctx.fillStyle='rgba(200,200,200,.25)'; ctx.font='bold 9px Barlow Condensed,sans-serif';
-  ctx.textAlign='center'; ctx.fillText('IBU', PAD.l+CW/2, H-4);
+  ctx.textAlign='center'; ctx.fillText('IBU', PAD.l+CW/2, H-3);
 
   // Filter zone highlight
-  if (EF.active && (EF.ibuMin>0||EF.ibuMax<120||EF.abvMin>0||EF.abvMax<15)) {
-    const x1=PAD.l+(EF.ibuMin/120)*CW, x2=PAD.l+(EF.ibuMax/120)*CW;
-    const y1=PAD.t+CH-(EF.abvMax/15)*CH, y2=PAD.t+CH-(EF.abvMin/15)*CH;
-    ctx.fillStyle='rgba(255,255,255,.03)'; ctx.fillRect(x1,y1,x2-x1,y2-y1);
-    ctx.strokeStyle='rgba(255,255,255,.1)'; ctx.lineWidth=1; ctx.strokeRect(x1,y1,x2-x1,y2-y1);
+  if (EF.active && (EF.ibuMin>MAP_IBU_MIN||EF.ibuMax<MAP_IBU_MAX||EF.abvMin>MAP_ABV_MIN||EF.abvMax<MAP_ABV_MAX)) {
+    const x1=ibuToX(EF.ibuMin), x2=ibuToX(EF.ibuMax);
+    const y1=abvToY(EF.abvMax), y2=abvToY(EF.abvMin);
+    ctx.fillStyle='rgba(255,255,255,.04)'; ctx.fillRect(x1,y1,x2-x1,y2-y1);
+    ctx.strokeStyle='rgba(255,255,255,.15)'; ctx.lineWidth=1; ctx.strokeRect(x1,y1,x2-x1,y2-y1);
   }
 
   // Get visible cards (respects filter + state filter)
@@ -326,13 +388,13 @@ function renderMapView() {
     const isPoss  = myState === 'possible';
     const mc = matchClass(pct, isDisc);
 
-    const ibu = c.ibuMin!=null ? (c.ibuMin+c.ibuMax)/2 : 40;
+    const ibu = c.ibuMin!=null ? (c.ibuMin+c.ibuMax)/2 : 35;
     const abv = c.abvMin!=null ? (c.abvMin+c.abvMax)/2 : 5;
     const m   = meta[c.id]||{};
     const r   = m.body==='full'?8 : m.body==='light'?4 : 6;
 
-    const x = PAD.l + (Math.min(ibu,120)/120)*CW;
-    const y = PAD.t + CH - (Math.min(abv,15)/15)*CH;
+    const x = ibuToX(ibu);
+    const y = abvToY(abv);
 
     // Fill
     const alpha = isDisc ? .3 : (!EF.active ? .7 : (pct<0?.6:Math.max(.3, pct/100)));
@@ -413,6 +475,110 @@ function renderMapView() {
         }
       }
     });
+
+    // ── Pinch-zoom + pan ─────────────────────────────────────────
+    let _pinch0 = null, _pan0 = null;
+
+    function canvasCoordsToData(cx, cy, rect) {
+      // Convert canvas pixel → data coordinate
+      const ibuRange = _mapVP.ibuMax - _mapVP.ibuMin;
+      const abvRange = _mapVP.abvMax - _mapVP.abvMin;
+      const PAD2 = {l:36,r:10,t:14,b:28};
+      const cw = rect.width - PAD2.l - PAD2.r;
+      const ch = rect.height - PAD2.t - PAD2.b;
+      const ibu = _mapVP.ibuMin + ((cx - PAD2.l) / cw) * ibuRange;
+      const abv = _mapVP.abvMin + (1 - (cy - PAD2.t) / ch) * abvRange;
+      return { ibu, abv };
+    }
+
+    canvas.addEventListener('touchstart', e => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        const t1=e.touches[0], t2=e.touches[1];
+        const rect=canvas.getBoundingClientRect();
+        _pinch0 = {
+          dist: Math.hypot(t2.clientX-t1.clientX, t2.clientY-t1.clientY),
+          cx: (t1.clientX+t2.clientX)/2 - rect.left,
+          cy: (t1.clientY+t2.clientY)/2 - rect.top,
+          vp: {..._mapVP},
+        };
+        _pan0 = null;
+      } else if (e.touches.length === 1) {
+        const rect=canvas.getBoundingClientRect();
+        const d = canvasCoordsToData(e.touches[0].clientX-rect.left, e.touches[0].clientY-rect.top, rect);
+        _pan0 = { ...d, vp: {..._mapVP} };
+        _pinch0 = null;
+      }
+    }, {passive:false});
+
+    canvas.addEventListener('touchmove', e => {
+      e.preventDefault();
+      const rect=canvas.getBoundingClientRect();
+      if (e.touches.length === 2 && _pinch0) {
+        const t1=e.touches[0], t2=e.touches[1];
+        const dist = Math.hypot(t2.clientX-t1.clientX, t2.clientY-t1.clientY);
+        const scale = _pinch0.dist / dist; // <1 = zoom in, >1 = zoom out
+        const center = canvasCoordsToData(_pinch0.cx, _pinch0.cy, rect);
+        const ibuRange = (_pinch0.vp.ibuMax - _pinch0.vp.ibuMin) * scale;
+        const abvRange = (_pinch0.vp.abvMax - _pinch0.vp.abvMin) * scale;
+        // Keep center pinch point fixed
+        const ibuFrac = (_pinch0.vp.ibuMax - _pinch0.vp.ibuMin) > 0
+          ? (center.ibu - _pinch0.vp.ibuMin) / (_pinch0.vp.ibuMax - _pinch0.vp.ibuMin) : 0.5;
+        const abvFrac = (_pinch0.vp.abvMax - _pinch0.vp.abvMin) > 0
+          ? (center.abv - _pinch0.vp.abvMin) / (_pinch0.vp.abvMax - _pinch0.vp.abvMin) : 0.5;
+        _mapVP.ibuMin = Math.max(-5,  center.ibu - ibuFrac * ibuRange);
+        _mapVP.ibuMax = Math.min(110, _mapVP.ibuMin + ibuRange);
+        _mapVP.abvMin = Math.max(0,   center.abv - abvFrac * abvRange);
+        _mapVP.abvMax = Math.min(16,  _mapVP.abvMin + abvRange);
+        // Enforce min zoom
+        if (_mapVP.ibuMax - _mapVP.ibuMin < 15) { const m=(_mapVP.ibuMin+_mapVP.ibuMax)/2; _mapVP.ibuMin=m-7.5; _mapVP.ibuMax=m+7.5; }
+        if (_mapVP.abvMax - _mapVP.abvMin < 1.5) { const m=(_mapVP.abvMin+_mapVP.abvMax)/2; _mapVP.abvMin=m-.75; _mapVP.abvMax=m+.75; }
+        renderMapView();
+      } else if (e.touches.length === 1 && _pan0) {
+        const d = canvasCoordsToData(e.touches[0].clientX-rect.left, e.touches[0].clientY-rect.top, rect);
+        // Pan: shift viewport so d === pan0 data point
+        const dibu = _pan0.ibu - d.ibu;
+        const dabv = _pan0.abv - d.abv;
+        const ibuR = _pan0.vp.ibuMax - _pan0.vp.ibuMin;
+        const abvR = _pan0.vp.abvMax - _pan0.vp.abvMin;
+        _mapVP.ibuMin = Math.max(-5,  Math.min(110-ibuR, _pan0.vp.ibuMin + dibu));
+        _mapVP.ibuMax = _mapVP.ibuMin + ibuR;
+        _mapVP.abvMin = Math.max(0,   Math.min(16-abvR,  _pan0.vp.abvMin + dabv));
+        _mapVP.abvMax = _mapVP.abvMin + abvR;
+        renderMapView();
+      }
+    }, {passive:false});
+
+    canvas.addEventListener('touchend', () => { _pinch0=null; _pan0=null; });
+
+    // Double-tap to reset zoom
+    let _lastTap=0;
+    canvas.addEventListener('touchend', e => {
+      const now=Date.now();
+      if (now-_lastTap<350) {
+        _mapVP.ibuMin=0; _mapVP.ibuMax=100; _mapVP.abvMin=2; _mapVP.abvMax=12;
+        renderMapView();
+      }
+      _lastTap=now;
+    });
+
+    // Mouse wheel zoom (desktop)
+    canvas.addEventListener('wheel', e => {
+      e.preventDefault();
+      const rect=canvas.getBoundingClientRect();
+      const cx=e.clientX-rect.left, cy=e.clientY-rect.top;
+      const d=canvasCoordsToData(cx,cy,rect);
+      const scale = e.deltaY>0 ? 1.15 : 0.87;
+      const ibuFrac = (_mapVP.ibuMax-_mapVP.ibuMin)>0 ? (d.ibu-_mapVP.ibuMin)/(_mapVP.ibuMax-_mapVP.ibuMin) : .5;
+      const abvFrac = (_mapVP.abvMax-_mapVP.abvMin)>0 ? (d.abv-_mapVP.abvMin)/(_mapVP.abvMax-_mapVP.abvMin) : .5;
+      const ibuR = Math.min(100, Math.max(15, (_mapVP.ibuMax-_mapVP.ibuMin)*scale));
+      const abvR = Math.min(10,  Math.max(1.5,(_mapVP.abvMax-_mapVP.abvMin)*scale));
+      _mapVP.ibuMin = Math.max(-5,  Math.min(110-ibuR, d.ibu - ibuFrac*ibuR));
+      _mapVP.ibuMax = _mapVP.ibuMin + ibuR;
+      _mapVP.abvMin = Math.max(0,   Math.min(16-abvR,  d.abv - abvFrac*abvR));
+      _mapVP.abvMax = _mapVP.abvMin + abvR;
+      renderMapView();
+    }, {passive:false});
   }
   function retry(){ const cv=el('map-cv'); if(cv) setupMapEvents(); else setTimeout(retry,500); }
   setTimeout(retry,300);
@@ -1239,21 +1405,18 @@ function renderBeerCards() {
   }
 
   if (cardFilter==='possible') {
-    // Show cards marked possible by ME or any teammate
     const teamPossible = new Set(
       Object.values(gameState?.teams?.[game.teamId]?.players||{})
         .flatMap(p => Object.entries(p.cardStates||{}).filter(([,st])=>st==='possible').map(([id])=>id))
     );
     cards = cards.filter(c => teamPossible.has(c.id));
   } else if (cardFilter==='discarded') {
-    // Show cards discarded by ME or any teammate
     const teamDiscarded = new Set(
       Object.values(gameState?.teams?.[game.teamId]?.players||{})
         .flatMap(p => Object.entries(p.cardStates||{}).filter(([,st])=>st==='discarded').map(([id])=>id))
     );
     cards = cards.filter(c => teamDiscarded.has(c.id));
   }
-  // 'all' shows everything (default)
 
   if (cardSearch) {
     const q = cardSearch.toLowerCase();
@@ -1267,6 +1430,14 @@ function renderBeerCards() {
       (c.tags||'').toLowerCase().includes(q) ||
       (c.commercialExamples||'').toLowerCase().includes(q)
     );
+  }
+
+  // When filters active: sort by match % descending, then by category
+  if (EF.active) {
+    cards = cards
+      .map(c => ({ c, pct: explorerScoreCard(c) }))
+      .sort((a, b) => b.pct - a.pct)
+      .map(x => x.c);
   }
 
   if (!cards.length) {

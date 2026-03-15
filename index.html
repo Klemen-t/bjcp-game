@@ -916,58 +916,74 @@ select option{background:var(--k3)}
       <!-- FILTRE SENSORIAL — sempre visible, compacte -->
       <div class="sf-panel" id="sf-panel">
 
-        <!-- Banda SRM -->
+        <!-- Banda SRM visual clicable -->
         <div id="sf-srm-bar" class="sf-srm-bar"></div>
 
-        <!-- Fila 1: Color ràpid -->
+        <!-- Fila 1: Color -->
         <div class="sf-row">
           <span class="sf-label">Color</span>
-          <span class="sf-pill" data-esrm="1,6">Pàl·lid</span>
-          <span class="sf-pill" data-esrm="4,10">Daurat</span>
-          <span class="sf-pill" data-esrm="9,18">Ambre</span>
-          <span class="sf-pill" data-esrm="15,30">Marró</span>
-          <span class="sf-pill" data-esrm="25,40">Negre</span>
+          <span class="sf-pill" data-esrm="1,4">Pàl·lid (1–4)</span>
+          <span class="sf-pill" data-esrm="4,9">Daurat (4–9)</span>
+          <span class="sf-pill" data-esrm="9,18">Ambre (9–18)</span>
+          <span class="sf-pill" data-esrm="18,30">Marró (18–30)</span>
+          <span class="sf-pill" data-esrm="30,40">Negre (30+)</span>
         </div>
 
         <!-- Fila 2: Fermentació -->
         <div class="sf-row">
           <span class="sf-label">Ferm.</span>
-          <span class="sf-pill" data-eferm="ale">Ale</span>
-          <span class="sf-pill" data-eferm="lager">Lager</span>
+          <span class="sf-pill" data-eferm="ale">Ale (alt-ferm.)</span>
+          <span class="sf-pill" data-eferm="lager">Lager (baix-ferm.)</span>
           <span class="sf-pill" data-eferm="wild">Salvatge</span>
           <span class="sf-pill" data-eferm="hybrid">Híbrida</span>
         </div>
 
-        <!-- Fila 3: Alcohol -->
+        <!-- Fila 3: Alcohol (amb rangs reals) -->
         <div class="sf-row">
           <span class="sf-label">Alcohol</span>
-          <span class="sf-pill" data-eabv="0,3.5">&lt;3.5%</span>
-          <span class="sf-pill" data-eabv="3.5,5.5">Normal</span>
-          <span class="sf-pill" data-eabv="5.5,8">Alt</span>
-          <span class="sf-pill" data-eabv="8,15">Fort</span>
+          <span class="sf-pill" data-eabv="2,3.5">Baix (2–3.5%)</span>
+          <span class="sf-pill" data-eabv="3.5,5">Moderat (3.5–5%)</span>
+          <span class="sf-pill" data-eabv="5,6.5">Normal (5–6.5%)</span>
+          <span class="sf-pill" data-eabv="6.5,9">Alt (6.5–9%)</span>
+          <span class="sf-pill" data-eabv="9,14">Fort (9%+)</span>
         </div>
 
-        <!-- Fila 4: Amargor -->
+        <!-- Fila 4: Amargor (amb rangs reals) -->
         <div class="sf-row">
           <span class="sf-label">Amargor</span>
-          <span class="sf-pill" data-eibu="0,15">Gens</span>
-          <span class="sf-pill" data-eibu="10,30">Lleuger</span>
-          <span class="sf-pill" data-eibu="25,50">Moderat</span>
-          <span class="sf-pill" data-eibu="40,80">Intens</span>
-          <span class="sf-pill" data-eibu="70,120">Molt</span>
+          <span class="sf-pill" data-eibu="0,12">Gens (0–12)</span>
+          <span class="sf-pill" data-eibu="8,25">Suau (8–25)</span>
+          <span class="sf-pill" data-eibu="20,40">Moderat (20–40)</span>
+          <span class="sf-pill" data-eibu="35,60">Intens (35–60)</span>
+          <span class="sf-pill" data-eibu="55,100">Molt amarg (55+)</span>
         </div>
 
-        <!-- Fila 5: Cos + Caràcter junts -->
+        <!-- Fila 5: Cos -->
         <div class="sf-row">
           <span class="sf-label">Cos</span>
           <span class="sf-pill" data-ebody="light">Lleuger</span>
           <span class="sf-pill" data-ebody="medium">Mig</span>
           <span class="sf-pill" data-ebody="full">Ple</span>
-          <span class="sf-label" style="margin-left:4px">Caràcter</span>
+        </div>
+
+        <!-- Fila 6: Caràcter sensorial -->
+        <div class="sf-row">
+          <span class="sf-label">Caràcter</span>
           <span class="sf-pill" data-echar="malty">Malta</span>
           <span class="sf-pill" data-echar="hoppy">Llúpol</span>
-          <span class="sf-pill" data-echar="roasty">Torrat</span>
+          <span class="sf-pill" data-echar="roasty">Torrat/Cafè</span>
           <span class="sf-pill" data-echar="sour">Àcid</span>
+          <span class="sf-pill" data-echar="fruity">Afruitat</span>
+          <span class="sf-pill" data-echar="spice">Especiat/Herbes</span>
+          <span class="sf-pill" data-echar="smoke">Fumat</span>
+        </div>
+
+        <!-- Fila 7: Final -->
+        <div class="sf-row">
+          <span class="sf-label">Final</span>
+          <span class="sf-pill" data-echar="dry">Sec</span>
+          <span class="sf-pill" data-echar="sweet">Dolç/Residual</span>
+          <span class="sf-pill" data-echar="hicarb">Molt carbonat.</span>
         </div>
 
         <!-- Reset + recompte actius -->
@@ -1003,7 +1019,7 @@ select option{background:var(--k3)}
             <div class="muted" style="font-family:var(--fu);font-size:.72rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-top:2px">🍺 Identifica la cervesa!</div>
           </div>
           <div style="text-align:right">
-            <div class="muted" style="font-family:var(--fu);font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.14em">Cartes</div>
+            <div class="muted" style="font-family:var(--fu);font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.14em">Cartes ⚡</div>
             <div style="font-family:var(--fd);font-size:1.5rem;color:var(--rl)" id="action-count">0</div>
           </div>
         </div>
@@ -1025,7 +1041,8 @@ select option{background:var(--k3)}
 
       <!-- MAP VIEW -->
       <div id="cards-view-map">
-        <div class="map-info-bar">Eix X: IBU (amargor) · Eix Y: ABV (alcohol) · Mida: cos</div>
+        <div class="map-info-bar">Eix X: IBU (amargor) · Eix Y: ABV (alcohol) · Mida: cos
+          <span style="color:var(--r)"> · Pelluca per ampliar</span></div>
         <div class="map-canvas-wrap">
           <canvas id="map-cv" height="360"></canvas>
           <div class="map-tooltip" id="map-tooltip">
