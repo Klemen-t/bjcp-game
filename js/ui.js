@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
 //  UI.JS  —  Interface & interaction logic
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION = 'v2026.15 · 15/03/2026';
+const APP_VERSION = 'v2026.16 · 15/03/2026';
 
 // Add popup slide-up animation
 const _popupStyle = document.createElement('style');
@@ -85,7 +85,7 @@ function getCardMeta() {
 const EF = {
   srmMin:1, srmMax:40,
   abvMin:0, abvMax:15,
-  ibuMin:0, ibuMax:120,
+  ibuMin:0, ibuMax:100,
   ferm: new Set(),
   body: new Set(),
   chars: new Set(),
@@ -110,7 +110,7 @@ function explorerScoreCard(c) {
     const ov=Math.max(0, Math.min(EF.abvMax,cMax) - Math.max(EF.abvMin,cMin));
     score += 2 * Math.min(1, (ov / Math.max(0.5, EF.abvMax-EF.abvMin)) * 1.5);
   }
-  if (EF.ibuMin>0 || EF.ibuMax<120) {
+  if (EF.ibuMin>0 || EF.ibuMax<100) {
     total += 2;
     if (c.ibuMin == null) { score += 0.5; }
     else {
@@ -212,14 +212,14 @@ function updateSrmOverlay() {
 // ── Update filters ─────────────────────────────────────────────
 function explorerUpdateFilters() {
   EF.active = EF.srmMin>1 || EF.srmMax<40 || EF.abvMin>0 || EF.abvMax<15 ||
-              EF.ibuMin>0 || EF.ibuMax<120 || EF.ferm.size>0 ||
+              EF.ibuMin>0 || EF.ibuMax<100 || EF.ferm.size>0 ||
               EF.body.size>0 || EF.chars.size>0;
   updateSrmOverlay();
   // Active count badge
   let count = 0;
   if (EF.srmMin>1||EF.srmMax<40) count++;
   if (EF.abvMin>0||EF.abvMax<15) count++;
-  if (EF.ibuMin>0||EF.ibuMax<120) count++;
+  if (EF.ibuMin>0||EF.ibuMax<100) count++;
   EF.ferm.forEach(()=>count++); EF.body.forEach(()=>count++); EF.chars.forEach(()=>count++);
   const ct = el('sf-active-count');
   if (ct) {
@@ -231,7 +231,7 @@ function explorerUpdateFilters() {
 
 function explorerResetFilters() {
   EF.srmMin=1; EF.srmMax=40; EF.abvMin=0; EF.abvMax=15;
-  EF.ibuMin=0; EF.ibuMax=120;
+  EF.ibuMin=0; EF.ibuMax=100;
   EF.ferm.clear(); EF.body.clear(); EF.chars.clear(); EF.active=false;
   document.querySelectorAll('.sf-pill').forEach(p=>p.classList.remove('on'));
   updateSrmOverlay();
@@ -479,34 +479,56 @@ function renderMapView() {
     // ── Pinch-zoom + pan ─────────────────────────────────────────
     let _pinch0 = null, _pan0 = null;
 
-    function canvasCoordsToData(cx, cy, rect) {
-      // Convert canvas pixel → data coordinate
-      const ibuRange = _mapVP.ibuMax - _mapVP.ibuMin;
-      const abvRange = _mapVP.abvMax - _mapVP.abvMin;
-      const PAD2 = {l:36,r:10,t:14,b:28};
-      const cw = rect.width - PAD2.l - PAD2.r;
-      const ch = rect.height - PAD2.t - PAD2.b;
-      const ibu = _mapVP.ibuMin + ((cx - PAD2.l) / cw) * ibuRange;
-      const abv = _mapVP.abvMin + (1 - (cy - PAD2.t) / ch) * abvRange;
-      return { ibu, abv };
+    // Convert canvas CSS-pixel position → data (ibu, abv)
+    function pxToData(px, py) {
+      const PADm = {l:36, r:10, t:14, b:28};
+      const cvW  = canvas.offsetWidth  - PADm.l - PADm.r;
+      const cvH  = canvas.offsetHeight - PADm.t - PADm.b;
+      const ibu  = _mapVP.ibuMin + Math.max(0, Math.min(1, (px - PADm.l) / cvW))
+                   * (_mapVP.ibuMax - _mapVP.ibuMin);
+      const abv  = _mapVP.abvMin + Math.max(0, Math.min(1, 1 - (py - PADm.t) / cvH))
+                   * (_mapVP.abvMax - _mapVP.abvMin);
+      return {ibu, abv};
     }
 
+    function applyZoom(centerIbu, centerAbv, factor) {
+      // factor > 1 = zoom in (smaller range), factor < 1 = zoom out
+      const curIbuR = _mapVP.ibuMax - _mapVP.ibuMin;
+      const curAbvR = _mapVP.abvMax - _mapVP.abvMin;
+      const newIbuR = Math.min(105, Math.max(12, curIbuR / factor));
+      const newAbvR = Math.min(11,  Math.max(1.2, curAbvR / factor));
+      // Keep the center data point fixed on screen
+      const ibuFrac = curIbuR > 0 ? (centerIbu - _mapVP.ibuMin) / curIbuR : 0.5;
+      const abvFrac = curAbvR > 0 ? (centerAbv - _mapVP.abvMin) / curAbvR : 0.5;
+      _mapVP.ibuMin = Math.max(-2,  centerIbu - ibuFrac * newIbuR);
+      _mapVP.ibuMax = Math.min(102, _mapVP.ibuMin + newIbuR);
+      _mapVP.abvMin = Math.max(0,   centerAbv - abvFrac * newAbvR);
+      _mapVP.abvMax = Math.min(15,  _mapVP.abvMin + newAbvR);
+      renderMapView();
+    }
+
+    // ── Touch: pinch-to-zoom + 1-finger pan ───────────────────
+    let _pinch0 = null, _pan0 = null;
+
     canvas.addEventListener('touchstart', e => {
+      e.preventDefault();
       if (e.touches.length === 2) {
-        e.preventDefault();
         const t1=e.touches[0], t2=e.touches[1];
         const rect=canvas.getBoundingClientRect();
+        const midX = (t1.clientX+t2.clientX)/2 - rect.left;
+        const midY = (t1.clientY+t2.clientY)/2 - rect.top;
         _pinch0 = {
           dist: Math.hypot(t2.clientX-t1.clientX, t2.clientY-t1.clientY),
-          cx: (t1.clientX+t2.clientX)/2 - rect.left,
-          cy: (t1.clientY+t2.clientY)/2 - rect.top,
-          vp: {..._mapVP},
+          center: pxToData(midX, midY),
+          vp: { ..._mapVP },
         };
         _pan0 = null;
       } else if (e.touches.length === 1) {
         const rect=canvas.getBoundingClientRect();
-        const d = canvasCoordsToData(e.touches[0].clientX-rect.left, e.touches[0].clientY-rect.top, rect);
-        _pan0 = { ...d, vp: {..._mapVP} };
+        _pan0 = {
+          start: pxToData(e.touches[0].clientX-rect.left, e.touches[0].clientY-rect.top),
+          vp: { ..._mapVP },
+        };
         _pinch0 = null;
       }
     }, {passive:false});
@@ -514,70 +536,52 @@ function renderMapView() {
     canvas.addEventListener('touchmove', e => {
       e.preventDefault();
       const rect=canvas.getBoundingClientRect();
+
       if (e.touches.length === 2 && _pinch0) {
         const t1=e.touches[0], t2=e.touches[1];
         const dist = Math.hypot(t2.clientX-t1.clientX, t2.clientY-t1.clientY);
-        const scale = _pinch0.dist / dist; // <1 = zoom in, >1 = zoom out
-        const center = canvasCoordsToData(_pinch0.cx, _pinch0.cy, rect);
-        const ibuRange = (_pinch0.vp.ibuMax - _pinch0.vp.ibuMin) * scale;
-        const abvRange = (_pinch0.vp.abvMax - _pinch0.vp.abvMin) * scale;
-        // Keep center pinch point fixed
-        const ibuFrac = (_pinch0.vp.ibuMax - _pinch0.vp.ibuMin) > 0
-          ? (center.ibu - _pinch0.vp.ibuMin) / (_pinch0.vp.ibuMax - _pinch0.vp.ibuMin) : 0.5;
-        const abvFrac = (_pinch0.vp.abvMax - _pinch0.vp.abvMin) > 0
-          ? (center.abv - _pinch0.vp.abvMin) / (_pinch0.vp.abvMax - _pinch0.vp.abvMin) : 0.5;
-        _mapVP.ibuMin = Math.max(-5,  center.ibu - ibuFrac * ibuRange);
-        _mapVP.ibuMax = Math.min(110, _mapVP.ibuMin + ibuRange);
-        _mapVP.abvMin = Math.max(0,   center.abv - abvFrac * abvRange);
-        _mapVP.abvMax = Math.min(16,  _mapVP.abvMin + abvRange);
-        // Enforce min zoom
-        if (_mapVP.ibuMax - _mapVP.ibuMin < 15) { const m=(_mapVP.ibuMin+_mapVP.ibuMax)/2; _mapVP.ibuMin=m-7.5; _mapVP.ibuMax=m+7.5; }
-        if (_mapVP.abvMax - _mapVP.abvMin < 1.5) { const m=(_mapVP.abvMin+_mapVP.abvMax)/2; _mapVP.abvMin=m-.75; _mapVP.abvMax=m+.75; }
-        renderMapView();
+        if (_pinch0.dist < 1) return;
+        // Restore snapshot, then apply new zoom from it
+        Object.assign(_mapVP, _pinch0.vp);
+        applyZoom(_pinch0.center.ibu, _pinch0.center.abv, dist / _pinch0.dist);
+
       } else if (e.touches.length === 1 && _pan0) {
-        const d = canvasCoordsToData(e.touches[0].clientX-rect.left, e.touches[0].clientY-rect.top, rect);
-        // Pan: shift viewport so d === pan0 data point
-        const dibu = _pan0.ibu - d.ibu;
-        const dabv = _pan0.abv - d.abv;
+        const cur = pxToData(e.touches[0].clientX-rect.left, e.touches[0].clientY-rect.top);
+        const dibu = _pan0.start.ibu - cur.ibu;
+        const dabv = _pan0.start.abv - cur.abv;
         const ibuR = _pan0.vp.ibuMax - _pan0.vp.ibuMin;
         const abvR = _pan0.vp.abvMax - _pan0.vp.abvMin;
-        _mapVP.ibuMin = Math.max(-5,  Math.min(110-ibuR, _pan0.vp.ibuMin + dibu));
+        _mapVP.ibuMin = Math.max(-2,  Math.min(102-ibuR, _pan0.vp.ibuMin + dibu));
         _mapVP.ibuMax = _mapVP.ibuMin + ibuR;
-        _mapVP.abvMin = Math.max(0,   Math.min(16-abvR,  _pan0.vp.abvMin + dabv));
+        _mapVP.abvMin = Math.max(0,   Math.min(15-abvR,  _pan0.vp.abvMin + dabv));
         _mapVP.abvMax = _mapVP.abvMin + abvR;
         renderMapView();
       }
     }, {passive:false});
 
-    canvas.addEventListener('touchend', () => { _pinch0=null; _pan0=null; });
-
-    // Double-tap to reset zoom
-    let _lastTap=0;
     canvas.addEventListener('touchend', e => {
-      const now=Date.now();
-      if (now-_lastTap<350) {
+      if (e.touches.length < 2) _pinch0 = null;
+      if (e.touches.length < 1) _pan0 = null;
+    });
+
+    // Double-tap: reset zoom
+    let _lastTap = 0;
+    canvas.addEventListener('touchend', e => {
+      if (e.changedTouches.length !== 1) return;
+      const now = Date.now();
+      if (now - _lastTap < 350) {
         _mapVP.ibuMin=0; _mapVP.ibuMax=100; _mapVP.abvMin=2; _mapVP.abvMax=12;
         renderMapView();
       }
-      _lastTap=now;
+      _lastTap = now;
     });
 
-    // Mouse wheel zoom (desktop)
+    // Mouse wheel zoom (desktop/tablet amb ratolí)
     canvas.addEventListener('wheel', e => {
       e.preventDefault();
       const rect=canvas.getBoundingClientRect();
-      const cx=e.clientX-rect.left, cy=e.clientY-rect.top;
-      const d=canvasCoordsToData(cx,cy,rect);
-      const scale = e.deltaY>0 ? 1.15 : 0.87;
-      const ibuFrac = (_mapVP.ibuMax-_mapVP.ibuMin)>0 ? (d.ibu-_mapVP.ibuMin)/(_mapVP.ibuMax-_mapVP.ibuMin) : .5;
-      const abvFrac = (_mapVP.abvMax-_mapVP.abvMin)>0 ? (d.abv-_mapVP.abvMin)/(_mapVP.abvMax-_mapVP.abvMin) : .5;
-      const ibuR = Math.min(100, Math.max(15, (_mapVP.ibuMax-_mapVP.ibuMin)*scale));
-      const abvR = Math.min(10,  Math.max(1.5,(_mapVP.abvMax-_mapVP.abvMin)*scale));
-      _mapVP.ibuMin = Math.max(-5,  Math.min(110-ibuR, d.ibu - ibuFrac*ibuR));
-      _mapVP.ibuMax = _mapVP.ibuMin + ibuR;
-      _mapVP.abvMin = Math.max(0,   Math.min(16-abvR,  d.abv - abvFrac*abvR));
-      _mapVP.abvMax = _mapVP.abvMin + abvR;
-      renderMapView();
+      const d = pxToData(e.clientX-rect.left, e.clientY-rect.top);
+      applyZoom(d.ibu, d.abv, e.deltaY < 0 ? 1.25 : 0.8);
     }, {passive:false});
   }
   function retry(){ const cv=el('map-cv'); if(cv) setupMapEvents(); else setTimeout(retry,500); }
@@ -1432,12 +1436,16 @@ function renderBeerCards() {
     );
   }
 
-  // When filters active: sort by match % descending, then by category
+  // Always sort: by match % when filters active, else by categoryNumber + name
   if (EF.active) {
     cards = cards
       .map(c => ({ c, pct: explorerScoreCard(c) }))
       .sort((a, b) => b.pct - a.pct)
       .map(x => x.c);
+  } else {
+    cards = cards.slice().sort((a, b) =>
+      (a.categoryNumber - b.categoryNumber) || a.name.localeCompare(b.name, 'ca')
+    );
   }
 
   if (!cards.length) {
