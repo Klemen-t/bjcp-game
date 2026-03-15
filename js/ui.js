@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
 //  UI.JS  —  Interface & interaction logic
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION = 'v2026.12 · 15/03/2026';
+const APP_VERSION = 'v2026.14 · 15/03/2026';
 
 // Add popup slide-up animation
 const _popupStyle = document.createElement('style');
@@ -23,26 +23,24 @@ let activeCardIds    = null;  // null = all; array = restricted pool
 
 
 // ═══════════════════════════════════════════════════════════════
-//  EXPLORER — filtres sensorials + vistes graella/mapa
+//  EXPLORER — filtres sensorials + vistes llista/mapa
 // ═══════════════════════════════════════════════════════════════
 
-// ── Card metadata cache (derived from tags+mouthfeel) ──────────
+// ── Card metadata cache ────────────────────────────────────────
 let _cardMeta = null;
 function getCardMeta() {
   if (_cardMeta) return _cardMeta;
   _cardMeta = {};
   BJCP_CARDS.forEach(c => {
     const tags = (c.tags||'').split(',').map(t=>t.trim());
-    // fermentation
     let ferm = 'hybrid';
     if (tags.includes('top-fermented') && !tags.includes('bottom-fermented') && !tags.includes('lagered')) ferm='ale';
-    else if (tags.includes('bottom-fermented') || tags.includes('lagered')) ferm='lager';
+    else if (tags.includes('bottom-fermented') || (tags.includes('lagered') && !tags.includes('top-fermented'))) ferm='lager';
     else if (tags.includes('wild-fermented')||tags.includes('wild-fermentation')) ferm='wild';
     else if (tags.includes('top-fermented') && tags.includes('lagered')) ferm='hybrid';
-    // body from mouthfeel text
     const mf = (c.mouthfeel||'').toLowerCase();
     let body = 'medium';
-    if (/lleuger|lleuger|light|thin|lleugera/.test(mf)) body='light';
+    if (/lleuger|light|thin|lleugera/.test(mf)) body='light';
     else if (/ple|full|alta|pesada/.test(mf)) body='full';
     _cardMeta[c.id] = {
       ferm, body,
@@ -55,7 +53,7 @@ function getCardMeta() {
   return _cardMeta;
 }
 
-// ── Explorer filter state ──────────────────────────────────────
+// ── Filter state ───────────────────────────────────────────────
 const EF = {
   srmMin:1, srmMax:40,
   abvMin:0, abvMax:15,
@@ -66,39 +64,59 @@ const EF = {
   active: false,
 };
 
+// ── Score: returns 0-100 (%), or -1 if no filters active ───────
 function explorerScoreCard(c) {
-  if (!EF.active) return -1; // -1 = no filter active
-  const meta = getCardMeta()[c.id] || {};
+  if (!EF.active) return -1;
   let score=0, total=0;
-  if (EF.srmMin>1||EF.srmMax<40) {
-    total+=2; const cMin=c.srmMin||1, cMax=c.srmMax||40;
-    const ov=Math.max(0,Math.min(EF.srmMax,cMax)-Math.max(EF.srmMin,cMin));
-    score+=2*Math.min(1,(ov/Math.max(1,EF.srmMax-EF.srmMin))*1.5);
+  const meta = getCardMeta()[c.id] || {};
+
+  if (EF.srmMin>1 || EF.srmMax<40) {
+    total += 2;
+    const cMin=c.srmMin||1, cMax=c.srmMax||40;
+    const ov=Math.max(0, Math.min(EF.srmMax,cMax) - Math.max(EF.srmMin,cMin));
+    score += 2 * Math.min(1, (ov / Math.max(1, EF.srmMax-EF.srmMin)) * 1.5);
   }
-  if (EF.abvMin>0||EF.abvMax<15) {
-    total+=2; const cMin=c.abvMin||0, cMax=c.abvMax||15;
-    const ov=Math.max(0,Math.min(EF.abvMax,cMax)-Math.max(EF.abvMin,cMin));
-    score+=2*Math.min(1,(ov/Math.max(0.5,EF.abvMax-EF.abvMin))*1.5);
+  if (EF.abvMin>0 || EF.abvMax<15) {
+    total += 2;
+    const cMin=c.abvMin||0, cMax=c.abvMax||15;
+    const ov=Math.max(0, Math.min(EF.abvMax,cMax) - Math.max(EF.abvMin,cMin));
+    score += 2 * Math.min(1, (ov / Math.max(0.5, EF.abvMax-EF.abvMin)) * 1.5);
   }
-  if (EF.ibuMin>0||EF.ibuMax<120) {
-    total+=2;
-    if (c.ibuMin==null) { score+=0.5; }
+  if (EF.ibuMin>0 || EF.ibuMax<120) {
+    total += 2;
+    if (c.ibuMin == null) { score += 0.5; }
     else {
-      const ov=Math.max(0,Math.min(EF.ibuMax,c.ibuMax)-Math.max(EF.ibuMin,c.ibuMin));
-      score+=2*Math.min(1,(ov/Math.max(1,EF.ibuMax-EF.ibuMin))*1.5);
+      const ov=Math.max(0, Math.min(EF.ibuMax,c.ibuMax) - Math.max(EF.ibuMin,c.ibuMin));
+      score += 2 * Math.min(1, (ov / Math.max(1, EF.ibuMax-EF.ibuMin)) * 1.5);
     }
   }
-  if (EF.ferm.size>0) { total+=2; if(EF.ferm.has(meta.ferm)) score+=2; }
-  if (EF.body.size>0) { total+=1.5; if(EF.body.has(meta.body)) score+=1.5; }
-  EF.chars.forEach(ch => { total+=1; if(meta[ch]) score+=1; });
-  if (total===0) return -1;
-  const pct=score/total;
-  if (pct>=.85) return 5; if (pct>=.65) return 4;
-  if (pct>=.45) return 3; if (pct>=.25) return 2;
-  if (pct>=.05) return 1; return 0;
+  if (EF.ferm.size > 0) {
+    total += 2;
+    if (EF.ferm.has(meta.ferm)) score += 2;
+  }
+  if (EF.body.size > 0) {
+    total += 1.5;
+    if (EF.body.has(meta.body)) score += 1.5;
+  }
+  EF.chars.forEach(ch => {
+    total += 1;
+    if (meta[ch]) score += 1;
+  });
+
+  if (total === 0) return -1;
+  return Math.round((score / total) * 100);
 }
 
-// ── SRM color ──────────────────────────────────────────────────
+// ── Color coding: verd≥70, groc 40-69, vermell <40 ────────────
+function matchClass(pct, isDiscarded) {
+  if (isDiscarded) return { card:'mc-grey', badge:'mpb-grey', color:'#555' };
+  if (pct < 0)     return { card:'', badge:'', color:'rgba(255,255,255,.25)' }; // no filter
+  if (pct >= 70)   return { card:'mc-green',  badge:'mpb-green',  color:'#2E8040' };
+  if (pct >= 40)   return { card:'mc-yellow', badge:'mpb-yellow', color:'#B8A010' };
+  return              { card:'mc-red',    badge:'mpb-red',    color:'#8A0B21' };
+}
+
+// ── SRM color helper ───────────────────────────────────────────
 function srmToColor(srm) {
   const map=[[2,'#F8F753'],[3,'#F6F513'],[4,'#ECE61A'],[5,'#D5BC26'],[6,'#BEA337'],
     [7,'#A88C3E'],[8,'#977A3F'],[9,'#856B3D'],[10,'#745D3B'],[11,'#644F36'],
@@ -110,292 +128,178 @@ function srmToColor(srm) {
   return map[map.length-1][1];
 }
 
-// ── Build SRM strip in filter drawer ──────────────────────────
-function buildSrmStripGame() {
-  const strip = el('srm-strip-game'); if (!strip||strip.dataset.built) return;
-  strip.dataset.built='1';
+// ── Build SRM bar ──────────────────────────────────────────────
+function buildSrmBar() {
+  const bar = el('sf-srm-bar'); if (!bar || bar.dataset.built) return;
+  bar.dataset.built = '1';
   for (let i=1;i<=40;i++) {
     const d=document.createElement('div');
-    d.className='srm-cell-g'; d.style.background=srmToColor(i); d.dataset.srm=i;
-    strip.appendChild(d);
+    d.className='sf-srm-cell'; d.style.background=srmToColor(i); d.dataset.srm=i;
+    bar.appendChild(d);
   }
-  updateSrmStripOverlay();
+  updateSrmOverlay();
 }
 
-function updateSrmStripOverlay() {
-  const strip=el('srm-strip-game'); if(!strip) return;
-  let ov=strip.querySelector('.srm-range-overlay');
-  if (!ov) { ov=document.createElement('div'); ov.className='srm-range-overlay'; strip.appendChild(ov); }
-  const pctL=((EF.srmMin-1)/39*100).toFixed(1);
-  const pctW=((EF.srmMax-EF.srmMin)/39*100).toFixed(1);
-  ov.style.left=pctL+'%'; ov.style.width=pctW+'%';
-  ov.style.display=(EF.srmMin>1||EF.srmMax<40)?'block':'none';
+function updateSrmOverlay() {
+  const bar = el('sf-srm-bar'); if (!bar) return;
+  let ov = bar.querySelector('.sf-srm-overlay');
+  if (!ov) { ov=document.createElement('div'); ov.className='sf-srm-overlay'; bar.appendChild(ov); }
+  if (EF.srmMin>1 || EF.srmMax<40) {
+    const pL = ((EF.srmMin-1)/39*100).toFixed(1);
+    const pW = ((EF.srmMax-EF.srmMin)/39*100).toFixed(1);
+    ov.style.left=pL+'%'; ov.style.width=pW+'%'; ov.style.display='block';
+  } else {
+    ov.style.display='none';
+  }
 }
 
-// ── Explorer filter updates ────────────────────────────────────
+// ── Update filters ─────────────────────────────────────────────
 function explorerUpdateFilters() {
-  EF.srmMin=+el('ef-srm-min').value; EF.srmMax=+el('ef-srm-max').value;
-  if(EF.srmMin>EF.srmMax) [EF.srmMin,EF.srmMax]=[EF.srmMax,EF.srmMin];
-  EF.abvMin=+el('ef-abv-min').value; EF.abvMax=+el('ef-abv-max').value;
-  EF.ibuMin=+el('ef-ibu-min').value; EF.ibuMax=+el('ef-ibu-max').value;
-  if(EF.ibuMin>EF.ibuMax) [EF.ibuMin,EF.ibuMax]=[EF.ibuMax,EF.ibuMin];
-  const vi=el('ef-srm-val'), va=el('ef-abv-min-v'), vb=el('ef-abv-max-v'), vc=el('ef-ibu-val');
-  if(vi) vi.textContent=EF.srmMin+'–'+EF.srmMax;
-  if(va) va.textContent=EF.abvMin+'%'; if(vb) vb.textContent=EF.abvMax+'%';
-  if(vc) vc.textContent=EF.ibuMin+'–'+EF.ibuMax;
-  EF.active=EF.srmMin>1||EF.srmMax<40||EF.abvMin>0||EF.abvMax<15||
-            EF.ibuMin>0||EF.ibuMax<120||EF.ferm.size>0||EF.body.size>0||EF.chars.size>0;
-  updateSrmStripOverlay();
-  // Update filter toggle style
-  const btn=el('filter-toggle-btn');
-  if(btn) btn.classList.toggle('has-filters',EF.active);
-  const hint=el('filter-active-hint');
-  if(hint) hint.style.display=EF.active?'inline':'none';
+  EF.active = EF.srmMin>1 || EF.srmMax<40 || EF.abvMin>0 || EF.abvMax<15 ||
+              EF.ibuMin>0 || EF.ibuMax<120 || EF.ferm.size>0 ||
+              EF.body.size>0 || EF.chars.size>0;
+  updateSrmOverlay();
+  // Active count badge
+  let count = 0;
+  if (EF.srmMin>1||EF.srmMax<40) count++;
+  if (EF.abvMin>0||EF.abvMax<15) count++;
+  if (EF.ibuMin>0||EF.ibuMax<120) count++;
+  EF.ferm.forEach(()=>count++); EF.body.forEach(()=>count++); EF.chars.forEach(()=>count++);
+  const ct = el('sf-active-count');
+  if (ct) {
+    ct.style.display = count>0 ? 'inline' : 'none';
+    ct.textContent = count + (count===1?' filtre actiu':' filtres actius');
+  }
   renderCurrentCardView();
 }
 
 function explorerResetFilters() {
-  el('ef-srm-min').value=1; el('ef-srm-max').value=40;
-  el('ef-abv-min').value=0; el('ef-abv-max').value=15;
-  el('ef-ibu-min').value=0; el('ef-ibu-max').value=120;
+  EF.srmMin=1; EF.srmMax=40; EF.abvMin=0; EF.abvMax=15;
+  EF.ibuMin=0; EF.ibuMax=120;
   EF.ferm.clear(); EF.body.clear(); EF.chars.clear(); EF.active=false;
-  document.querySelectorAll('.fpill').forEach(p=>p.classList.remove('on'));
-  el('filter-toggle-btn')?.classList.remove('has-filters');
-  const hint=el('filter-active-hint'); if(hint) hint.style.display='none';
-  explorerUpdateFilters();
+  document.querySelectorAll('.sf-pill').forEach(p=>p.classList.remove('on'));
+  updateSrmOverlay();
+  const ct=el('sf-active-count'); if(ct) ct.style.display='none';
+  renderCurrentCardView();
 }
 
-// pill event binding — called once on initTeamView
+// ── Init pills (called once) ───────────────────────────────────
 function initExplorerPills() {
-  document.querySelectorAll('.fpill[data-esrm]').forEach(p=>{
-    p.addEventListener('click',()=>{
-      const [mn,mx]=p.dataset.esrm.split(',').map(Number);
-      el('ef-srm-min').value=mn; el('ef-srm-max').value=mx;
-      document.querySelectorAll('.fpill[data-esrm]').forEach(x=>x.classList.remove('on'));
+  buildSrmBar();
+
+  document.querySelectorAll('.sf-pill[data-esrm]').forEach(p => {
+    p.addEventListener('click', () => {
+      const [mn,mx] = p.dataset.esrm.split(',').map(Number);
+      EF.srmMin=mn; EF.srmMax=mx;
+      document.querySelectorAll('.sf-pill[data-esrm]').forEach(x=>x.classList.remove('on'));
       p.classList.add('on'); explorerUpdateFilters();
     });
   });
-  document.querySelectorAll('.fpill[data-eferm]').forEach(p=>{
-    p.addEventListener('click',()=>{
+  document.querySelectorAll('.sf-pill[data-eferm]').forEach(p => {
+    p.addEventListener('click', () => {
       const v=p.dataset.eferm;
       if(EF.ferm.has(v)){EF.ferm.delete(v);p.classList.remove('on');}
       else{EF.ferm.add(v);p.classList.add('on');}
       explorerUpdateFilters();
     });
   });
-  document.querySelectorAll('.fpill[data-ebody]').forEach(p=>{
-    p.addEventListener('click',()=>{
+  document.querySelectorAll('.sf-pill[data-ebody]').forEach(p => {
+    p.addEventListener('click', () => {
       const v=p.dataset.ebody;
       if(EF.body.has(v)){EF.body.delete(v);p.classList.remove('on');}
       else{EF.body.add(v);p.classList.add('on');}
       explorerUpdateFilters();
     });
   });
-  document.querySelectorAll('.fpill[data-echar]').forEach(p=>{
-    p.addEventListener('click',()=>{
+  document.querySelectorAll('.sf-pill[data-echar]').forEach(p => {
+    p.addEventListener('click', () => {
       const v=p.dataset.echar;
       if(EF.chars.has(v)){EF.chars.delete(v);p.classList.remove('on');}
       else{EF.chars.add(v);p.classList.add('on');}
       explorerUpdateFilters();
     });
   });
-  document.querySelectorAll('.fpill[data-eabv]').forEach(p=>{
-    p.addEventListener('click',()=>{
-      const [mn,mx]=p.dataset.eabv.split(',').map(Number);
-      el('ef-abv-min').value=mn; el('ef-abv-max').value=mx;
-      document.querySelectorAll('.fpill[data-eabv]').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.sf-pill[data-eabv]').forEach(p => {
+    p.addEventListener('click', () => {
+      const [mn,mx] = p.dataset.eabv.split(',').map(Number);
+      EF.abvMin=mn; EF.abvMax=mx;
+      document.querySelectorAll('.sf-pill[data-eabv]').forEach(x=>x.classList.remove('on'));
       p.classList.add('on'); explorerUpdateFilters();
     });
   });
-  document.querySelectorAll('.fpill[data-eibu]').forEach(p=>{
-    p.addEventListener('click',()=>{
-      const [mn,mx]=p.dataset.eibu.split(',').map(Number);
-      el('ef-ibu-min').value=mn; el('ef-ibu-max').value=mx;
-      document.querySelectorAll('.fpill[data-eibu]').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.sf-pill[data-eibu]').forEach(p => {
+    p.addEventListener('click', () => {
+      const [mn,mx] = p.dataset.eibu.split(',').map(Number);
+      EF.ibuMin=mn; EF.ibuMax=mx;
+      document.querySelectorAll('.sf-pill[data-eibu]').forEach(x=>x.classList.remove('on'));
       p.classList.add('on'); explorerUpdateFilters();
     });
   });
 }
 
-// ── Filter drawer toggle ───────────────────────────────────────
-function toggleFilterDrawer() {
-  const d=el('filter-drawer');
-  if (!d) return;
-  const open=d.classList.toggle('open');
-  const arr=el('filter-toggle-arrow');
-  if(arr) arr.textContent=open?'▲':'▼';
-  if(open) buildSrmStripGame();
-}
-
-// ── Card view state ────────────────────────────────────────────
+// ── View state ─────────────────────────────────────────────────
 let currentCardView = 'list';
 function setCardView(v) {
-  currentCardView=v;
-  ['list','grid','map'].forEach(x=>{
-    const panel=el('cards-view-'+x);
-    if(panel) panel.style.display=x===v?'block':'none';
-    el('vstab-'+x)?.classList.toggle('active',x===v);
-  });
+  currentCardView = v;
+  const lp = el('cards-view-list'), mp = el('cards-view-map');
+  if (lp) lp.style.display = v==='list' ? 'block' : 'none';
+  if (mp) mp.style.display = v==='map'  ? 'block' : 'none';
+  el('vstab-list')?.classList.toggle('active', v==='list');
+  el('vstab-map')?.classList.toggle('active',  v==='map');
   renderCurrentCardView();
 }
 
 function renderCurrentCardView() {
-  if (currentCardView==='list') renderBeerCards();
-  else if (currentCardView==='grid') renderGridView();
-  else if (currentCardView==='map') renderMapView();
-}
-
-// ── GRID VIEW ──────────────────────────────────────────────────
-function renderGridView() {
-  const container=el('grid-container'); if(!container) return;
-  const locked=gameState?.cardsLocked;
-  if (locked) { container.innerHTML=''; return; }
-
-  const globalInfo=gameState?.currentBeer?.revealedInfo||{};
-  const teamInfo=gameState?.currentBeer?.teamInfo?.[game.teamId]||{};
-  const myPlayer=gameState?.teams?.[game.teamId]?.players?.[game.playerName];
-  if (myPlayer?.cardStates) Object.entries(myPlayer.cardStates).forEach(([id,st])=>{cardStates[id]=st;});
-
-  let cards=getVisibleCards();
-  if (cardFilter==='possible') {
-    const tp=new Set(Object.values(gameState?.teams?.[game.teamId]?.players||{})
-      .flatMap(p=>Object.entries(p.cardStates||{}).filter(([,st])=>st==='possible').map(([id])=>id)));
-    cards=cards.filter(c=>tp.has(c.id));
-  } else if (cardFilter==='discarded') {
-    const td=new Set(Object.values(gameState?.teams?.[game.teamId]?.players||{})
-      .flatMap(p=>Object.entries(p.cardStates||{}).filter(([,st])=>st==='discarded').map(([id])=>id)));
-    cards=cards.filter(c=>td.has(c.id));
-  }
-  if (cardSearch) {
-    const q=cardSearch.toLowerCase();
-    cards=cards.filter(c=>c.name.toLowerCase().includes(q)||c.category.toLowerCase().includes(q));
-  }
-
-  if (!cards.length) { container.innerHTML=emptyState('⊞','Cap estil per mostrar'); return; }
-
-  // Score + sort
-  const scored=cards.map(c=>({c,s:explorerScoreCard(c)}))
-    .sort((a,b)=>(b.s-a.s)||(a.c.catN||a.c.categoryNumber)-(b.c.catN||b.c.categoryNumber));
-
-  // Group by category
-  const cats={};
-  scored.forEach(({c,s})=>{
-    const k=c.category; if(!cats[k]) cats[k]=[];
-    cats[k].push({c,s});
-  });
-
-  // Sort categories by best score
-  const sorted=Object.entries(cats).sort((a,b)=>{
-    const am=Math.max(...a[1].map(x=>x.s)); const bm=Math.max(...b[1].map(x=>x.s));
-    return bm-am;
-  });
-
-  container.innerHTML=sorted.map(([cat,items])=>`
-    <div class="grid-cat-sec">
-      <div class="grid-cat-hdr">
-        <span>${cat}</span><span style="color:var(--m)">${items.length}</span>
-      </div>
-      <div class="grid-cells">
-        ${items.map(({c,s})=>{
-          const myState=cardStates[c.id]||'normal';
-          const srmC=c.srmMin?srmToColor((c.srmMin+c.srmMax)/2):null;
-          const mCls=s<0?'gc-match0':'gc-match'+s;
-          const sCls=myState==='possible'?'gc-possible':myState==='discarded'?'gc-discarded':'';
-          const dimStyle=(s===0&&EF.active)?'opacity:.2':'';
-          const stateIcon=myState==='possible'?'⭐':myState==='discarded'?'✕':'';
-          return `<div class="grid-cell ${mCls} ${sCls}" style="${dimStyle}"
-              onclick="handleGridCellTap('${c.id}','${c.name.replace(/'/g,'&#39;')}')"
-              data-card-id="${c.id}">
-            ${srmC?`<div style="position:absolute;top:3px;right:3px;width:7px;height:7px;background:${srmC};opacity:.6"></div>`:'' }
-            ${stateIcon?`<div class="gc-state-icon">${stateIcon}</div>`:'' }
-            <div class="gc-num">${c.number}</div>
-            <div class="gc-name">${c.name}</div>
-          </div>`;
-        }).join('')}
-      </div>
-    </div>`).join('');
-}
-
-// Tap on grid cell: first tap = open detail, second tap = toggle possible
-let _lastGridTap = null;
-function handleGridCellTap(cardId, cardName) {
-  if (_lastGridTap===cardId) {
-    // Second tap: toggle possible
-    const st=cardStates[cardId]||'normal';
-    setCardState(cardId, st==='possible'?'normal':'possible');
-    _lastGridTap=null;
-  } else {
-    _lastGridTap=cardId;
-    setTimeout(()=>{ if(_lastGridTap===cardId) _lastGridTap=null; },800);
-    // Show quick info modal
-    const c=BJCP_CARDS.find(x=>x.id===cardId); if(!c) return;
-    const st=cardStates[cardId]||'normal';
-    const gI=gameState?.currentBeer?.revealedInfo||{};
-    const tI=gameState?.currentBeer?.teamInfo?.[game.teamId]||{};
-    const score=explorerScoreCard(c);
-    const pctTxt=score>=0?`<span style="color:var(--rl);font-family:var(--fd);font-size:1rem">${Math.round(score/5*100)}%</span> coincidència<br>`:'';
-    showModal(c.number+' — '+c.name,`
-      <div style="font-family:var(--fu);font-size:.68rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--r);margin-bottom:8px">${c.category}</div>
-      <div style="font-size:.8rem;color:var(--m);line-height:1.6;margin-bottom:10px">${pctTxt}${c.overallImpression||''}</div>
-      ${cardStatsHTML(c,gI,tI)}
-      ${c.commercialExamples?`<div style="font-family:var(--fu);font-size:.7rem;color:var(--rl);margin-top:8px;padding-top:8px;border-top:1px solid var(--k4)">🏪 ${c.commercialExamples}</div>`:''}
-      <div style="display:flex;gap:8px;margin-top:14px">
-        <button class="btn btn-sm" style="flex:1;background:${st==='possible'?'rgba(196,18,48,.2)':'rgba(255,255,255,.05)'};border:1px solid ${st==='possible'?'var(--r)':'var(--k4)'};color:${st==='possible'?'var(--rl)':'var(--t)'}"
-          onclick="closeModal();setCardState('${cardId}','possible')">⭐ Possible</button>
-        <button class="btn btn-sm" style="flex:1;background:${st==='discarded'?'rgba(122,28,28,.2)':'rgba(255,255,255,.05)'};border:1px solid ${st==='discarded'?'var(--rd)':'var(--k4)'};color:${st==='discarded'?'#d44':'var(--t)'}"
-          onclick="closeModal();setCardState('${cardId}','discarded')">✕ Descartar</button>
-        ${st==='possible'?`<button class="btn btn-success btn-sm" style="flex:1" onclick="closeModal();proposeCard('${cardId}','${cardName}')">🎯 Proposar</button>`:''}
-      </div>`);
-  }
+  if (currentCardView === 'list') renderBeerCards();
+  else renderMapView();
 }
 
 // ── MAP VIEW ──────────────────────────────────────────────────
-let _mapHits=[];
+let _mapHits = [];
 function renderMapView() {
-  const canvas=el('map-cv'); if(!canvas) return;
-  const W=canvas.parentElement.clientWidth||320;
-  const H=340;
-  canvas.width=W*devicePixelRatio; canvas.height=H*devicePixelRatio;
-  canvas.style.height=H+'px';
-  const ctx=canvas.getContext('2d');
-  ctx.scale(devicePixelRatio,devicePixelRatio);
+  const canvas = el('map-cv'); if (!canvas) return;
+  const W = canvas.parentElement.clientWidth || 320;
+  const H = 360;
+  canvas.width  = W * devicePixelRatio;
+  canvas.height = H * devicePixelRatio;
+  canvas.style.height = H + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(devicePixelRatio, devicePixelRatio);
 
-  const PAD={l:36,r:12,t:14,b:30};
-  const CW=W-PAD.l-PAD.r, CH=H-PAD.t-PAD.b;
+  const PAD = { l:38, r:12, t:14, b:30 };
+  const CW = W-PAD.l-PAD.r, CH = H-PAD.t-PAD.b;
 
   ctx.fillStyle='#0f0f0f'; ctx.fillRect(0,0,W,H);
 
-  // Grid lines
+  // Grid
   ctx.strokeStyle='rgba(255,255,255,.05)'; ctx.lineWidth=1;
-  for(let ibu=0;ibu<=120;ibu+=20){
+  for (let ibu=0;ibu<=120;ibu+=20) {
     const x=PAD.l+(ibu/120)*CW;
     ctx.beginPath(); ctx.moveTo(x,PAD.t); ctx.lineTo(x,PAD.t+CH); ctx.stroke();
     ctx.fillStyle='rgba(255,255,255,.22)';
-    ctx.font='bold 8px Barlow Condensed,sans-serif'; ctx.textAlign='center';
-    ctx.fillText(ibu, x, PAD.t+CH+12);
+    ctx.font='bold 8px Barlow Condensed,sans-serif';
+    ctx.textAlign='center'; ctx.fillText(ibu, x, PAD.t+CH+12);
   }
-  for(let abv=0;abv<=15;abv+=5){
+  for (let abv=0;abv<=15;abv+=5) {
     const y=PAD.t+CH-(abv/15)*CH;
     ctx.beginPath(); ctx.moveTo(PAD.l,y); ctx.lineTo(PAD.l+CW,y); ctx.stroke();
     ctx.fillStyle='rgba(255,255,255,.22)';
-    ctx.font='bold 8px Barlow Condensed,sans-serif'; ctx.textAlign='right';
-    ctx.fillText(abv+'%', PAD.l-4, y+3);
+    ctx.font='bold 8px Barlow Condensed,sans-serif';
+    ctx.textAlign='right'; ctx.fillText(abv+'%', PAD.l-4, y+3);
   }
+  ctx.fillStyle='rgba(200,200,200,.25)'; ctx.font='bold 9px Barlow Condensed,sans-serif';
+  ctx.textAlign='center'; ctx.fillText('IBU', PAD.l+CW/2, H-4);
 
-  // Axis labels
-  ctx.fillStyle='rgba(200,200,200,.3)'; ctx.font='bold 9px Barlow Condensed,sans-serif';
-  ctx.textAlign='center';
-  ctx.fillText('IBU', PAD.l+CW/2, H-4);
-
-  // Filter highlight zone
-  if(EF.active&&(EF.ibuMin>0||EF.ibuMax<120||EF.abvMin>0||EF.abvMax<15)){
+  // Filter zone highlight
+  if (EF.active && (EF.ibuMin>0||EF.ibuMax<120||EF.abvMin>0||EF.abvMax<15)) {
     const x1=PAD.l+(EF.ibuMin/120)*CW, x2=PAD.l+(EF.ibuMax/120)*CW;
     const y1=PAD.t+CH-(EF.abvMax/15)*CH, y2=PAD.t+CH-(EF.abvMin/15)*CH;
-    ctx.fillStyle='rgba(196,18,48,.06)'; ctx.fillRect(x1,y1,x2-x1,y2-y1);
-    ctx.strokeStyle='rgba(196,18,48,.25)'; ctx.lineWidth=1; ctx.strokeRect(x1,y1,x2-x1,y2-y1);
+    ctx.fillStyle='rgba(255,255,255,.03)'; ctx.fillRect(x1,y1,x2-x1,y2-y1);
+    ctx.strokeStyle='rgba(255,255,255,.1)'; ctx.lineWidth=1; ctx.strokeRect(x1,y1,x2-x1,y2-y1);
   }
 
-  let cards=getVisibleCards();
+  // Get visible cards (respects filter + state filter)
+  let cards = getVisibleCards();
   if (cardFilter==='possible') {
     const tp=new Set(Object.values(gameState?.teams?.[game.teamId]?.players||{})
       .flatMap(p=>Object.entries(p.cardStates||{}).filter(([,st])=>st==='possible').map(([id])=>id)));
@@ -410,87 +314,134 @@ function renderMapView() {
     cards=cards.filter(c=>c.name.toLowerCase().includes(q)||c.category.toLowerCase().includes(q));
   }
 
-  _mapHits=[];
-  const meta=getCardMeta();
-  cards.forEach(c=>{
-    const s=explorerScoreCard(c);
-    const myState=cardStates[c.id]||'normal';
-    const ibu=c.ibuMin!=null?(c.ibuMin+c.ibuMax)/2:40;
-    const abv=c.abvMin!=null?(c.abvMin+c.abvMax)/2:5;
-    const x=PAD.l+(Math.min(ibu,120)/120)*CW;
-    const y=PAD.t+CH-(Math.min(abv,15)/15)*CH;
-    const m=meta[c.id]||{};
-    const r=m.body==='full'?7:m.body==='light'?3.5:5;
-    // color: possible=green, discarded=grey, match-based otherwise
-    let col;
-    if(myState==='discarded') col='rgba(80,80,80,.4)';
-    else if(myState==='possible') col='rgba(46,128,64,.85)';
-    else col=['rgba(30,30,30,.7)','rgba(140,120,20,.65)','rgba(196,100,20,.7)',
-              'rgba(200,60,20,.8)','rgba(220,30,30,.85)','rgba(230,20,48,.95)'][Math.max(0,s<0?0:s)];
+  _mapHits = [];
+  const meta = getCardMeta();
+  // Sort: high match on top (drawn last = visible)
+  const scored = cards.map(c=>({c, pct:explorerScoreCard(c)}));
+  scored.sort((a,b) => a.pct - b.pct); // draw worst first, best on top
 
+  scored.forEach(({c, pct}) => {
+    const myState = cardStates[c.id] || 'normal';
+    const isDisc  = myState === 'discarded';
+    const isPoss  = myState === 'possible';
+    const mc = matchClass(pct, isDisc);
+
+    const ibu = c.ibuMin!=null ? (c.ibuMin+c.ibuMax)/2 : 40;
+    const abv = c.abvMin!=null ? (c.abvMin+c.abvMax)/2 : 5;
+    const m   = meta[c.id]||{};
+    const r   = m.body==='full'?8 : m.body==='light'?4 : 6;
+
+    const x = PAD.l + (Math.min(ibu,120)/120)*CW;
+    const y = PAD.t + CH - (Math.min(abv,15)/15)*CH;
+
+    // Fill
+    const alpha = isDisc ? .3 : (!EF.active ? .7 : (pct<0?.6:Math.max(.3, pct/100)));
     ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2);
-    ctx.fillStyle=col; ctx.fill();
-    if(myState==='possible'||s>=4){
-      ctx.strokeStyle='rgba(255,255,255,'+(myState==='possible'?'.5':'.2')+')';
-      ctx.lineWidth=1; ctx.stroke();
+    ctx.fillStyle = mc.color;
+    ctx.globalAlpha = alpha;
+    ctx.fill();
+
+    // Possible ring
+    if (isPoss) {
+      ctx.beginPath(); ctx.arc(x,y,r+2.5,0,Math.PI*2);
+      ctx.strokeStyle='#fff'; ctx.lineWidth=1.5; ctx.globalAlpha=.8; ctx.stroke();
     }
-    if(s>=4&&r>=4){
+    ctx.globalAlpha=1;
+
+    // Label for high-match
+    if (!isDisc && EF.active && pct>=70 && r>=5) {
       ctx.fillStyle='rgba(255,255,255,.7)';
-      ctx.font='bold 7px Barlow Condensed,sans-serif'; ctx.textAlign='center';
+      ctx.font='bold 7px Barlow Condensed,sans-serif';
+      ctx.textAlign='center';
       ctx.fillText(c.number, x, y-r-2);
     }
-    _mapHits.push({c,s,x,y,r:r+5});
+
+    _mapHits.push({c, pct, x, y, r: r+6, state: myState});
   });
 }
 
-// Map touch/hover
+// Map events (set up once)
 (function(){
-  let _tt=null;
   function setupMapEvents() {
-    const canvas=el('map-cv'); if(!canvas||canvas._eventsSet) return;
-    canvas._eventsSet=true;
-    const tt=el('map-tooltip');
-    function show(cx,cy){
-      if(!_mapHits.length) return;
-      const rect=canvas.getBoundingClientRect();
-      const mx=(cx-rect.left)*(canvas.width/devicePixelRatio/rect.width);
-      const my=(cy-rect.top)*(canvas.height/devicePixelRatio/rect.height);
-      let found=null;
-      for(const h of _mapHits){ if(Math.hypot(mx-h.x,my-h.y)<=h.r){found=h;break;} }
-      if(found&&tt){
-        el('mtt-name').textContent=found.c.number+' — '+found.c.name;
-        el('mtt-cat').textContent=found.c.category;
-        let ttx=cx-rect.left+10, tty=cy-rect.top-60;
-        if(ttx+185>rect.width) ttx=cx-rect.left-190;
-        if(tty<0) tty=10;
-        tt.style.left=ttx+'px'; tt.style.top=tty+'px';
+    const canvas = el('map-cv');
+    if (!canvas || canvas._eventsSet) return;
+    canvas._eventsSet = true;
+    const tt = el('map-tooltip');
+
+    function showTip(cx, cy) {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / devicePixelRatio / rect.width;
+      const scaleY = canvas.height / devicePixelRatio / rect.height;
+      const mx = (cx-rect.left)*scaleX, my = (cy-rect.top)*scaleY;
+      let found = null;
+      for (const h of _mapHits) { if(Math.hypot(mx-h.x,my-h.y)<=h.r){found=h;break;} }
+      if (found && tt) {
+        el('mtt-name').textContent = found.c.number+' — '+found.c.name;
+        el('mtt-cat').textContent  = found.c.category;
+        const pctEl = el('mtt-pct');
+        if (pctEl) {
+          if (found.pct < 0) { pctEl.textContent=''; }
+          else {
+            const mc = matchClass(found.pct, found.state==='discarded');
+            pctEl.textContent = found.pct+'%';
+            pctEl.style.color = mc.color;
+          }
+        }
+        let tx = cx-rect.left+12, ty = cy-rect.top-70;
+        if (tx+200>rect.width)  tx = cx-rect.left-205;
+        if (ty < 0)             ty = 8;
+        tt.style.left=tx+'px'; tt.style.top=ty+'px';
         tt.classList.add('show');
-      } else if(tt) tt.classList.remove('show');
+      } else if (tt) { tt.classList.remove('show'); }
     }
-    canvas.addEventListener('mousemove',e=>show(e.clientX,e.clientY));
-    canvas.addEventListener('mouseleave',()=>el('map-tooltip')?.classList.remove('show'));
-    canvas.addEventListener('touchstart',e=>{
+    let _tipTimer;
+    canvas.addEventListener('mousemove', e=>showTip(e.clientX,e.clientY));
+    canvas.addEventListener('mouseleave', ()=>tt?.classList.remove('show'));
+    canvas.addEventListener('touchstart', e=>{
       e.preventDefault();
-      const t=e.touches[0]; show(t.clientX,t.clientY);
-      clearTimeout(_tt); _tt=setTimeout(()=>el('map-tooltip')?.classList.remove('show'),1800);
+      const t=e.touches[0]; showTip(t.clientX,t.clientY);
+      clearTimeout(_tipTimer); _tipTimer=setTimeout(()=>tt?.classList.remove('show'),2000);
     },{passive:false});
-    canvas.addEventListener('click',e=>{
+    canvas.addEventListener('click', e=>{
       const rect=canvas.getBoundingClientRect();
-      const mx=(e.clientX-rect.left)*(canvas.width/devicePixelRatio/rect.width);
-      const my=(e.clientY-rect.top)*(canvas.height/devicePixelRatio/rect.height);
-      for(const h of _mapHits){
-        if(Math.hypot(mx-h.x,my-h.y)<=h.r){
-          handleGridCellTap(h.c.id,h.c.name.replace(/'/g,'&#39;'));
-          break;
+      const scaleX=canvas.width/devicePixelRatio/rect.width;
+      const scaleY=canvas.height/devicePixelRatio/rect.height;
+      const mx=(e.clientX-rect.left)*scaleX, my=(e.clientY-rect.top)*scaleY;
+      for (const h of _mapHits) {
+        if (Math.hypot(mx-h.x,my-h.y)<=h.r) {
+          showQuickCardModal(h.c); break;
         }
       }
     });
   }
-  // Retry until elements available
-  function trySetup(){ const cv=el('map-cv'); if(cv) setupMapEvents(); else setTimeout(trySetup,500); }
-  setTimeout(trySetup,300);
+  function retry(){ const cv=el('map-cv'); if(cv) setupMapEvents(); else setTimeout(retry,500); }
+  setTimeout(retry,300);
 })();
 
+// Quick card modal (shared by map tap + grid cell tap)
+function showQuickCardModal(c) {
+  const st = cardStates[c.id]||'normal';
+  const pct = explorerScoreCard(c);
+  const mc  = matchClass(pct, st==='discarded');
+  const gI  = gameState?.currentBeer?.revealedInfo||{};
+  const tI  = gameState?.currentBeer?.teamInfo?.[game.teamId]||{};
+  const pctTxt = pct>=0
+    ? `<span style="font-family:var(--fd);font-size:1.2rem;color:${mc.color}">${pct}%</span> <span style="font-family:var(--fu);font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--m)">coincidència</span><br><br>`
+    : '';
+  showModal(c.number+' — '+c.name, `
+    <div style="font-family:var(--fu);font-size:.68rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--r);margin-bottom:10px">${c.category}</div>
+    <div style="margin-bottom:10px">${pctTxt}</div>
+    <div style="font-size:.8rem;color:var(--m);line-height:1.65;margin-bottom:12px">${c.overallImpression||''}</div>
+    ${cardStatsHTML(c,gI,tI)}
+    ${c.commercialExamples?`<div style="font-family:var(--fu);font-size:.7rem;color:var(--rl);margin-top:8px;padding-top:8px;border-top:1px solid var(--k4)">🏪 ${c.commercialExamples}</div>`:''}
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn btn-sm" style="flex:1;background:${st==='possible'?'rgba(196,18,48,.2)':'rgba(255,255,255,.05)'};border:1px solid ${st==='possible'?'var(--r)':'var(--k4)'};color:${st==='possible'?'var(--rl)':'var(--t)'}"
+        onclick="closeModal();setCardState('${c.id}','possible')">⭐ Possible</button>
+      <button class="btn btn-sm" style="flex:1;background:${st==='discarded'?'rgba(122,28,28,.2)':'rgba(255,255,255,.05)'};border:1px solid ${st==='discarded'?'var(--rd)':'var(--k4)'};color:${st==='discarded'?'#d44':'var(--t)'}"
+        onclick="closeModal();setCardState('${c.id}','discarded')">✕ Descartar</button>
+      ${st==='possible'?`<button class="btn btn-success btn-sm" style="flex:1" onclick="closeModal();proposeCard('${c.id}','${c.name.replace(/'/g,"\\'")}')">🎯 Proposar</button>`:''}
+    </div>`);
+}
 
 // ═══ UTILS ══════════════════════════════════════════════════════
 const el    = id => document.getElementById(id);
@@ -618,6 +569,7 @@ async function _checkMasterPassword(input) {
   const enc = new TextEncoder().encode(input);
   const buf = await crypto.subtle.digest('SHA-256', enc);
   const hex = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+  // sha256('merderada')
   return hex === '84a0a5b8837983314b166079f7af613a57031c0b9b1283b86a1d714d7e8baef9';
 }
 
@@ -948,7 +900,6 @@ function initTeamView(s) {
   teamViewInited = true;
   buildGuessOptions();
   initExplorerPills();
-  buildSrmStripGame();
   // Listen for new messages — show popup for shield alerts
   game.gameRef.child('messages').on('value', snap => {
     const msgs = snap.val() || {};
@@ -1333,12 +1284,20 @@ function beerCardHTML(card, globalInfo, teamInfo, teamCS) {
   const tcs       = teamCS[card.id]||{possible:[],discarded:[]};
   const matchScore = explorerScoreCard(card);
 
-  let cls='beer-card', sty='';
-  if (myState==='discarded') cls+=' discarded';
-  else if (myState==='possible') cls+=' possible';
-  else {
+  // Base classes
+  const isDisc = myState==='discarded';
+  const isPoss = myState==='possible';
+  const mc = matchClass(matchScore, isDisc);
+  let cls='beer-card';
+  if (isPoss)  cls += ' possible';
+  if (isDisc)  cls += ' discarded';
+  // Add match color class only when filters active and not already possible/discarded
+  if (!isPoss && !isDisc && EF.active && matchScore>=0) cls += ' ' + mc.card;
+  // Override with reveal status (range match from info cards)
+  let sty='';
+  if (!isDisc && !isPoss) {
     if (revStatus==='match')   sty='border-color:#3D8B4E;box-shadow:0 0 14px rgba(61,139,78,.25)';
-    if (revStatus==='nomatch') sty='border-color:#8B2020;opacity:.4';
+    if (revStatus==='nomatch') sty='opacity:.4';
   }
 
   const otherPossible  = tcs.possible.filter(n=>n!==game.playerName);

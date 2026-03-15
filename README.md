@@ -226,10 +226,7 @@ Tags que influencien els filtres sensorials:
 
 ## 🔑 Contrasenya Master
 
-La contrasenya per defecte és **** (hash SHA-256 emmagatzemat al codi).
-
-Per canviar-la, substitueix el hash a `js/ui.js` (línia `MASTER_PW_HASH`). Pots generar el hash a:
-https://emn178.github.io/online-tools/sha256.html
+La validació de la contrasenya es fa comparant el hash SHA-256 de l'entrada amb el hash emmagatzemat directament al codi a `js/ui.js`. Per canviar-la, substitueix el valor del hash per un de propi.
 
 ---
 
