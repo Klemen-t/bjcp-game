@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
 //  UI.JS  —  Interface & interaction logic
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION = 'v2026.18 · 15/03/2026';
+const APP_VERSION = 'v2026.19 · 15/03/2026';
 
 // Add popup slide-up animation
 const _popupStyle = document.createElement('style');
@@ -609,26 +609,44 @@ function renderMapView() {
 
 // Quick card modal (shared by map tap + grid cell tap)
 function showQuickCardModal(c) {
-  const st = cardStates[c.id]||'normal';
   const pct = explorerScoreCard(c);
-  const mc  = matchClass(pct, st==='discarded');
-  const gI  = gameState?.currentBeer?.revealedInfo||{};
-  const tI  = gameState?.currentBeer?.teamInfo?.[game.teamId]||{};
-  const pctTxt = pct>=0
-    ? `<span style="font-family:var(--fd);font-size:1.2rem;color:${mc.color}">${pct}%</span> <span style="font-family:var(--fu);font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--m)">coincidència</span><br><br>`
+  const mc  = matchClass(pct, cardStates[c.id]==='discarded');
+
+  // Build compact stats row: ABV · IBU · SRM
+  const abvTxt = c.abvMin!=null ? `${c.abvMin}–${c.abvMax}%` : '—';
+  const ibuTxt = c.ibuMin!=null ? `${c.ibuMin}–${c.ibuMax}` : '—';
+  const srmTxt = c.srmMin!=null ? `${c.srmMin}–${c.srmMax}` : '—';
+
+  // SRM color swatch
+  const srmMid = c.srmMin!=null ? (c.srmMin+c.srmMax)/2 : null;
+  const srmCol = srmMid ? srmToColor(srmMid) : '#444';
+
+  // % badge
+  const pctBlock = pct>=0
+    ? `<div style="font-family:var(--fd);font-size:2rem;color:${mc.color};line-height:1;margin-bottom:2px">${pct}%</div>
+       <div style="font-family:var(--fu);font-size:.6rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--m)">Coincidència</div>`
     : '';
+
   showModal(c.number+' — '+c.name, `
-    <div style="font-family:var(--fu);font-size:.68rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--r);margin-bottom:10px">${c.category}</div>
-    <div style="margin-bottom:10px">${pctTxt}</div>
-    <div style="font-size:.8rem;color:var(--m);line-height:1.65;margin-bottom:12px">${c.overallImpression||''}</div>
-    ${cardStatsHTML(c,gI,tI)}
-    ${c.commercialExamples?`<div style="font-family:var(--fu);font-size:.7rem;color:var(--rl);margin-top:8px;padding-top:8px;border-top:1px solid var(--k4)">🏪 ${c.commercialExamples}</div>`:''}
-    <div style="display:flex;gap:8px;margin-top:14px">
-      <button class="btn btn-sm" style="flex:1;background:${st==='possible'?'rgba(196,18,48,.2)':'rgba(255,255,255,.05)'};border:1px solid ${st==='possible'?'var(--r)':'var(--k4)'};color:${st==='possible'?'var(--rl)':'var(--t)'}"
-        onclick="closeModal();setCardState('${c.id}','possible')">⭐ Possible</button>
-      <button class="btn btn-sm" style="flex:1;background:${st==='discarded'?'rgba(122,28,28,.2)':'rgba(255,255,255,.05)'};border:1px solid ${st==='discarded'?'var(--rd)':'var(--k4)'};color:${st==='discarded'?'#d44':'var(--t)'}"
-        onclick="closeModal();setCardState('${c.id}','discarded')">✕ Descartar</button>
-      ${st==='possible'?`<button class="btn btn-success btn-sm" style="flex:1" onclick="closeModal();proposeCard('${c.id}','${c.name.replace(/'/g,"\\'")}')">🎯 Proposar</button>`:''}
+    <div style="font-family:var(--fu);font-size:.68rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--r);margin-bottom:14px">${c.category}</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr ${pct>=0?'1fr':'0'};gap:8px;margin-bottom:14px">
+      <div style="background:var(--k3);padding:10px 8px;text-align:center">
+        <div style="font-family:var(--fd);font-size:1.1rem;color:var(--sl)">${abvTxt}</div>
+        <div style="font-family:var(--fu);font-size:.58rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--m);margin-top:3px">ABV</div>
+      </div>
+      <div style="background:var(--k3);padding:10px 8px;text-align:center">
+        <div style="font-family:var(--fd);font-size:1.1rem;color:var(--sl)">${ibuTxt}</div>
+        <div style="font-family:var(--fu);font-size:.58rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--m);margin-top:3px">IBU</div>
+      </div>
+      <div style="background:var(--k3);padding:10px 8px;text-align:center">
+        <div style="display:flex;align-items:center;justify-content:center;gap:5px">
+          <div style="width:14px;height:14px;background:${srmCol};flex-shrink:0;border:1px solid rgba(255,255,255,.1)"></div>
+          <span style="font-family:var(--fd);font-size:1.1rem;color:var(--sl)">${srmTxt}</span>
+        </div>
+        <div style="font-family:var(--fu);font-size:.58rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--m);margin-top:3px">SRM</div>
+      </div>
+      ${pct>=0 ? `<div style="background:var(--k3);padding:10px 8px;text-align:center">${pctBlock}</div>` : ''}
     </div>`);
 }
 
