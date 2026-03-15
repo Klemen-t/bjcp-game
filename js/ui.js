@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
 //  UI.JS  —  Interface & interaction logic
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION = 'v2026.17 · 15/03/2026';
+const APP_VERSION = 'v2026.18 · 15/03/2026';
 
 // Add popup slide-up animation
 const _popupStyle = document.createElement('style');
@@ -464,95 +464,85 @@ function renderMapView() {
       const t=e.touches[0]; showTip(t.clientX,t.clientY);
       clearTimeout(_tipTimer); _tipTimer=setTimeout(()=>tt?.classList.remove('show'),2000);
     },{passive:false});
-    canvas.addEventListener('click', e=>{
-      const rect=canvas.getBoundingClientRect();
-      const scaleX=canvas.width/devicePixelRatio/rect.width;
-      const scaleY=canvas.height/devicePixelRatio/rect.height;
-      const mx=(e.clientX-rect.left)*scaleX, my=(e.clientY-rect.top)*scaleY;
-      for (const h of _mapHits) {
-        if (Math.hypot(mx-h.x,my-h.y)<=h.r) {
-          showQuickCardModal(h.c); break;
-        }
-      }
-    });
-
-    // ── Pinch-zoom + pan ─────────────────────────────────────────
-
-    // Convert canvas CSS-pixel position → data (ibu, abv)
+    // ── Helpers: pixel ↔ data coords ────────────────────────────
+    const PADm = {l:36, r:10, t:14, b:28};
     function pxToData(px, py) {
-      const PADm = {l:36, r:10, t:14, b:28};
-      const cvW  = canvas.offsetWidth  - PADm.l - PADm.r;
-      const cvH  = canvas.offsetHeight - PADm.t - PADm.b;
-      const ibu  = _mapVP.ibuMin + Math.max(0, Math.min(1, (px - PADm.l) / cvW))
-                   * (_mapVP.ibuMax - _mapVP.ibuMin);
-      const abv  = _mapVP.abvMin + Math.max(0, Math.min(1, 1 - (py - PADm.t) / cvH))
-                   * (_mapVP.abvMax - _mapVP.abvMin);
-      return {ibu, abv};
+      const cvW = canvas.offsetWidth  - PADm.l - PADm.r;
+      const cvH = canvas.offsetHeight - PADm.t - PADm.b;
+      return {
+        ibu: _mapVP.ibuMin + Math.max(0, Math.min(1, (px - PADm.l) / cvW)) * (_mapVP.ibuMax - _mapVP.ibuMin),
+        abv: _mapVP.abvMin + Math.max(0, Math.min(1, 1 - (py - PADm.t) / cvH)) * (_mapVP.abvMax - _mapVP.abvMin)
+      };
     }
 
-    function applyZoom(centerIbu, centerAbv, factor) {
-      // factor > 1 = zoom in (smaller range), factor < 1 = zoom out
-      const curIbuR = _mapVP.ibuMax - _mapVP.ibuMin;
-      const curAbvR = _mapVP.abvMax - _mapVP.abvMin;
-      const newIbuR = Math.min(105, Math.max(12, curIbuR / factor));
-      const newAbvR = Math.min(11,  Math.max(1.2, curAbvR / factor));
-      // Keep the center data point fixed on screen
-      const ibuFrac = curIbuR > 0 ? (centerIbu - _mapVP.ibuMin) / curIbuR : 0.5;
-      const abvFrac = curAbvR > 0 ? (centerAbv - _mapVP.abvMin) / curAbvR : 0.5;
-      _mapVP.ibuMin = Math.max(-2,  centerIbu - ibuFrac * newIbuR);
-      _mapVP.ibuMax = Math.min(102, _mapVP.ibuMin + newIbuR);
-      _mapVP.abvMin = Math.max(0,   centerAbv - abvFrac * newAbvR);
-      _mapVP.abvMax = Math.min(15,  _mapVP.abvMin + newAbvR);
+    function zoomAround(centerIbu, centerAbv, factor) {
+      // factor > 1 → zoom in (reduce range); factor < 1 → zoom out
+      const ibuR0 = _mapVP.ibuMax - _mapVP.ibuMin;
+      const abvR0 = _mapVP.abvMax - _mapVP.abvMin;
+      const ibuR1 = Math.min(105, Math.max(10, ibuR0 / factor));
+      const abvR1 = Math.min(11,  Math.max(1,  abvR0 / factor));
+      const fi = ibuR0 > 0 ? (centerIbu - _mapVP.ibuMin) / ibuR0 : 0.5;
+      const fa = abvR0 > 0 ? (centerAbv - _mapVP.abvMin) / abvR0 : 0.5;
+      _mapVP.ibuMin = Math.max(-2,  Math.min(102 - ibuR1, centerIbu - fi * ibuR1));
+      _mapVP.ibuMax = _mapVP.ibuMin + ibuR1;
+      _mapVP.abvMin = Math.max(0,   Math.min(15  - abvR1, centerAbv - fa * abvR1));
+      _mapVP.abvMax = _mapVP.abvMin + abvR1;
       renderMapView();
     }
 
-    // ── Touch: pinch-to-zoom + 1-finger pan ───────────────────
-    let _pinch0 = null, _pan0 = null;
+    // ── Touch state ───────────────────────────────────────────
+    let _pinch0 = null;  // { dist, ibu, abv }  — set on 2-finger start
+    let _pan0   = null;  // { startIbu, startAbv, vpSnap } — set on 1-finger start
+    let _didGesture = false; // true if touchmove fired → suppress click
 
     canvas.addEventListener('touchstart', e => {
       e.preventDefault();
+      _didGesture = false;
+      const rect = canvas.getBoundingClientRect();
       if (e.touches.length === 2) {
-        const t1=e.touches[0], t2=e.touches[1];
-        const rect=canvas.getBoundingClientRect();
-        const midX = (t1.clientX+t2.clientX)/2 - rect.left;
-        const midY = (t1.clientY+t2.clientY)/2 - rect.top;
+        const t1 = e.touches[0], t2 = e.touches[1];
+        const midX = (t1.clientX + t2.clientX) / 2 - rect.left;
+        const midY = (t1.clientY + t2.clientY) / 2 - rect.top;
+        const center = pxToData(midX, midY);
         _pinch0 = {
-          dist: Math.hypot(t2.clientX-t1.clientX, t2.clientY-t1.clientY),
-          center: pxToData(midX, midY),
-          vp: { ..._mapVP },
+          dist:   Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY),
+          ibu:    center.ibu,
+          abv:    center.abv,
+          vpSnap: { ..._mapVP },   // snapshot at gesture start
         };
         _pan0 = null;
       } else if (e.touches.length === 1) {
-        const rect=canvas.getBoundingClientRect();
-        _pan0 = {
-          start: pxToData(e.touches[0].clientX-rect.left, e.touches[0].clientY-rect.top),
-          vp: { ..._mapVP },
-        };
+        const d = pxToData(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
+        _pan0 = { startIbu: d.ibu, startAbv: d.abv, vpSnap: { ..._mapVP } };
         _pinch0 = null;
       }
     }, {passive:false});
 
     canvas.addEventListener('touchmove', e => {
       e.preventDefault();
-      const rect=canvas.getBoundingClientRect();
+      _didGesture = true;
+      const rect = canvas.getBoundingClientRect();
 
       if (e.touches.length === 2 && _pinch0) {
-        const t1=e.touches[0], t2=e.touches[1];
-        const dist = Math.hypot(t2.clientX-t1.clientX, t2.clientY-t1.clientY);
+        const t1 = e.touches[0], t2 = e.touches[1];
+        const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
         if (_pinch0.dist < 1) return;
-        // Restore snapshot, then apply new zoom from it
-        Object.assign(_mapVP, _pinch0.vp);
-        applyZoom(_pinch0.center.ibu, _pinch0.center.abv, dist / _pinch0.dist);
+        // Use snapshot each time so zoom is stable (no drift)
+        Object.assign(_mapVP, _pinch0.vpSnap);
+        zoomAround(_pinch0.ibu, _pinch0.abv, dist / _pinch0.dist);
 
       } else if (e.touches.length === 1 && _pan0) {
-        const cur = pxToData(e.touches[0].clientX-rect.left, e.touches[0].clientY-rect.top);
-        const dibu = _pan0.start.ibu - cur.ibu;
-        const dabv = _pan0.start.abv - cur.abv;
-        const ibuR = _pan0.vp.ibuMax - _pan0.vp.ibuMin;
-        const abvR = _pan0.vp.abvMax - _pan0.vp.abvMin;
-        _mapVP.ibuMin = Math.max(-2,  Math.min(102-ibuR, _pan0.vp.ibuMin + dibu));
+        const cur  = pxToData(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
+        // Compute delta from the *snapshot* so there's no drift
+        const snap = _pan0.vpSnap;
+        const ibuR = snap.ibuMax - snap.ibuMin;
+        const abvR = snap.abvMax - snap.abvMin;
+        // How much the data point has moved since start
+        const di = _pan0.startIbu - cur.ibu;
+        const da = _pan0.startAbv - cur.abv;
+        _mapVP.ibuMin = Math.max(-2,  Math.min(102 - ibuR, snap.ibuMin + di));
         _mapVP.ibuMax = _mapVP.ibuMin + ibuR;
-        _mapVP.abvMin = Math.max(0,   Math.min(15-abvR,  _pan0.vp.abvMin + dabv));
+        _mapVP.abvMin = Math.max(0,   Math.min(15  - abvR, snap.abvMin + da));
         _mapVP.abvMax = _mapVP.abvMin + abvR;
         renderMapView();
       }
@@ -560,27 +550,57 @@ function renderMapView() {
 
     canvas.addEventListener('touchend', e => {
       if (e.touches.length < 2) _pinch0 = null;
-      if (e.touches.length < 1) _pan0 = null;
+      if (e.touches.length === 0) _pan0 = null;
     });
 
-    // Double-tap: reset zoom
+    // Tap to open card (only if no gesture happened)
     let _lastTap = 0;
     canvas.addEventListener('touchend', e => {
       if (e.changedTouches.length !== 1) return;
       const now = Date.now();
-      if (now - _lastTap < 350) {
+      // Double-tap: reset zoom
+      if (now - _lastTap < 350 && !_didGesture) {
         _mapVP.ibuMin=0; _mapVP.ibuMax=100; _mapVP.abvMin=2; _mapVP.abvMax=12;
         renderMapView();
+        _lastTap = 0;
+        return;
       }
       _lastTap = now;
+      if (_didGesture) return; // gesture ended — don't open card
+      // Single tap: find nearest bubble
+      const rect = canvas.getBoundingClientRect();
+      const t = e.changedTouches[0];
+      const scaleX = canvas.width / devicePixelRatio / rect.width;
+      const scaleY = canvas.height / devicePixelRatio / rect.height;
+      const mx = (t.clientX - rect.left) * scaleX;
+      const my = (t.clientY - rect.top)  * scaleY;
+      for (const h of _mapHits) {
+        if (Math.hypot(mx - h.x, my - h.y) <= h.r + 6) {
+          showQuickCardModal(h.c); break;
+        }
+      }
     });
 
-    // Mouse wheel zoom (desktop/tablet amb ratolí)
+    // Click (desktop mouse — always safe, no gesture ambiguity)
+    canvas.addEventListener('click', e => {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / devicePixelRatio / rect.width;
+      const scaleY = canvas.height / devicePixelRatio / rect.height;
+      const mx = (e.clientX - rect.left) * scaleX;
+      const my = (e.clientY - rect.top)  * scaleY;
+      for (const h of _mapHits) {
+        if (Math.hypot(mx - h.x, my - h.y) <= h.r + 4) {
+          showQuickCardModal(h.c); break;
+        }
+      }
+    });
+
+    // Mouse wheel zoom (desktop)
     canvas.addEventListener('wheel', e => {
       e.preventDefault();
-      const rect=canvas.getBoundingClientRect();
-      const d = pxToData(e.clientX-rect.left, e.clientY-rect.top);
-      applyZoom(d.ibu, d.abv, e.deltaY < 0 ? 1.25 : 0.8);
+      const rect = canvas.getBoundingClientRect();
+      const d = pxToData(e.clientX - rect.left, e.clientY - rect.top);
+      zoomAround(d.ibu, d.abv, e.deltaY < 0 ? 1.3 : 0.77);
     }, {passive:false});
   }
   function retry(){ const cv=el('map-cv'); if(cv) setupMapEvents(); else setTimeout(retry,500); }
@@ -1490,10 +1510,12 @@ function beerCardHTML(card, globalInfo, teamInfo, teamCS) {
   <div class="${cls}" id="bc-${card.id}" style="${sty}">
     <div class="card-hdr" onclick="toggleCard('${card.id}')">
       ${revIcon}
-      ${EF.active && matchScore>=0 ? `<div class="card-match-dot" style="background:${['rgba(30,30,30,.5)','rgba(140,120,20,.6)','rgba(196,100,20,.7)','rgba(200,60,20,.8)','rgba(220,30,30,.85)','rgba(230,20,48,.95)'][matchScore]};width:8px;height:8px"></div>` : ''}
       <span class="card-num">${card.number}</span>
       <div style="flex:1;min-width:0">
-        <div class="card-name">${card.name}</div>
+        <div style="display:flex;align-items:baseline;gap:6px;flex-wrap:wrap">
+          <div class="card-name">${card.name}</div>
+          ${EF.active && matchScore>=0 ? `<span class="match-pct-badge ${mc.badge}">${matchScore}%</span>` : ''}
+        </div>
         <div class="card-cat">${card.category}</div>
         ${teamTagsHTML?`<div class="team-tags">${teamTagsHTML}</div>`:''}
       </div>
