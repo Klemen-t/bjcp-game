@@ -21,6 +21,477 @@ let masterViewInited = false;
 let unreadMsgs       = 0;
 let activeCardIds    = null;  // null = all; array = restricted pool
 
+
+// ═══════════════════════════════════════════════════════════════
+//  EXPLORER — filtres sensorials + vistes graella/mapa
+// ═══════════════════════════════════════════════════════════════
+
+// ── Card metadata cache (derived from tags+mouthfeel) ──────────
+let _cardMeta = null;
+function getCardMeta() {
+  if (_cardMeta) return _cardMeta;
+  _cardMeta = {};
+  BJCP_CARDS.forEach(c => {
+    const tags = (c.tags||'').split(',').map(t=>t.trim());
+    // fermentation
+    let ferm = 'hybrid';
+    if (tags.includes('top-fermented') && !tags.includes('bottom-fermented') && !tags.includes('lagered')) ferm='ale';
+    else if (tags.includes('bottom-fermented') || tags.includes('lagered')) ferm='lager';
+    else if (tags.includes('wild-fermented')||tags.includes('wild-fermentation')) ferm='wild';
+    else if (tags.includes('top-fermented') && tags.includes('lagered')) ferm='hybrid';
+    // body from mouthfeel text
+    const mf = (c.mouthfeel||'').toLowerCase();
+    let body = 'medium';
+    if (/lleuger|lleuger|light|thin|lleugera/.test(mf)) body='light';
+    else if (/ple|full|alta|pesada/.test(mf)) body='full';
+    _cardMeta[c.id] = {
+      ferm, body,
+      malty:  tags.includes('malty'),
+      hoppy:  tags.includes('hoppy'),
+      roasty: tags.includes('roasty'),
+      sour:   tags.includes('sour') || tags.includes('wild'),
+    };
+  });
+  return _cardMeta;
+}
+
+// ── Explorer filter state ──────────────────────────────────────
+const EF = {
+  srmMin:1, srmMax:40,
+  abvMin:0, abvMax:15,
+  ibuMin:0, ibuMax:120,
+  ferm: new Set(),
+  body: new Set(),
+  chars: new Set(),
+  active: false,
+};
+
+function explorerScoreCard(c) {
+  if (!EF.active) return -1; // -1 = no filter active
+  const meta = getCardMeta()[c.id] || {};
+  let score=0, total=0;
+  if (EF.srmMin>1||EF.srmMax<40) {
+    total+=2; const cMin=c.srmMin||1, cMax=c.srmMax||40;
+    const ov=Math.max(0,Math.min(EF.srmMax,cMax)-Math.max(EF.srmMin,cMin));
+    score+=2*Math.min(1,(ov/Math.max(1,EF.srmMax-EF.srmMin))*1.5);
+  }
+  if (EF.abvMin>0||EF.abvMax<15) {
+    total+=2; const cMin=c.abvMin||0, cMax=c.abvMax||15;
+    const ov=Math.max(0,Math.min(EF.abvMax,cMax)-Math.max(EF.abvMin,cMin));
+    score+=2*Math.min(1,(ov/Math.max(0.5,EF.abvMax-EF.abvMin))*1.5);
+  }
+  if (EF.ibuMin>0||EF.ibuMax<120) {
+    total+=2;
+    if (c.ibuMin==null) { score+=0.5; }
+    else {
+      const ov=Math.max(0,Math.min(EF.ibuMax,c.ibuMax)-Math.max(EF.ibuMin,c.ibuMin));
+      score+=2*Math.min(1,(ov/Math.max(1,EF.ibuMax-EF.ibuMin))*1.5);
+    }
+  }
+  if (EF.ferm.size>0) { total+=2; if(EF.ferm.has(meta.ferm)) score+=2; }
+  if (EF.body.size>0) { total+=1.5; if(EF.body.has(meta.body)) score+=1.5; }
+  EF.chars.forEach(ch => { total+=1; if(meta[ch]) score+=1; });
+  if (total===0) return -1;
+  const pct=score/total;
+  if (pct>=.85) return 5; if (pct>=.65) return 4;
+  if (pct>=.45) return 3; if (pct>=.25) return 2;
+  if (pct>=.05) return 1; return 0;
+}
+
+// ── SRM color ──────────────────────────────────────────────────
+function srmToColor(srm) {
+  const map=[[2,'#F8F753'],[3,'#F6F513'],[4,'#ECE61A'],[5,'#D5BC26'],[6,'#BEA337'],
+    [7,'#A88C3E'],[8,'#977A3F'],[9,'#856B3D'],[10,'#745D3B'],[11,'#644F36'],
+    [12,'#554330'],[13,'#46382A'],[14,'#392D23'],[15,'#2D231C'],[16,'#231A14'],
+    [17,'#1A110D'],[18,'#140D09'],[19,'#0F0A06'],[20,'#0C0705'],[25,'#080503'],
+    [30,'#060302'],[40,'#040101']];
+  if (!srm) return '#444';
+  for (let i=1;i<map.length;i++) if(srm<=map[i][0]) return map[i][1];
+  return map[map.length-1][1];
+}
+
+// ── Build SRM strip in filter drawer ──────────────────────────
+function buildSrmStripGame() {
+  const strip = el('srm-strip-game'); if (!strip||strip.dataset.built) return;
+  strip.dataset.built='1';
+  for (let i=1;i<=40;i++) {
+    const d=document.createElement('div');
+    d.className='srm-cell-g'; d.style.background=srmToColor(i); d.dataset.srm=i;
+    strip.appendChild(d);
+  }
+  updateSrmStripOverlay();
+}
+
+function updateSrmStripOverlay() {
+  const strip=el('srm-strip-game'); if(!strip) return;
+  let ov=strip.querySelector('.srm-range-overlay');
+  if (!ov) { ov=document.createElement('div'); ov.className='srm-range-overlay'; strip.appendChild(ov); }
+  const pctL=((EF.srmMin-1)/39*100).toFixed(1);
+  const pctW=((EF.srmMax-EF.srmMin)/39*100).toFixed(1);
+  ov.style.left=pctL+'%'; ov.style.width=pctW+'%';
+  ov.style.display=(EF.srmMin>1||EF.srmMax<40)?'block':'none';
+}
+
+// ── Explorer filter updates ────────────────────────────────────
+function explorerUpdateFilters() {
+  EF.srmMin=+el('ef-srm-min').value; EF.srmMax=+el('ef-srm-max').value;
+  if(EF.srmMin>EF.srmMax) [EF.srmMin,EF.srmMax]=[EF.srmMax,EF.srmMin];
+  EF.abvMin=+el('ef-abv-min').value; EF.abvMax=+el('ef-abv-max').value;
+  EF.ibuMin=+el('ef-ibu-min').value; EF.ibuMax=+el('ef-ibu-max').value;
+  if(EF.ibuMin>EF.ibuMax) [EF.ibuMin,EF.ibuMax]=[EF.ibuMax,EF.ibuMin];
+  const vi=el('ef-srm-val'), va=el('ef-abv-min-v'), vb=el('ef-abv-max-v'), vc=el('ef-ibu-val');
+  if(vi) vi.textContent=EF.srmMin+'–'+EF.srmMax;
+  if(va) va.textContent=EF.abvMin+'%'; if(vb) vb.textContent=EF.abvMax+'%';
+  if(vc) vc.textContent=EF.ibuMin+'–'+EF.ibuMax;
+  EF.active=EF.srmMin>1||EF.srmMax<40||EF.abvMin>0||EF.abvMax<15||
+            EF.ibuMin>0||EF.ibuMax<120||EF.ferm.size>0||EF.body.size>0||EF.chars.size>0;
+  updateSrmStripOverlay();
+  // Update filter toggle style
+  const btn=el('filter-toggle-btn');
+  if(btn) btn.classList.toggle('has-filters',EF.active);
+  const hint=el('filter-active-hint');
+  if(hint) hint.style.display=EF.active?'inline':'none';
+  renderCurrentCardView();
+}
+
+function explorerResetFilters() {
+  el('ef-srm-min').value=1; el('ef-srm-max').value=40;
+  el('ef-abv-min').value=0; el('ef-abv-max').value=15;
+  el('ef-ibu-min').value=0; el('ef-ibu-max').value=120;
+  EF.ferm.clear(); EF.body.clear(); EF.chars.clear(); EF.active=false;
+  document.querySelectorAll('.fpill').forEach(p=>p.classList.remove('on'));
+  el('filter-toggle-btn')?.classList.remove('has-filters');
+  const hint=el('filter-active-hint'); if(hint) hint.style.display='none';
+  explorerUpdateFilters();
+}
+
+// pill event binding — called once on initTeamView
+function initExplorerPills() {
+  document.querySelectorAll('.fpill[data-esrm]').forEach(p=>{
+    p.addEventListener('click',()=>{
+      const [mn,mx]=p.dataset.esrm.split(',').map(Number);
+      el('ef-srm-min').value=mn; el('ef-srm-max').value=mx;
+      document.querySelectorAll('.fpill[data-esrm]').forEach(x=>x.classList.remove('on'));
+      p.classList.add('on'); explorerUpdateFilters();
+    });
+  });
+  document.querySelectorAll('.fpill[data-eferm]').forEach(p=>{
+    p.addEventListener('click',()=>{
+      const v=p.dataset.eferm;
+      if(EF.ferm.has(v)){EF.ferm.delete(v);p.classList.remove('on');}
+      else{EF.ferm.add(v);p.classList.add('on');}
+      explorerUpdateFilters();
+    });
+  });
+  document.querySelectorAll('.fpill[data-ebody]').forEach(p=>{
+    p.addEventListener('click',()=>{
+      const v=p.dataset.ebody;
+      if(EF.body.has(v)){EF.body.delete(v);p.classList.remove('on');}
+      else{EF.body.add(v);p.classList.add('on');}
+      explorerUpdateFilters();
+    });
+  });
+  document.querySelectorAll('.fpill[data-echar]').forEach(p=>{
+    p.addEventListener('click',()=>{
+      const v=p.dataset.echar;
+      if(EF.chars.has(v)){EF.chars.delete(v);p.classList.remove('on');}
+      else{EF.chars.add(v);p.classList.add('on');}
+      explorerUpdateFilters();
+    });
+  });
+  document.querySelectorAll('.fpill[data-eabv]').forEach(p=>{
+    p.addEventListener('click',()=>{
+      const [mn,mx]=p.dataset.eabv.split(',').map(Number);
+      el('ef-abv-min').value=mn; el('ef-abv-max').value=mx;
+      document.querySelectorAll('.fpill[data-eabv]').forEach(x=>x.classList.remove('on'));
+      p.classList.add('on'); explorerUpdateFilters();
+    });
+  });
+  document.querySelectorAll('.fpill[data-eibu]').forEach(p=>{
+    p.addEventListener('click',()=>{
+      const [mn,mx]=p.dataset.eibu.split(',').map(Number);
+      el('ef-ibu-min').value=mn; el('ef-ibu-max').value=mx;
+      document.querySelectorAll('.fpill[data-eibu]').forEach(x=>x.classList.remove('on'));
+      p.classList.add('on'); explorerUpdateFilters();
+    });
+  });
+}
+
+// ── Filter drawer toggle ───────────────────────────────────────
+function toggleFilterDrawer() {
+  const d=el('filter-drawer');
+  if (!d) return;
+  const open=d.classList.toggle('open');
+  const arr=el('filter-toggle-arrow');
+  if(arr) arr.textContent=open?'▲':'▼';
+  if(open) buildSrmStripGame();
+}
+
+// ── Card view state ────────────────────────────────────────────
+let currentCardView = 'list';
+function setCardView(v) {
+  currentCardView=v;
+  ['list','grid','map'].forEach(x=>{
+    const panel=el('cards-view-'+x);
+    if(panel) panel.style.display=x===v?'block':'none';
+    el('vstab-'+x)?.classList.toggle('active',x===v);
+  });
+  renderCurrentCardView();
+}
+
+function renderCurrentCardView() {
+  if (currentCardView==='list') renderBeerCards();
+  else if (currentCardView==='grid') renderGridView();
+  else if (currentCardView==='map') renderMapView();
+}
+
+// ── GRID VIEW ──────────────────────────────────────────────────
+function renderGridView() {
+  const container=el('grid-container'); if(!container) return;
+  const locked=gameState?.cardsLocked;
+  if (locked) { container.innerHTML=''; return; }
+
+  const globalInfo=gameState?.currentBeer?.revealedInfo||{};
+  const teamInfo=gameState?.currentBeer?.teamInfo?.[game.teamId]||{};
+  const myPlayer=gameState?.teams?.[game.teamId]?.players?.[game.playerName];
+  if (myPlayer?.cardStates) Object.entries(myPlayer.cardStates).forEach(([id,st])=>{cardStates[id]=st;});
+
+  let cards=getVisibleCards();
+  if (cardFilter==='possible') {
+    const tp=new Set(Object.values(gameState?.teams?.[game.teamId]?.players||{})
+      .flatMap(p=>Object.entries(p.cardStates||{}).filter(([,st])=>st==='possible').map(([id])=>id)));
+    cards=cards.filter(c=>tp.has(c.id));
+  } else if (cardFilter==='discarded') {
+    const td=new Set(Object.values(gameState?.teams?.[game.teamId]?.players||{})
+      .flatMap(p=>Object.entries(p.cardStates||{}).filter(([,st])=>st==='discarded').map(([id])=>id)));
+    cards=cards.filter(c=>td.has(c.id));
+  }
+  if (cardSearch) {
+    const q=cardSearch.toLowerCase();
+    cards=cards.filter(c=>c.name.toLowerCase().includes(q)||c.category.toLowerCase().includes(q));
+  }
+
+  if (!cards.length) { container.innerHTML=emptyState('⊞','Cap estil per mostrar'); return; }
+
+  // Score + sort
+  const scored=cards.map(c=>({c,s:explorerScoreCard(c)}))
+    .sort((a,b)=>(b.s-a.s)||(a.c.catN||a.c.categoryNumber)-(b.c.catN||b.c.categoryNumber));
+
+  // Group by category
+  const cats={};
+  scored.forEach(({c,s})=>{
+    const k=c.category; if(!cats[k]) cats[k]=[];
+    cats[k].push({c,s});
+  });
+
+  // Sort categories by best score
+  const sorted=Object.entries(cats).sort((a,b)=>{
+    const am=Math.max(...a[1].map(x=>x.s)); const bm=Math.max(...b[1].map(x=>x.s));
+    return bm-am;
+  });
+
+  container.innerHTML=sorted.map(([cat,items])=>`
+    <div class="grid-cat-sec">
+      <div class="grid-cat-hdr">
+        <span>${cat}</span><span style="color:var(--m)">${items.length}</span>
+      </div>
+      <div class="grid-cells">
+        ${items.map(({c,s})=>{
+          const myState=cardStates[c.id]||'normal';
+          const srmC=c.srmMin?srmToColor((c.srmMin+c.srmMax)/2):null;
+          const mCls=s<0?'gc-match0':'gc-match'+s;
+          const sCls=myState==='possible'?'gc-possible':myState==='discarded'?'gc-discarded':'';
+          const dimStyle=(s===0&&EF.active)?'opacity:.2':'';
+          const stateIcon=myState==='possible'?'⭐':myState==='discarded'?'✕':'';
+          return \`<div class="grid-cell \${mCls} \${sCls}" style="\${dimStyle}"
+              onclick="handleGridCellTap('\${c.id}','\${c.name.replace(/'/g,'&#39;')}')"
+              data-card-id="\${c.id}">
+            \${srmC?\`<div style="position:absolute;top:3px;right:3px;width:7px;height:7px;background:\${srmC};opacity:.6"></div>\`:'' }
+            \${stateIcon?\`<div class="gc-state-icon">\${stateIcon}</div>\`:'' }
+            <div class="gc-num">\${c.number}</div>
+            <div class="gc-name">\${c.name}</div>
+          </div>\`;
+        }).join('')}
+      </div>
+    </div>`).join('');
+}
+
+// Tap on grid cell: first tap = open detail, second tap = toggle possible
+let _lastGridTap = null;
+function handleGridCellTap(cardId, cardName) {
+  if (_lastGridTap===cardId) {
+    // Second tap: toggle possible
+    const st=cardStates[cardId]||'normal';
+    setCardState(cardId, st==='possible'?'normal':'possible');
+    _lastGridTap=null;
+  } else {
+    _lastGridTap=cardId;
+    setTimeout(()=>{ if(_lastGridTap===cardId) _lastGridTap=null; },800);
+    // Show quick info modal
+    const c=BJCP_CARDS.find(x=>x.id===cardId); if(!c) return;
+    const st=cardStates[cardId]||'normal';
+    const gI=gameState?.currentBeer?.revealedInfo||{};
+    const tI=gameState?.currentBeer?.teamInfo?.[game.teamId]||{};
+    const score=explorerScoreCard(c);
+    const pctTxt=score>=0?`<span style="color:var(--rl);font-family:var(--fd);font-size:1rem">${Math.round(score/5*100)}%</span> coincidència<br>`:'';
+    showModal(c.number+' — '+c.name,`
+      <div style="font-family:var(--fu);font-size:.68rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--r);margin-bottom:8px">${c.category}</div>
+      <div style="font-size:.8rem;color:var(--m);line-height:1.6;margin-bottom:10px">${pctTxt}${c.overallImpression||''}</div>
+      ${cardStatsHTML(c,gI,tI)}
+      ${c.commercialExamples?`<div style="font-family:var(--fu);font-size:.7rem;color:var(--rl);margin-top:8px;padding-top:8px;border-top:1px solid var(--k4)">🏪 ${c.commercialExamples}</div>`:''}
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <button class="btn btn-sm" style="flex:1;background:${st==='possible'?'rgba(196,18,48,.2)':'rgba(255,255,255,.05)'};border:1px solid ${st==='possible'?'var(--r)':'var(--k4)'};color:${st==='possible'?'var(--rl)':'var(--t)'}"
+          onclick="closeModal();setCardState('${cardId}','possible')">⭐ Possible</button>
+        <button class="btn btn-sm" style="flex:1;background:${st==='discarded'?'rgba(122,28,28,.2)':'rgba(255,255,255,.05)'};border:1px solid ${st==='discarded'?'var(--rd)':'var(--k4)'};color:${st==='discarded'?'#d44':'var(--t)'}"
+          onclick="closeModal();setCardState('${cardId}','discarded')">✕ Descartar</button>
+        ${st==='possible'?`<button class="btn btn-success btn-sm" style="flex:1" onclick="closeModal();proposeCard('${cardId}','${cardName}')">🎯 Proposar</button>`:''}
+      </div>`);
+  }
+}
+
+// ── MAP VIEW ──────────────────────────────────────────────────
+let _mapHits=[];
+function renderMapView() {
+  const canvas=el('map-cv'); if(!canvas) return;
+  const W=canvas.parentElement.clientWidth||320;
+  const H=340;
+  canvas.width=W*devicePixelRatio; canvas.height=H*devicePixelRatio;
+  canvas.style.height=H+'px';
+  const ctx=canvas.getContext('2d');
+  ctx.scale(devicePixelRatio,devicePixelRatio);
+
+  const PAD={l:36,r:12,t:14,b:30};
+  const CW=W-PAD.l-PAD.r, CH=H-PAD.t-PAD.b;
+
+  ctx.fillStyle='#0f0f0f'; ctx.fillRect(0,0,W,H);
+
+  // Grid lines
+  ctx.strokeStyle='rgba(255,255,255,.05)'; ctx.lineWidth=1;
+  for(let ibu=0;ibu<=120;ibu+=20){
+    const x=PAD.l+(ibu/120)*CW;
+    ctx.beginPath(); ctx.moveTo(x,PAD.t); ctx.lineTo(x,PAD.t+CH); ctx.stroke();
+    ctx.fillStyle='rgba(255,255,255,.22)';
+    ctx.font='bold 8px Barlow Condensed,sans-serif'; ctx.textAlign='center';
+    ctx.fillText(ibu, x, PAD.t+CH+12);
+  }
+  for(let abv=0;abv<=15;abv+=5){
+    const y=PAD.t+CH-(abv/15)*CH;
+    ctx.beginPath(); ctx.moveTo(PAD.l,y); ctx.lineTo(PAD.l+CW,y); ctx.stroke();
+    ctx.fillStyle='rgba(255,255,255,.22)';
+    ctx.font='bold 8px Barlow Condensed,sans-serif'; ctx.textAlign='right';
+    ctx.fillText(abv+'%', PAD.l-4, y+3);
+  }
+
+  // Axis labels
+  ctx.fillStyle='rgba(200,200,200,.3)'; ctx.font='bold 9px Barlow Condensed,sans-serif';
+  ctx.textAlign='center';
+  ctx.fillText('IBU', PAD.l+CW/2, H-4);
+
+  // Filter highlight zone
+  if(EF.active&&(EF.ibuMin>0||EF.ibuMax<120||EF.abvMin>0||EF.abvMax<15)){
+    const x1=PAD.l+(EF.ibuMin/120)*CW, x2=PAD.l+(EF.ibuMax/120)*CW;
+    const y1=PAD.t+CH-(EF.abvMax/15)*CH, y2=PAD.t+CH-(EF.abvMin/15)*CH;
+    ctx.fillStyle='rgba(196,18,48,.06)'; ctx.fillRect(x1,y1,x2-x1,y2-y1);
+    ctx.strokeStyle='rgba(196,18,48,.25)'; ctx.lineWidth=1; ctx.strokeRect(x1,y1,x2-x1,y2-y1);
+  }
+
+  let cards=getVisibleCards();
+  if (cardFilter==='possible') {
+    const tp=new Set(Object.values(gameState?.teams?.[game.teamId]?.players||{})
+      .flatMap(p=>Object.entries(p.cardStates||{}).filter(([,st])=>st==='possible').map(([id])=>id)));
+    cards=cards.filter(c=>tp.has(c.id));
+  } else if (cardFilter==='discarded') {
+    const td=new Set(Object.values(gameState?.teams?.[game.teamId]?.players||{})
+      .flatMap(p=>Object.entries(p.cardStates||{}).filter(([,st])=>st==='discarded').map(([id])=>id)));
+    cards=cards.filter(c=>td.has(c.id));
+  }
+  if (cardSearch) {
+    const q=cardSearch.toLowerCase();
+    cards=cards.filter(c=>c.name.toLowerCase().includes(q)||c.category.toLowerCase().includes(q));
+  }
+
+  _mapHits=[];
+  const meta=getCardMeta();
+  cards.forEach(c=>{
+    const s=explorerScoreCard(c);
+    const myState=cardStates[c.id]||'normal';
+    const ibu=c.ibuMin!=null?(c.ibuMin+c.ibuMax)/2:40;
+    const abv=c.abvMin!=null?(c.abvMin+c.abvMax)/2:5;
+    const x=PAD.l+(Math.min(ibu,120)/120)*CW;
+    const y=PAD.t+CH-(Math.min(abv,15)/15)*CH;
+    const m=meta[c.id]||{};
+    const r=m.body==='full'?7:m.body==='light'?3.5:5;
+    // color: possible=green, discarded=grey, match-based otherwise
+    let col;
+    if(myState==='discarded') col='rgba(80,80,80,.4)';
+    else if(myState==='possible') col='rgba(46,128,64,.85)';
+    else col=['rgba(30,30,30,.7)','rgba(140,120,20,.65)','rgba(196,100,20,.7)',
+              'rgba(200,60,20,.8)','rgba(220,30,30,.85)','rgba(230,20,48,.95)'][Math.max(0,s<0?0:s)];
+
+    ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2);
+    ctx.fillStyle=col; ctx.fill();
+    if(myState==='possible'||s>=4){
+      ctx.strokeStyle='rgba(255,255,255,'+(myState==='possible'?'.5':'.2')+')';
+      ctx.lineWidth=1; ctx.stroke();
+    }
+    if(s>=4&&r>=4){
+      ctx.fillStyle='rgba(255,255,255,.7)';
+      ctx.font='bold 7px Barlow Condensed,sans-serif'; ctx.textAlign='center';
+      ctx.fillText(c.number, x, y-r-2);
+    }
+    _mapHits.push({c,s,x,y,r:r+5});
+  });
+}
+
+// Map touch/hover
+(function(){
+  let _tt=null;
+  function setupMapEvents() {
+    const canvas=el('map-cv'); if(!canvas||canvas._eventsSet) return;
+    canvas._eventsSet=true;
+    const tt=el('map-tooltip');
+    function show(cx,cy){
+      if(!_mapHits.length) return;
+      const rect=canvas.getBoundingClientRect();
+      const mx=(cx-rect.left)*(canvas.width/devicePixelRatio/rect.width);
+      const my=(cy-rect.top)*(canvas.height/devicePixelRatio/rect.height);
+      let found=null;
+      for(const h of _mapHits){ if(Math.hypot(mx-h.x,my-h.y)<=h.r){found=h;break;} }
+      if(found&&tt){
+        el('mtt-name').textContent=found.c.number+' — '+found.c.name;
+        el('mtt-cat').textContent=found.c.category;
+        let ttx=cx-rect.left+10, tty=cy-rect.top-60;
+        if(ttx+185>rect.width) ttx=cx-rect.left-190;
+        if(tty<0) tty=10;
+        tt.style.left=ttx+'px'; tt.style.top=tty+'px';
+        tt.classList.add('show');
+      } else if(tt) tt.classList.remove('show');
+    }
+    canvas.addEventListener('mousemove',e=>show(e.clientX,e.clientY));
+    canvas.addEventListener('mouseleave',()=>el('map-tooltip')?.classList.remove('show'));
+    canvas.addEventListener('touchstart',e=>{
+      e.preventDefault();
+      const t=e.touches[0]; show(t.clientX,t.clientY);
+      clearTimeout(_tt); _tt=setTimeout(()=>el('map-tooltip')?.classList.remove('show'),1800);
+    },{passive:false});
+    canvas.addEventListener('click',e=>{
+      const rect=canvas.getBoundingClientRect();
+      const mx=(e.clientX-rect.left)*(canvas.width/devicePixelRatio/rect.width);
+      const my=(e.clientY-rect.top)*(canvas.height/devicePixelRatio/rect.height);
+      for(const h of _mapHits){
+        if(Math.hypot(mx-h.x,my-h.y)<=h.r){
+          handleGridCellTap(h.c.id,h.c.name.replace(/'/g,'&#39;'));
+          break;
+        }
+      }
+    });
+  }
+  // Retry until elements available
+  function trySetup(){ const cv=el('map-cv'); if(cv) setupMapEvents(); else setTimeout(trySetup,500); }
+  setTimeout(trySetup,300);
+})();
+
+
 // ═══ UTILS ══════════════════════════════════════════════════════
 const el    = id => document.getElementById(id);
 const v     = id => (el(id)?.value||'').trim();
@@ -425,6 +896,7 @@ function listenGameState() {
       const wrap = el('team-guesses-wrap');
       if (wrap) wrap.style.display = 'none';
       showToast('🔄 Nova ronda — cartes reiniciades!');
+      renderCurrentCardView();
     }
     activeCardIds = s.activeCardIds || null;
     gameState = s;
@@ -476,6 +948,8 @@ function initTeamView(s) {
   if (teamViewInited) return;
   teamViewInited = true;
   buildGuessOptions();
+  initExplorerPills();
+  buildSrmStripGame();
   // Listen for new messages — show popup for shield alerts
   game.gameRef.child('messages').on('value', snap => {
     const msgs = snap.val() || {};
@@ -542,7 +1016,7 @@ function updateTeamView(s) {
 
   renderActionCards(myCards, myPlayer.usedCards||[]);
   renderRevealedBar(s.currentBeer?.revealedInfo||{}, s.currentBeer?.teamInfo?.[game.teamId]||{});
-  renderBeerCards();
+  renderCurrentCardView();
   renderTeamGuesses(s);
   updateRanking(s,'team-ranking','player-ranking');
 
@@ -858,6 +1332,7 @@ function beerCardHTML(card, globalInfo, teamInfo, teamCS) {
   const myState   = cardStates[card.id]||'normal';
   const revStatus = getRevealStatus(card, globalInfo, teamInfo);
   const tcs       = teamCS[card.id]||{possible:[],discarded:[]};
+  const matchScore = explorerScoreCard(card);
 
   let cls='beer-card', sty='';
   if (myState==='discarded') cls+=' discarded';
@@ -879,6 +1354,7 @@ function beerCardHTML(card, globalInfo, teamInfo, teamCS) {
   <div class="${cls}" id="bc-${card.id}" style="${sty}">
     <div class="card-hdr" onclick="toggleCard('${card.id}')">
       ${revIcon}
+      ${EF.active && matchScore>=0 ? \`<div class="card-match-dot" style="background:\${['rgba(30,30,30,.5)','rgba(140,120,20,.6)','rgba(196,100,20,.7)','rgba(200,60,20,.8)','rgba(220,30,30,.85)','rgba(230,20,48,.95)'][matchScore]};width:8px;height:8px"></div>\` : ''}
       <span class="card-num">${card.number}</span>
       <div style="flex:1;min-width:0">
         <div class="card-name">${card.name}</div>
@@ -988,12 +1464,12 @@ function showDesc(evt, type, cardId) {
   evt.target.classList.add('active');
 }
 
-function filterCards() { cardSearch=el('card-search')?.value||''; renderBeerCards(); }
+function filterCards() { cardSearch=el('card-search')?.value||''; renderCurrentCardView(); }
 function setFilter(btn, f) {
   cardFilter = f;
   document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
   btn.classList.add('active');
-  renderBeerCards();
+  renderCurrentCardView();
   // Show sent proposals when viewing possibles
   const wrap = el('team-guesses-wrap');
   if (wrap) wrap.style.display = f === 'possible' ? 'block' : 'none';
@@ -1107,7 +1583,7 @@ function initMasterView() {
   if (gameState?.currentBeer && !gameState.currentBeer.revealed) {
     const sb = el('btn-set-beer'); if (sb) sb.style.display = 'none';
     const hint = el('round-active-hint'); if (hint) hint.style.display = 'block';
-    el('reveal-panel') && (el('reveal-panel').style.display = 'block');
+    // reveal-panel removed
   }
   renderMasterBeerGrid();
   game.gameRef.on('value', snap => {
@@ -1150,8 +1626,6 @@ async function setCurrentBeer() {
   const card=BJCP_CARDS.find(c=>c.id===selectedBeer); if (!card) return;
   try {
     await game.setCurrentBeer(card);
-    el('reveal-panel').style.display='block';
-    renderRevealButtons(card);
     showToast('🍺 '+card.name+' seleccionada!');
   } catch(e) { showToast('❌ '+e.message); }
 }
@@ -1393,7 +1867,7 @@ async function nextRound() {
   try {
     await game.nextRound();
     selectedBeer=null;
-    el('reveal-panel').style.display='none';
+    // reveal-panel removed
     document.querySelectorAll('.beer-item').forEach(e=>e.classList.remove('selected'));
     // Show "Iniciar ronda" again for the new round
     el('btn-set-beer').style.display = 'block';

@@ -617,6 +617,188 @@ select option{background:var(--k3)}
   background:transparent;color:var(--m);transition:all .2s
 }
 .mode-btn.active{background:var(--r);color:#fff}
+
+/* ══ EXPLORER VIEWS ════════════════════════════════════════════ */
+/* Sub-tab bar inside tab-cards */
+.view-subtabs {
+  display:flex;gap:3px;padding:8px 0 4px;
+  position:sticky;top:0;z-index:99;
+  background:rgba(8,8,8,.97);backdrop-filter:blur(16px);
+}
+.vstab {
+  flex:1;padding:7px 4px;text-align:center;
+  font-family:var(--fu);font-size:.62rem;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;
+  border:1px solid var(--k4);background:transparent;
+  color:var(--m);cursor:pointer;transition:all .14s;border-radius:0;
+}
+.vstab.active { background:rgba(196,18,48,.12);border-color:var(--r);color:var(--rl); }
+
+/* Filter drawer */
+.filter-drawer {
+  background:var(--k2);border:1px solid var(--k4);
+  border-left:2px solid var(--rd);
+  margin-bottom:8px;overflow:hidden;
+  transition:max-height .3s ease;max-height:0;
+}
+.filter-drawer.open { max-height:800px; }
+.filter-drawer-inner { padding:12px 14px; }
+.filter-toggle {
+  width:100%;padding:8px 12px;
+  background:rgba(196,18,48,.05);border:1px solid rgba(196,18,48,.15);
+  border-left:2px solid var(--rd);
+  font-family:var(--fu);font-size:.68rem;font-weight:700;
+  letter-spacing:.14em;text-transform:uppercase;
+  color:var(--sd);cursor:pointer;text-align:left;
+  display:flex;justify-content:space-between;align-items:center;
+  transition:all .15s;margin-bottom:8px;
+}
+.filter-toggle.has-filters { border-left-color:var(--r);color:var(--rl);background:rgba(196,18,48,.1); }
+.filter-toggle:active { transform:scale(.98); }
+
+/* filter sections inside drawer */
+.fsec { margin-bottom:12px; }
+.fsec-title {
+  font-family:var(--fu);font-size:.6rem;font-weight:700;
+  letter-spacing:.2em;text-transform:uppercase;color:var(--r);
+  margin-bottom:6px;display:flex;align-items:center;gap:7px;
+}
+.fsec-title::before { content:'';width:8px;height:1px;background:var(--r); }
+
+/* SRM strip */
+.srm-strip-game {
+  display:flex;height:22px;border:1px solid var(--k4);
+  margin-bottom:6px;overflow:hidden;cursor:crosshair;
+  position:relative;border-radius:0;
+}
+.srm-cell-g { flex:1; transition:opacity .1s; }
+.srm-range-overlay {
+  position:absolute;top:0;bottom:0;
+  border:2px solid #fff;pointer-events:none;opacity:.8;
+  box-sizing:border-box;
+}
+
+/* Range row compact */
+.frange { display:flex;align-items:center;gap:7px;margin-bottom:5px; }
+.frange label {
+  font-family:var(--fu);font-size:.58rem;font-weight:700;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--m);
+  min-width:52px;
+}
+.frange input[type=range] {
+  flex:1;height:2px;accent-color:var(--r);
+  background:var(--k4);outline:none;border:none;padding:0;cursor:pointer;
+  -webkit-appearance:none;
+}
+.frange input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance:none;width:12px;height:12px;
+  background:var(--r);cursor:pointer;
+}
+.frange-val {
+  font-family:var(--fd);font-size:.82rem;color:var(--rl);
+  min-width:46px;text-align:right;letter-spacing:.02em;
+}
+/* Pills compact */
+.fpills { display:flex;flex-wrap:wrap;gap:4px;margin-top:3px; }
+.fpill {
+  font-family:var(--fu);font-size:.6rem;font-weight:700;
+  letter-spacing:.08em;text-transform:uppercase;
+  padding:3px 9px;border:1px solid var(--k4);
+  background:transparent;color:var(--m);cursor:pointer;transition:all .12s;
+}
+.fpill:active { transform:scale(.94); }
+.fpill.on { background:rgba(196,18,48,.12);border-color:var(--r);color:var(--rl); }
+
+/* Match indicator on beer cards */
+.card-match-dot {
+  width:8px;height:8px;border-radius:0;flex-shrink:0;
+  margin-top:5px;align-self:flex-start;
+}
+
+/* ── GRID VIEW ── */
+#cards-view-grid { display:none; padding-bottom:86px; }
+.grid-cat-sec { margin-bottom:16px; }
+.grid-cat-hdr {
+  font-family:var(--fu);font-size:.66rem;font-weight:700;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--sd);
+  padding:5px 0;margin-bottom:5px;
+  border-bottom:1px solid var(--k4);
+  display:flex;justify-content:space-between;align-items:center;
+}
+.grid-cells {
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(80px,1fr));
+  gap:3px;
+}
+.grid-cell {
+  aspect-ratio:1;border:1px solid var(--k4);
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:4px;cursor:pointer;position:relative;
+  transition:transform .15s,border-color .15s;
+  text-align:center;overflow:hidden;
+}
+.grid-cell:active { transform:scale(.93); }
+.grid-cell.gc-possible { border-left:3px solid var(--r); }
+.grid-cell.gc-discarded { opacity:.25;border-left:3px solid var(--rd); }
+.grid-cell.gc-match5 { background:rgba(196,18,48,.55); }
+.grid-cell.gc-match4 { background:rgba(196,18,48,.35); }
+.grid-cell.gc-match3 { background:rgba(196,80,18,.22); }
+.grid-cell.gc-match2 { background:rgba(196,140,18,.14); }
+.grid-cell.gc-match1 { background:rgba(180,160,20,.08); }
+.grid-cell.gc-match0 { background:rgba(255,255,255,.02); }
+.gc-num {
+  font-family:var(--fd);font-size:.7rem;color:rgba(255,255,255,.35);
+  line-height:1;margin-bottom:2px;
+}
+.gc-name {
+  font-family:var(--fu);font-size:.58rem;font-weight:700;
+  letter-spacing:.02em;color:rgba(255,255,255,.8);line-height:1.15;
+  text-transform:uppercase;
+}
+.gc-state-icon {
+  position:absolute;top:2px;right:3px;font-size:.55rem;line-height:1;
+}
+
+/* ── MAP VIEW ── */
+#cards-view-map { display:none;padding-bottom:86px; }
+.map-info-bar {
+  font-family:var(--fu);font-size:.6rem;font-weight:600;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--m);
+  padding:6px 0 8px;text-align:center;
+}
+.map-canvas-wrap {
+  border:1px solid var(--k4);background:var(--k2);
+  position:relative;
+}
+#map-cv { display:block;width:100%; }
+.map-legend {
+  display:flex;flex-wrap:wrap;gap:8px;padding:7px 0 4px;
+  justify-content:center;
+}
+.map-leg-item { display:flex;align-items:center;gap:4px; }
+.map-leg-dot { width:10px;height:10px; }
+.map-leg-lbl {
+  font-family:var(--fu);font-size:.58rem;font-weight:600;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--m);
+}
+/* Tooltip overlay on map */
+.map-tooltip {
+  position:absolute;pointer-events:none;z-index:500;
+  background:var(--k2);border:1px solid var(--k4);border-left:2px solid var(--r);
+  padding:7px 10px;max-width:180px;
+  box-shadow:0 4px 20px rgba(0,0,0,.7);opacity:0;transition:opacity .1s;
+}
+.map-tooltip.show { opacity:1; }
+.mtt-name {
+  font-family:var(--fu);font-size:.8rem;font-weight:700;
+  letter-spacing:.04em;color:var(--sl);margin-bottom:2px;
+}
+.mtt-cat {
+  font-family:var(--fu);font-size:.58rem;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--r);
+}
+
 </style>
 </head>
 <body>
@@ -766,9 +948,17 @@ select option{background:var(--k3)}
   </div>
 
   <div style="flex:1;overflow-y:auto;padding:0 14px 82px">
-    <!-- TAB CARTES -->
+    <!-- TAB CARTES — amb sub-vistes i filtres sensorials -->
     <div id="tab-cards">
-      <div class="filters-bar">
+      <!-- Sub-tab bar: vista actual -->
+      <div class="view-subtabs">
+        <button class="vstab active" id="vstab-list"  onclick="setCardView('list')">☰ Llista</button>
+        <button class="vstab"        id="vstab-grid"  onclick="setCardView('grid')">⊞ Graella</button>
+        <button class="vstab"        id="vstab-map"   onclick="setCardView('map')">◉ Mapa</button>
+      </div>
+
+      <!-- Filtres ràpids: estat (possible/descartat) + cerca — visibles sempre -->
+      <div class="filters-bar" style="padding-top:0">
         <div class="search-wrap">
           <span class="search-icon">🔍</span>
           <input type="text" id="card-search" placeholder="Buscar estil…" oninput="filterCards()">
@@ -777,6 +967,113 @@ select option{background:var(--k3)}
           <span class="chip active" onclick="setFilter(this,'all')">Totes</span>
           <span class="chip" onclick="setFilter(this,'possible')">⭐ Possibles</span>
           <span class="chip" onclick="setFilter(this,'discarded')">✕ Descartades</span>
+        </div>
+      </div>
+
+      <!-- Botó + drawer de filtres sensorials -->
+      <button class="filter-toggle" id="filter-toggle-btn" onclick="toggleFilterDrawer()">
+        <span>🎛️ Filtres sensorials <span id="filter-active-hint" style="display:none;font-size:.58rem;color:var(--rl)"> — actius</span></span>
+        <span id="filter-toggle-arrow">▼</span>
+      </button>
+      <div class="filter-drawer" id="filter-drawer">
+        <div class="filter-drawer-inner">
+
+          <!-- Color SRM -->
+          <div class="fsec">
+            <div class="fsec-title">Color visual</div>
+            <div id="srm-strip-game" class="srm-strip-game"></div>
+            <div class="frange">
+              <label>SRM</label>
+              <input type="range" id="ef-srm-min" min="1" max="40" value="1" oninput="explorerUpdateFilters()">
+              <input type="range" id="ef-srm-max" min="1" max="40" value="40" oninput="explorerUpdateFilters()">
+              <span class="frange-val" id="ef-srm-val">1–40</span>
+            </div>
+            <div class="fpills">
+              <span class="fpill" data-esrm="1,6">Pàl·lid</span>
+              <span class="fpill" data-esrm="4,10">Daurat</span>
+              <span class="fpill" data-esrm="9,18">Ambre</span>
+              <span class="fpill" data-esrm="15,30">Marró</span>
+              <span class="fpill" data-esrm="25,40">Negre</span>
+            </div>
+          </div>
+
+          <!-- Fermentació -->
+          <div class="fsec">
+            <div class="fsec-title">Fermentació</div>
+            <div class="fpills">
+              <span class="fpill" data-eferm="ale">🟢 Ale</span>
+              <span class="fpill" data-eferm="lager">🔵 Lager</span>
+              <span class="fpill" data-eferm="wild">🟠 Salvatge</span>
+              <span class="fpill" data-eferm="hybrid">⚪ Híbrida</span>
+            </div>
+          </div>
+
+          <!-- Alcohol -->
+          <div class="fsec">
+            <div class="fsec-title">Alcohol</div>
+            <div class="frange">
+              <label>Mínim</label>
+              <input type="range" id="ef-abv-min" min="0" max="15" step="0.5" value="0" oninput="explorerUpdateFilters()">
+              <span class="frange-val" id="ef-abv-min-v">0%</span>
+            </div>
+            <div class="frange">
+              <label>Màxim</label>
+              <input type="range" id="ef-abv-max" min="0" max="15" step="0.5" value="15" oninput="explorerUpdateFilters()">
+              <span class="frange-val" id="ef-abv-max-v">15%</span>
+            </div>
+            <div class="fpills">
+              <span class="fpill" data-eabv="0,3.5">&lt;3.5%</span>
+              <span class="fpill" data-eabv="3.5,5.5">Normal</span>
+              <span class="fpill" data-eabv="5.5,8">Alt</span>
+              <span class="fpill" data-eabv="8,15">Fort</span>
+            </div>
+          </div>
+
+          <!-- Amargor -->
+          <div class="fsec">
+            <div class="fsec-title">Amargor</div>
+            <div class="frange">
+              <label>IBU</label>
+              <input type="range" id="ef-ibu-min" min="0" max="120" value="0" oninput="explorerUpdateFilters()">
+              <input type="range" id="ef-ibu-max" min="0" max="120" value="120" oninput="explorerUpdateFilters()">
+              <span class="frange-val" id="ef-ibu-val">0–120</span>
+            </div>
+            <div class="fpills">
+              <span class="fpill" data-eibu="0,15">Gens</span>
+              <span class="fpill" data-eibu="10,30">Lleuger</span>
+              <span class="fpill" data-eibu="25,50">Moderat</span>
+              <span class="fpill" data-eibu="40,80">Intens</span>
+              <span class="fpill" data-eibu="70,120">Molt</span>
+            </div>
+          </div>
+
+          <!-- Cos -->
+          <div class="fsec">
+            <div class="fsec-title">Cos</div>
+            <div class="fpills">
+              <span class="fpill" data-ebody="light">Lleuger</span>
+              <span class="fpill" data-ebody="medium">Mig</span>
+              <span class="fpill" data-ebody="full">Ple</span>
+            </div>
+          </div>
+
+          <!-- Caràcter -->
+          <div class="fsec">
+            <div class="fsec-title">Caràcter</div>
+            <div class="fpills">
+              <span class="fpill" data-echar="malty">Malta</span>
+              <span class="fpill" data-echar="hoppy">Llúpol</span>
+              <span class="fpill" data-echar="roasty">Torrat</span>
+              <span class="fpill" data-echar="sour">Àcid</span>
+            </div>
+          </div>
+
+          <button onclick="explorerResetFilters()"
+            style="width:100%;font-family:var(--fu);font-size:.68rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;background:transparent;border:1px solid var(--m2);color:var(--sd);padding:7px;cursor:pointer;margin-top:4px;transition:all .2s"
+            onmouseover="this.style.borderColor='var(--r)';this.style.color='var(--rl)'"
+            onmouseout="this.style.borderColor='var(--m2)';this.style.color='var(--sd)'">
+            ↺ Reiniciar filtres
+          </button>
         </div>
       </div>
 
@@ -808,7 +1105,35 @@ select option{background:var(--k3)}
       <div id="team-guesses-wrap" style="display:none;margin:0 0 10px">
         <div id="team-guesses"></div>
       </div>
-      <div id="cards-container"></div>
+      <!-- LIST VIEW (original) -->
+      <div id="cards-view-list">
+        <div id="cards-container"></div>
+      </div>
+
+      <!-- GRID VIEW -->
+      <div id="cards-view-grid">
+        <div id="grid-container"></div>
+      </div>
+
+      <!-- MAP VIEW -->
+      <div id="cards-view-map">
+        <div class="map-info-bar">Eix X: IBU · Eix Y: ABV · Mida: cos · <span style="color:var(--rl)">Vermell = coincidència alta</span></div>
+        <div class="map-canvas-wrap">
+          <canvas id="map-cv" height="340"></canvas>
+          <div class="map-tooltip" id="map-tooltip">
+            <div class="mtt-name" id="mtt-name"></div>
+            <div class="mtt-cat" id="mtt-cat"></div>
+          </div>
+        </div>
+        <div class="map-legend">
+          <div class="map-leg-item"><div class="map-leg-dot" style="background:rgba(255,255,255,.08)"></div><span class="map-leg-lbl">Cap</span></div>
+          <div class="map-leg-item"><div class="map-leg-dot" style="background:rgba(196,140,18,.4)"></div><span class="map-leg-lbl">Possible</span></div>
+          <div class="map-leg-item"><div class="map-leg-dot" style="background:rgba(196,18,48,.6)"></div><span class="map-leg-lbl">Alta</span></div>
+          <div class="map-leg-item"><div class="map-leg-dot" style="background:rgba(230,20,48,.95)"></div><span class="map-leg-lbl">Molt alta</span></div>
+          <div class="map-leg-item"><div class="map-leg-dot" style="background:#2E8040;border:1px solid #6DBF7E"></div><span class="map-leg-lbl">Possible ⭐</span></div>
+          <div class="map-leg-item"><div class="map-leg-dot" style="background:#666"></div><span class="map-leg-lbl">Descartada ✕</span></div>
+        </div>
+      </div>
     </div>
 
     <!-- TAB ACCIONS -->
@@ -908,11 +1233,7 @@ select option{background:var(--k3)}
         <div id="round-active-hint" class="muted" style="display:none;font-family:var(--fu);font-size:.74rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;text-align:center;margin-top:6px">✅ Ronda en curs — espera les propostes</div>
       </div>
 
-      <!-- Reveal panel -->
-      <div class="card mb-11" id="reveal-panel" style="display:none">
-        <div class="sec-title">👁️ Revelar Informació</div>
-        <div class="g2" id="reveal-btns" style="gap:7px"></div>
-      </div>
+      <!-- reveal-panel removed -->
 
       <!-- Guesses -->
       <div class="card mb-11">
