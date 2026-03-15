@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
 //  UI.JS  —  Interface & interaction logic
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION = 'v2026.11 · 12/03/2026';
+const APP_VERSION = 'v2026.12 · 15/03/2026';
 
 // Add popup slide-up animation
 const _popupStyle = document.createElement('style');
@@ -303,14 +303,14 @@ function renderGridView() {
           const sCls=myState==='possible'?'gc-possible':myState==='discarded'?'gc-discarded':'';
           const dimStyle=(s===0&&EF.active)?'opacity:.2':'';
           const stateIcon=myState==='possible'?'⭐':myState==='discarded'?'✕':'';
-          return \`<div class="grid-cell \${mCls} \${sCls}" style="\${dimStyle}"
-              onclick="handleGridCellTap('\${c.id}','\${c.name.replace(/'/g,'&#39;')}')"
-              data-card-id="\${c.id}">
-            \${srmC?\`<div style="position:absolute;top:3px;right:3px;width:7px;height:7px;background:\${srmC};opacity:.6"></div>\`:'' }
-            \${stateIcon?\`<div class="gc-state-icon">\${stateIcon}</div>\`:'' }
-            <div class="gc-num">\${c.number}</div>
-            <div class="gc-name">\${c.name}</div>
-          </div>\`;
+          return `<div class="grid-cell ${mCls} ${sCls}" style="${dimStyle}"
+              onclick="handleGridCellTap('${c.id}','${c.name.replace(/'/g,'&#39;')}')"
+              data-card-id="${c.id}">
+            ${srmC?`<div style="position:absolute;top:3px;right:3px;width:7px;height:7px;background:${srmC};opacity:.6"></div>`:'' }
+            ${stateIcon?`<div class="gc-state-icon">${stateIcon}</div>`:'' }
+            <div class="gc-num">${c.number}</div>
+            <div class="gc-name">${c.name}</div>
+          </div>`;
         }).join('')}
       </div>
     </div>`).join('');
@@ -618,7 +618,6 @@ async function _checkMasterPassword(input) {
   const enc = new TextEncoder().encode(input);
   const buf = await crypto.subtle.digest('SHA-256', enc);
   const hex = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
-  // sha256('merderada')
   return hex === '84a0a5b8837983314b166079f7af613a57031c0b9b1283b86a1d714d7e8baef9';
 }
 
@@ -1354,7 +1353,7 @@ function beerCardHTML(card, globalInfo, teamInfo, teamCS) {
   <div class="${cls}" id="bc-${card.id}" style="${sty}">
     <div class="card-hdr" onclick="toggleCard('${card.id}')">
       ${revIcon}
-      ${EF.active && matchScore>=0 ? \`<div class="card-match-dot" style="background:\${['rgba(30,30,30,.5)','rgba(140,120,20,.6)','rgba(196,100,20,.7)','rgba(200,60,20,.8)','rgba(220,30,30,.85)','rgba(230,20,48,.95)'][matchScore]};width:8px;height:8px"></div>\` : ''}
+      ${EF.active && matchScore>=0 ? `<div class="card-match-dot" style="background:${['rgba(30,30,30,.5)','rgba(140,120,20,.6)','rgba(196,100,20,.7)','rgba(200,60,20,.8)','rgba(220,30,30,.85)','rgba(230,20,48,.95)'][matchScore]};width:8px;height:8px"></div>` : ''}
       <span class="card-num">${card.number}</span>
       <div style="flex:1;min-width:0">
         <div class="card-name">${card.name}</div>
