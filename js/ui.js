@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
 //  UI.JS  —  Interface & interaction logic
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION = 'v2026.19 · 15/03/2026';
+const APP_VERSION = 'v2026.20 · 15/03/2026';
 
 // Add popup slide-up animation
 const _popupStyle = document.createElement('style');

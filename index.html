@@ -168,10 +168,15 @@ select option{background:var(--k3)}
 }
 .beer-card.discarded{opacity:.2;border-left-color:var(--rd)}
 .beer-card.possible{
-  border-left-color:#C8960A !important;
-  background:rgba(200,150,10,.08) !important;
-  box-shadow:0 0 14px rgba(200,150,10,.12);
+  border-left-color:#C8960A;
+  border-top:1px solid rgba(200,150,10,.35);
+  border-right:1px solid rgba(200,150,10,.15);
+  border-bottom:1px solid rgba(200,150,10,.15);
+  background:rgba(200,150,10,.13);
 }
+/* Card name color inside a possible card */
+.beer-card.possible .card-name { color:#E8C040; }
+.beer-card.possible .card-num  { background:#7A5800; }
 /* Green highlight when info range matches */
 .beer-card.range-match{
   border-left-color:#2E8040;
