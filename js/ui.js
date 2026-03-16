@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
 //  UI.JS  —  Interface & interaction logic
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION = 'v2026.21 · 15/03/2026';
+const APP_VERSION = 'v2026.22 · 15/03/2026';
 
 // Add popup slide-up animation
 const _popupStyle = document.createElement('style');
@@ -315,71 +315,227 @@ let _mapHits = [];
 // Map viewport: x and y in 0-100 poster space, with zoom/pan
 const _mapVP = { x0:0, x1:100, y0:0, y1:100 };
 
-const _CARD_COORDS = {"American Barleywine": [6, 8], "English Barley Wine": [8, 12], "Wheatwine": [10, 8], "Wee Heavy": [5, 22], "British Strong Ale": [11, 22], "Old Ale": [18, 16], "American Strong Ale": [16, 8], "Scottish Light": [4, 28], "Scottish Heavy": [4, 32], "Scottish Export": [6, 36], "Double IPA": [10, 28], "American IPA": [14, 34], "English IPA": [16, 40], "Hazy IPA": [10, 38], "Specialty IPA": [12, 44], "American Pale Ale": [28, 20], "British Golden Ale": [26, 28], "Ordinary Bitter": [20, 36], "Best Bitter": [22, 42], "Strong Bitter": [16, 46], "Australian Sparkling Ale": [30, 34], "Blonde Ale": [38, 16], "Cream Ale": [34, 26], "American Wheat Beer": [44, 12], "Dark Mild": [36, 32], "Irish Red Ale": [32, 40], "American Amber Ale": [44, 22], "American Brown Ale": [42, 28], "British Brown Ale": [40, 34], "Historical Beer: London Brown Ale": [38, 40], "English Porter": [20, 50], "American Porter": [22, 56], "Historical Beer: Pre-Prohibition Porter": [18, 56], "Irish Stout": [8, 54], "Irish Extra Stout": [8, 58], "Foreign Extra Stout": [12, 60], "American Stout": [22, 62], "Imperial Stout": [8, 68], "Sweet Stout": [18, 68], "Oatmeal Stout": [10, 76], "Tropical Stout": [14, 72], "Baltic Porter": [6, 80], "Historical Beer: Kentucky Common": [28, 68], "California Common": [26, 72], "Rauchbier": [30, 82], "Classic Style Smoked Beer": [24, 80], "Specialty Smoked Beer": [20, 80], "Wood-Aged Beer": [16, 84], "Specialty Wood-Aged Beer": [14, 84], "Lambic": [60, 22], "Gueuze": [68, 18], "Fruit Lambic": [76, 18], "Straight Sour Beer": [60, 28], "Mixed-Fermentation Sour Beer": [62, 32], "Brett Beer": [58, 34], "Wild Specialty Beer": [64, 28], "Witbier": [54, 22], "Oud Bruin": [70, 26], "Flanders Red Ale": [76, 28], "Saison": [78, 22], "Bière de Garde": [82, 26], "Belgian Single": [80, 34], "Belgian Pale Ale": [84, 34], "Belgian Blond Ale": [82, 40], "Belgian Dark Strong Ale": [82, 50], "Belgian Golden Strong Ale": [88, 44], "Belgian Tripel": [88, 52], "Belgian Dubbel": [78, 46], "Kolsch": [66, 52], "Altbier": [60, 52], "Historical Beer: Roggenbier": [66, 58], "Weissbier": [80, 58], "Dunkles Weissbier": [74, 62], "Weizenbock": [70, 66], "Berliner Weisse": [84, 66], "Gose": [88, 62], "Historical Beer: Lichtenhainer": [82, 72], "Historical Beer: Piwo Grodziskie": [76, 72], "Historical Beer: Sahti": [68, 72], "German Pils": [42, 80], "Czech Pale Lager": [48, 82], "Czech Premium Pale Lager": [50, 86], "Czech Amber Lager": [54, 82], "Czech Dark Lager": [58, 86], "American Lager": [26, 78], "American Light Lager": [18, 84], "Historical Beer: Pre-Prohibition Lager": [22, 76], "German Leichtbier": [38, 86], "International Pale Lager": [58, 78], "International Amber Lager": [62, 78], "International Dark Lager": [64, 84], "Munich Helles": [76, 82], "Festbier": [80, 78], "German Helles Exportbier": [72, 76], "Historical Beer: Kellerbier": [70, 78], "Marzen": [80, 84], "Vienna Lager": [74, 88], "Munich Dunkel": [82, 90], "Schwarzbier": [84, 86], "Helles Bock": [76, 72], "Dunkles Bock": [84, 76], "Doppelbock": [90, 80], "Eisbock": [92, 84], "Fruit Beer": [48, 42], "Specialty Fruit Beer": [50, 46], "Fruit and Spice Beer": [52, 42], "Spice, Herb, or Vegetable Beer": [52, 48], "Specialty Spice Beer": [54, 46], "Autumn Seasonal Beer": [48, 52], "Winter Seasonal Beer": [44, 52], "Grape Ale": [54, 34], "Experimental Beer": [46, 56], "Mixed-Style Beer": [48, 58], "Commercial Specialty Beer": [50, 60], "Alternative Grain Beer": [44, 60], "Alternative Sugar Beer": [46, 64]};
+const _CARD_COORDS = {"American Barleywine":[6,8],"English Barley Wine":[8,12],"Wheatwine":[10,8],"Wee Heavy":[5,22],"British Strong Ale":[11,22],"Old Ale":[18,16],"American Strong Ale":[16,8],"Scottish Light":[4,28],"Scottish Heavy":[4,32],"Scottish Export":[6,36],"Double IPA":[10,28],"American IPA":[14,34],"English IPA":[16,40],"Hazy IPA":[10,38],"Specialty IPA":[12,44],"American Pale Ale":[28,20],"British Golden Ale":[26,28],"Ordinary Bitter":[20,36],"Best Bitter":[22,42],"Strong Bitter":[16,46],"Australian Sparkling Ale":[30,34],"Blonde Ale":[38,16],"Cream Ale":[34,26],"American Wheat Beer":[44,12],"Dark Mild":[36,32],"Irish Red Ale":[32,40],"American Amber Ale":[44,22],"American Brown Ale":[42,28],"British Brown Ale":[40,34],"Historical Beer: London Brown Ale":[38,40],"English Porter":[20,50],"American Porter":[22,56],"Historical Beer: Pre-Prohibition Porter":[18,56],"Irish Stout":[8,54],"Irish Extra Stout":[8,58],"Foreign Extra Stout":[12,60],"American Stout":[22,62],"Imperial Stout":[8,68],"Sweet Stout":[18,68],"Oatmeal Stout":[10,76],"Tropical Stout":[14,72],"Baltic Porter":[6,80],"Historical Beer: Kentucky Common":[28,68],"California Common":[26,72],"Rauchbier":[30,82],"Classic Style Smoked Beer":[24,80],"Specialty Smoked Beer":[20,80],"Wood-Aged Beer":[16,84],"Specialty Wood-Aged Beer":[14,84],"Lambic":[60,22],"Gueuze":[68,18],"Fruit Lambic":[76,18],"Straight Sour Beer":[60,28],"Mixed-Fermentation Sour Beer":[62,32],"Brett Beer":[58,34],"Wild Specialty Beer":[64,28],"Witbier":[54,22],"Oud Bruin":[70,26],"Flanders Red Ale":[76,28],"Saison":[78,22],"Bière de Garde":[82,26],"Belgian Single":[80,34],"Belgian Pale Ale":[84,34],"Belgian Blond Ale":[82,40],"Belgian Dark Strong Ale":[82,50],"Belgian Golden Strong Ale":[88,44],"Belgian Tripel":[88,52],"Belgian Dubbel":[78,46],"Kolsch":[66,52],"Altbier":[60,52],"Historical Beer: Roggenbier":[66,58],"Weissbier":[80,58],"Dunkles Weissbier":[74,62],"Weizenbock":[70,66],"Berliner Weisse":[84,66],"Gose":[88,62],"Historical Beer: Lichtenhainer":[82,72],"Historical Beer: Piwo Grodziskie":[76,72],"Historical Beer: Sahti":[68,72],"German Pils":[42,80],"Czech Pale Lager":[48,82],"Czech Premium Pale Lager":[50,86],"Czech Amber Lager":[54,82],"Czech Dark Lager":[58,86],"American Lager":[26,78],"American Light Lager":[18,84],"Historical Beer: Pre-Prohibition Lager":[22,76],"German Leichtbier":[38,86],"International Pale Lager":[58,78],"International Amber Lager":[62,78],"International Dark Lager":[64,84],"Munich Helles":[76,82],"Festbier":[80,78],"German Helles Exportbier":[72,76],"Historical Beer: Kellerbier":[70,78],"Marzen":[80,84],"Vienna Lager":[74,88],"Munich Dunkel":[82,90],"Schwarzbier":[84,86],"Helles Bock":[76,72],"Dunkles Bock":[84,76],"Doppelbock":[90,80],"Eisbock":[92,84],"Fruit Beer":[48,42],"Specialty Fruit Beer":[50,46],"Fruit and Spice Beer":[52,42],"Spice, Herb, or Vegetable Beer":[52,48],"Specialty Spice Beer":[54,46],"Autumn Seasonal Beer":[48,52],"Winter Seasonal Beer":[44,52],"Grape Ale":[54,34],"Experimental Beer":[46,56],"Mixed-Style Beer":[48,58],"Commercial Specialty Beer":[50,60],"Alternative Grain Beer":[44,60],"Alternative Sugar Beer":[46,64]};
 
-// Cluster labels for orientation (drawn as faint background text)
-const _MAP_LABELS = [
-  {x:12, y:4,  t:'ALE FORTA'},
-  {x:12, y:32, t:'IPA'},
-  {x:10, y:60, t:'STOUT'},
-  {x:10, y:80, t:'PORTER'},
-  {x:36, y:24, t:'PALE ALE'},
-  {x:44, y:35, t:'ALE'},
-  {x:62, y:24, t:'SOUR'},
-  {x:84, y:40, t:'BELGA'},
-  {x:80, y:62, t:'WEIZEN'},
-  {x:44, y:70, t:'LAGER'},
-  {x:76, y:85, t:'LAGER ALEMANYA'},
+// BJCP num + category lookup
+const _CARD_META = {"Altbier":["7B","Amber Bitter European Beer"],"Alternative Grain Beer":["31A","Alternative Fermentables Beer"],"Alternative Sugar Beer":["31B","Alternative Fermentables Beer"],"American Amber Ale":["19A","Amber And Brown American Beer"],"American Barleywine":["22C","Strong American Ale"],"American Brown Ale":["19C","Amber And Brown American Beer"],"American IPA":["21A","IPA"],"American Lager":["1B","Standard American Beer"],"American Light Lager":["1A","Standard American Beer"],"American Pale Ale":["18B","Pale American Ale"],"American Porter":["20A","American Porter And Stout"],"American Stout":["20B","American Porter And Stout"],"American Strong Ale":["22B","Strong American Ale"],"American Wheat Beer":["1D","Standard American Beer"],"Australian Sparkling Ale":["12B","Pale Commonwealth Beer"],"Autumn Seasonal Beer":["30B","Spiced Beer"],"Baltic Porter":["9C","Strong European Beer"],"Belgian Blond Ale":["25A","Strong Belgian Ale"],"Belgian Dark Strong Ale":["26D","Monastic Ale"],"Belgian Dubbel":["26B","Monastic Ale"],"Belgian Golden Strong Ale":["25C","Strong Belgian Ale"],"Belgian Pale Ale":["24B","Belgian Ale"],"Belgian Single":["26A","Monastic Ale"],"Belgian Tripel":["26C","Monastic Ale"],"Berliner Weisse":["23A","European Sour Ale"],"Best Bitter":["11B","British Bitter"],"Bière de Garde":["24C","Belgian Ale"],"Blonde Ale":["18A","Pale American Ale"],"Brett Beer":["28A","American Wild Ale"],"British Brown Ale":["13B","Brown British Beer"],"British Golden Ale":["12A","Pale Commonwealth Beer"],"British Strong Ale":["17A","Strong British Ale"],"California Common":["19B","Amber And Brown American Beer"],"Classic Style Smoked Beer":["32A","Smoked Beer"],"Commercial Specialty Beer":["34A","Specialty Beer"],"Cream Ale":["1C","Standard American Beer"],"Czech Amber Lager":["3C","Czech Lager"],"Czech Dark Lager":["3D","Czech Lager"],"Czech Pale Lager":["3A","Czech Lager"],"Czech Premium Pale Lager":["3B","Czech Lager"],"Dark Mild":["13A","Brown British Beer"],"Doppelbock":["9A","Strong European Beer"],"Double IPA":["22A","Strong American Ale"],"Dunkles Bock":["6C","Amber Malty European Lager"],"Dunkles Weissbier":["10B","German Wheat Beer"],"Eisbock":["9B","Strong European Beer"],"English Barley Wine":["17D","Strong British Ale"],"English IPA":["12C","Pale Commonwealth Beer"],"English Porter":["13C","Brown British Beer"],"Experimental Beer":["34C","Specialty Beer"],"Festbier":["4B","Pale Malty European Lager"],"Flanders Red Ale":["23B","European Sour Ale"],"Foreign Extra Stout":["16D","Dark British Beer"],"Fruit Beer":["29A","Fruit Beer"],"Fruit Lambic":["23F","European Sour Ale"],"Fruit and Spice Beer":["29B","Fruit Beer"],"German Helles Exportbier":["5C","Pale Bitter European Beer"],"German Leichtbier":["5A","Pale Bitter European Beer"],"German Pils":["5D","Pale Bitter European Beer"],"Gose":["23G","European Sour Ale"],"Grape Ale":["29D","Fruit Beer"],"Gueuze":["23E","European Sour Ale"],"Hazy IPA":["21C","IPA"],"Helles Bock":["4C","Pale Malty European Lager"],"Historical Beer: Kellerbier":["27A","Historical Beer"],"Historical Beer: Kentucky Common":["27B","Historical Beer"],"Historical Beer: Lichtenhainer":["27C","Historical Beer"],"Historical Beer: London Brown Ale":["27D","Historical Beer"],"Historical Beer: Piwo Grodziskie":["27E","Historical Beer"],"Historical Beer: Pre-Prohibition Lager":["27F","Historical Beer"],"Historical Beer: Pre-Prohibition Porter":["27G","Historical Beer"],"Historical Beer: Roggenbier":["27H","Historical Beer"],"Historical Beer: Sahti":["27I","Historical Beer"],"Imperial Stout":["20C","American Porter And Stout"],"International Amber Lager":["2B","International Lager"],"International Dark Lager":["2C","International Lager"],"International Pale Lager":["2A","International Lager"],"Irish Extra Stout":["15C","Irish Beer"],"Irish Red Ale":["15A","Irish Beer"],"Irish Stout":["15B","Irish Beer"],"Kolsch":["5B","Pale Bitter European Beer"],"Lambic":["23D","European Sour Ale"],"Marzen":["6A","Amber Malty European Lager"],"Mixed-Fermentation Sour Beer":["28B","American Wild Ale"],"Mixed-Style Beer":["34B","Specialty Beer"],"Munich Dunkel":["8A","Dark European Lager"],"Munich Helles":["4A","Pale Malty European Lager"],"Oatmeal Stout":["16B","Dark British Beer"],"Old Ale":["17B","Strong British Ale"],"Ordinary Bitter":["11A","British Bitter"],"Oud Bruin":["23C","European Sour Ale"],"Rauchbier":["6B","Amber Malty European Lager"],"Saison":["25B","Strong Belgian Ale"],"Schwarzbier":["8B","Dark European Lager"],"Scottish Export":["14C","Scottish Ale"],"Scottish Heavy":["14B","Scottish Ale"],"Scottish Light":["14A","Scottish Ale"],"Specialty Fruit Beer":["29C","Fruit Beer"],"Specialty IPA":["21B","IPA"],"Specialty Smoked Beer":["32B","Smoked Beer"],"Specialty Spice Beer":["30D","Spiced Beer"],"Specialty Wood-Aged Beer":["33B","Wood Beer"],"Spice, Herb, or Vegetable Beer":["30A","Spiced Beer"],"Straight Sour Beer":["28D","American Wild Ale"],"Strong Bitter":["11C","British Bitter"],"Sweet Stout":["16A","Dark British Beer"],"Tropical Stout":["16C","Dark British Beer"],"Vienna Lager":["7A","Amber Bitter European Beer"],"Wee Heavy":["17C","Strong British Ale"],"Weissbier":["10A","German Wheat Beer"],"Weizenbock":["10C","German Wheat Beer"],"Wheatwine":["22D","Strong American Ale"],"Wild Specialty Beer":["28C","American Wild Ale"],"Winter Seasonal Beer":["30C","Spiced Beer"],"Witbier":["24A","Belgian Ale"],"Wood-Aged Beer":["33A","Wood Beer"]};
+
+// Cluster definitions: index → {fill, dot, name}
+const _MAP_CL = {
+  0:{fill:'rgba(91,157,74,.11)',  dot:'#5b9d4a', name:'Ale'},
+  1:{fill:'rgba(74,127,193,.11)', dot:'#4a7fc1', name:'Lager'},
+  2:{fill:'rgba(193,122,58,.11)', dot:'#c17a3a', name:'Belga / Sour'},
+  3:{fill:'rgba(143,91,181,.11)', dot:'#8f5bb5', name:'Weizen / Ale alemanya'},
+  4:{fill:'rgba(193,74,74,.12)',  dot:'#c14a4a', name:'Stout / Porter'},
+  5:{fill:'rgba(106,171,181,.11)',dot:'#6aabb5', name:'Lager alemanya'},
+  6:{fill:'rgba(136,136,136,.09)',dot:'#888',    name:'Especialitats'},
+};
+
+// Card positions with cluster assignment: [name, x, y, cluster]
+const _MAP_CARDS = [
+  ["American Barleywine",6,8,0],["English Barley Wine",8,12,0],["Wheatwine",10,8,0],
+  ["Wee Heavy",5,22,0],["British Strong Ale",11,22,0],["Old Ale",18,16,0],
+  ["American Strong Ale",16,8,0],["Scottish Light",4,28,0],["Scottish Heavy",4,32,0],
+  ["Scottish Export",6,36,0],["Double IPA",10,28,0],["American IPA",14,34,0],
+  ["English IPA",16,40,0],["Hazy IPA",10,38,0],["Specialty IPA",12,44,0],
+  ["American Pale Ale",28,20,0],["British Golden Ale",26,28,0],
+  ["Ordinary Bitter",20,36,0],["Best Bitter",22,42,0],["Strong Bitter",16,46,0],
+  ["Australian Sparkling Ale",30,34,0],["Blonde Ale",38,16,0],["Cream Ale",34,26,0],
+  ["American Wheat Beer",44,12,0],["Dark Mild",36,32,0],["Irish Red Ale",32,40,0],
+  ["American Amber Ale",44,22,0],["American Brown Ale",42,28,0],
+  ["British Brown Ale",40,34,0],["Historical Beer: London Brown Ale",38,40,0],
+  ["English Porter",20,50,4],["American Porter",22,56,4],
+  ["Historical Beer: Pre-Prohibition Porter",18,56,4],
+  ["Irish Stout",8,54,4],["Irish Extra Stout",8,58,4],
+  ["Foreign Extra Stout",12,60,4],["American Stout",22,62,4],
+  ["Imperial Stout",8,68,4],["Sweet Stout",18,68,4],
+  ["Oatmeal Stout",10,76,4],["Tropical Stout",14,72,4],["Baltic Porter",6,80,4],
+  ["Historical Beer: Kentucky Common",28,68,0],["California Common",26,72,0],
+  ["Rauchbier",30,82,6],["Classic Style Smoked Beer",24,80,6],
+  ["Specialty Smoked Beer",20,80,6],["Wood-Aged Beer",16,84,6],
+  ["Specialty Wood-Aged Beer",14,84,6],
+  ["Lambic",60,22,2],["Gueuze",68,18,2],["Fruit Lambic",76,18,2],
+  ["Straight Sour Beer",60,28,2],["Mixed-Fermentation Sour Beer",62,32,2],
+  ["Brett Beer",58,34,2],["Wild Specialty Beer",64,28,2],
+  ["Witbier",54,22,2],["Oud Bruin",70,26,2],["Flanders Red Ale",76,28,2],
+  ["Saison",78,22,2],["Bière de Garde",82,26,2],
+  ["Belgian Single",80,34,2],["Belgian Pale Ale",84,34,2],
+  ["Belgian Blond Ale",82,40,2],["Belgian Dark Strong Ale",82,50,2],
+  ["Belgian Golden Strong Ale",88,44,2],["Belgian Tripel",88,52,2],
+  ["Belgian Dubbel",78,46,2],
+  ["Kolsch",66,52,3],["Altbier",60,52,3],
+  ["Historical Beer: Roggenbier",66,58,3],
+  ["Weissbier",80,58,3],["Dunkles Weissbier",74,62,3],
+  ["Weizenbock",70,66,3],["Berliner Weisse",84,66,3],["Gose",88,62,3],
+  ["Historical Beer: Lichtenhainer",82,72,3],
+  ["Historical Beer: Piwo Grodziskie",76,72,3],["Historical Beer: Sahti",68,72,3],
+  ["German Pils",42,80,1],["Czech Pale Lager",48,82,1],
+  ["Czech Premium Pale Lager",50,86,1],["Czech Amber Lager",54,82,1],
+  ["Czech Dark Lager",58,86,1],["American Lager",26,78,1],
+  ["American Light Lager",18,84,1],
+  ["Historical Beer: Pre-Prohibition Lager",22,76,1],
+  ["German Leichtbier",38,86,1],["International Pale Lager",58,78,1],
+  ["International Amber Lager",62,78,1],["International Dark Lager",64,84,1],
+  ["Munich Helles",76,82,5],["Festbier",80,78,5],
+  ["German Helles Exportbier",72,76,5],["Historical Beer: Kellerbier",70,78,5],
+  ["Marzen",80,84,5],["Vienna Lager",74,88,5],["Munich Dunkel",82,90,5],
+  ["Schwarzbier",84,86,5],["Helles Bock",76,72,5],["Dunkles Bock",84,76,5],
+  ["Doppelbock",90,80,5],["Eisbock",92,84,5],
+  ["Fruit Beer",48,42,6],["Specialty Fruit Beer",50,46,6],
+  ["Fruit and Spice Beer",52,42,6],["Spice, Herb, or Vegetable Beer",52,48,6],
+  ["Specialty Spice Beer",54,46,6],["Autumn Seasonal Beer",48,52,6],
+  ["Winter Seasonal Beer",44,52,6],["Grape Ale",54,34,6],
+  ["Experimental Beer",46,56,6],["Mixed-Style Beer",48,58,6],
+  ["Commercial Specialty Beer",50,60,6],
+  ["Alternative Grain Beer",44,60,6],["Alternative Sugar Beer",46,64,6],
+];
+const _MAP_IDX = {};
+_MAP_CARDS.forEach(([n],i) => _MAP_IDX[n] = i);
+
+// Zone polygons
+const _MAP_ZONES = [
+  {cl:0, pts:[[0,0],[50,0],[50,65],[35,65],[30,50],[0,50]]},
+  {cl:1, pts:[[0,65],[70,65],[70,75],[35,75],[35,100],[0,100]]},
+  {cl:5, pts:[[70,65],[100,65],[100,100],[35,100],[35,75],[70,75]]},
+  {cl:2, pts:[[50,0],[100,0],[100,60],[65,60],[65,65],[50,65]]},
+  {cl:3, pts:[[65,45],[100,45],[100,75],[65,75]]},
+  {cl:4, pts:[[0,45],[30,45],[30,85],[0,85]]},
+  {cl:6, pts:[[35,35],[65,35],[65,68],[35,68]]},
+];
+
+// Cluster labels
+const _MAP_LBLS = [
+  {x:22,y:18,cl:0,t:'ALE'},       {x:16,y:88,cl:1,t:'LAGER'},
+  {x:76,y:8, cl:2,t:'BELGA / SOUR'},{x:82,y:55,cl:3,t:'WEIZEN'},
+  {x:10,y:60,cl:4,t:'STOUT'},     {x:83,y:85,cl:5,t:'LAGER ALEMANYA'},
+  {x:50,y:50,cl:6,t:'ESPECIAL.'},
+];
+
+// Subestil connections [a, b]
+const _MAP_LINKS = [
+  ["English Barley Wine","Old Ale"],["American Barleywine","English Barley Wine"],
+  ["Wheatwine","American Barleywine"],["British Strong Ale","Old Ale"],
+  ["Wee Heavy","Scottish Export"],["Scottish Light","Scottish Heavy"],
+  ["Scottish Heavy","Scottish Export"],["American IPA","Double IPA"],
+  ["American IPA","Hazy IPA"],["English IPA","American IPA"],
+  ["Specialty IPA","American IPA"],["Ordinary Bitter","Best Bitter"],
+  ["Best Bitter","Strong Bitter"],["American Pale Ale","American IPA"],
+  ["British Golden Ale","Best Bitter"],["American Amber Ale","American Pale Ale"],
+  ["American Brown Ale","American Amber Ale"],["British Brown Ale","Dark Mild"],
+  ["Historical Beer: London Brown Ale","British Brown Ale"],
+  ["Dark Mild","Irish Red Ale"],["Irish Red Ale","American Amber Ale"],
+  ["English Porter","American Porter"],
+  ["Historical Beer: Pre-Prohibition Porter","American Porter"],
+  ["Baltic Porter","English Porter"],["American Porter","American Stout"],
+  ["Irish Stout","Irish Extra Stout"],["Irish Extra Stout","Foreign Extra Stout"],
+  ["Irish Stout","American Stout"],["American Stout","Imperial Stout"],
+  ["Sweet Stout","Oatmeal Stout"],["Sweet Stout","Tropical Stout"],
+  ["Irish Stout","Sweet Stout"],["California Common","Cream Ale"],
+  ["Classic Style Smoked Beer","Rauchbier"],
+  ["Specialty Smoked Beer","Classic Style Smoked Beer"],
+  ["Wood-Aged Beer","Specialty Wood-Aged Beer"],
+  ["Lambic","Gueuze"],["Lambic","Fruit Lambic"],
+  ["Straight Sour Beer","Lambic"],
+  ["Mixed-Fermentation Sour Beer","Straight Sour Beer"],
+  ["Brett Beer","Mixed-Fermentation Sour Beer"],
+  ["Wild Specialty Beer","Brett Beer"],
+  ["Belgian Single","Belgian Blond Ale"],["Belgian Pale Ale","Belgian Single"],
+  ["Belgian Blond Ale","Belgian Golden Strong Ale"],
+  ["Belgian Dubbel","Belgian Tripel"],
+  ["Belgian Tripel","Belgian Golden Strong Ale"],
+  ["Belgian Dark Strong Ale","Belgian Dubbel"],
+  ["Oud Bruin","Flanders Red Ale"],["Saison","Bière de Garde"],
+  ["Kolsch","Altbier"],
+  ["Weissbier","Dunkles Weissbier"],["Dunkles Weissbier","Weizenbock"],
+  ["Berliner Weisse","Gose"],
+  ["Historical Beer: Lichtenhainer","Berliner Weisse"],
+  ["Historical Beer: Piwo Grodziskie","Berliner Weisse"],
+  ["Czech Pale Lager","Czech Premium Pale Lager"],
+  ["Czech Premium Pale Lager","Czech Amber Lager"],
+  ["Czech Amber Lager","Czech Dark Lager"],
+  ["German Pils","Czech Premium Pale Lager"],
+  ["German Leichtbier","German Pils"],
+  ["American Light Lager","American Lager"],
+  ["American Lager","Historical Beer: Pre-Prohibition Lager"],
+  ["International Pale Lager","American Lager"],
+  ["International Amber Lager","International Pale Lager"],
+  ["International Dark Lager","International Amber Lager"],
+  ["Munich Helles","Festbier"],["Munich Helles","German Helles Exportbier"],
+  ["Historical Beer: Kellerbier","Munich Helles"],
+  ["Vienna Lager","Marzen"],["Munich Dunkel","Schwarzbier"],
+  ["Munich Helles","Munich Dunkel"],["Helles Bock","Munich Helles"],
+  ["Dunkles Bock","Helles Bock"],["Doppelbock","Dunkles Bock"],
+  ["Eisbock","Doppelbock"],
 ];
 
 function renderMapView() {
   const canvas = el('map-cv'); if (!canvas) return;
   const W = canvas.parentElement.clientWidth || 320;
-  const H = Math.round(W * 0.85); // slightly taller than wide
+  const H = Math.round(W * 0.88);
   canvas.width  = W * devicePixelRatio;
   canvas.height = H * devicePixelRatio;
   canvas.style.height = H + 'px';
   const ctx = canvas.getContext('2d');
   ctx.scale(devicePixelRatio, devicePixelRatio);
 
-  const PAD = {l:4, r:4, t:4, b:4};
-  const CW = W - PAD.l - PAD.r;
-  const CH = H - PAD.t - PAD.b;
+  function toX(px) { return (px - _mapVP.x0) / (_mapVP.x1 - _mapVP.x0) * W; }
+  function toY(py) { return (py - _mapVP.y0) / (_mapVP.y1 - _mapVP.y0) * H; }
 
-  // Map poster coords (0-100) to canvas pixels
-  function toX(px) { return PAD.l + (px - _mapVP.x0) / (_mapVP.x1 - _mapVP.x0) * CW; }
-  function toY(py) { return PAD.t + (py - _mapVP.y0) / (_mapVP.y1 - _mapVP.y0) * CH; }
-
-  // Background
-  ctx.fillStyle = '#0c0c0c';
+  ctx.fillStyle = '#111';
   ctx.fillRect(0, 0, W, H);
 
-  // ── Cluster labels (faint background) ─────────────────────
-  ctx.textAlign = 'center';
-  _MAP_LABELS.forEach(lb => {
+  // Zones
+  _MAP_ZONES.forEach(z => {
+    const pts = z.pts.map(([px,py]) => [toX(px), toY(py)]);
+    ctx.beginPath();
+    pts.forEach(([x,y],i) => i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y));
+    ctx.closePath();
+    ctx.fillStyle = _MAP_CL[z.cl].fill; ctx.fill();
+    ctx.strokeStyle = _MAP_CL[z.cl].dot + '44';
+    ctx.lineWidth = 0.75; ctx.setLineDash([3,4]); ctx.stroke(); ctx.setLineDash([]);
+  });
+
+  // ALE/LAGER divider
+  const dy = toY(65);
+  if (dy > 0 && dy < H) {
+    ctx.strokeStyle = 'rgba(255,255,255,.1)'; ctx.lineWidth = 1;
+    ctx.setLineDash([5,6]);
+    ctx.beginPath(); ctx.moveTo(0, dy); ctx.lineTo(W, dy); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Links (drawn before dots)
+  const vpW = _mapVP.x1 - _mapVP.x0;
+  const pos = {};
+  _MAP_CARDS.forEach(([n,px,py]) => { pos[n] = [toX(px), toY(py)]; });
+
+  _MAP_LINKS.forEach(([a, b]) => {
+    const ai = _MAP_IDX[a], bi = _MAP_IDX[b];
+    if (ai === undefined || bi === undefined) return;
+    const [apx,apy] = _MAP_CARDS[ai].slice(1,3);
+    const [bpx,bpy] = _MAP_CARDS[bi].slice(1,3);
+    if (apx<_mapVP.x0-5||apx>_mapVP.x1+5||apy<_mapVP.y0-5||apy>_mapVP.y1+5) return;
+    if (bpx<_mapVP.x0-5||bpx>_mapVP.x1+5||bpy<_mapVP.y0-5||bpy>_mapVP.y1+5) return;
+    const [ax,ay] = pos[a], [bx,by] = pos[b];
+    const clA = _MAP_CARDS[ai][3], clB = _MAP_CARDS[bi][3];
+    ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(bx,by);
+    ctx.strokeStyle = clA===clB ? _MAP_CL[clA].dot+'55' : 'rgba(255,255,255,.18)';
+    ctx.lineWidth = Math.max(0.5, 0.8*(100/vpW));
+    ctx.stroke();
+  });
+
+  // Cluster labels
+  _MAP_LBLS.forEach(lb => {
     const lx = toX(lb.x), ly = toY(lb.y);
-    if (lx < -20 || lx > W+20 || ly < -20 || ly > H+20) return;
-    ctx.font = 'bold 9px Barlow Condensed,sans-serif';
-    ctx.fillStyle = 'rgba(255,255,255,.06)';
+    if (lx < -30 || lx > W+30 || ly < -20 || ly > H+20) return;
+    const sz = Math.min(11, Math.max(7, Math.round(9*(100/vpW))));
+    ctx.font = `500 ${sz}px Barlow Condensed,sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = _MAP_CL[lb.cl].dot + '99';
     ctx.fillText(lb.t, lx, ly);
   });
 
-  // ── ALE / LAGER dividing line ──────────────────────────────
-  const divY = toY(62); // approximate division between ale and lager territory
-  if (divY > 0 && divY < H) {
-    ctx.strokeStyle = 'rgba(255,255,255,.06)';
-    ctx.lineWidth = 1;
-    ctx.setLineDash([4, 6]);
-    ctx.beginPath(); ctx.moveTo(PAD.l, divY); ctx.lineTo(PAD.l+CW, divY); ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.font = 'bold 8px Barlow Condensed,sans-serif';
-    ctx.fillStyle = 'rgba(255,255,255,.1)';
-    ctx.textAlign = 'right';
-    ctx.fillText('ALE ↑', PAD.l + CW - 4, divY - 3);
-    ctx.fillText('LAGER ↓', PAD.l + CW - 4, divY + 10);
-  }
-
-  // ── Get cards to show ──────────────────────────────────────
+  // Get cards to show
   let cards = getVisibleCards();
   if (cardFilter === 'possible') {
     const tp = new Set(Object.values(gameState?.teams?.[game.teamId]?.players||{})
@@ -395,63 +551,61 @@ function renderMapView() {
     cards = cards.filter(c => c.name.toLowerCase().includes(q) || c.category.toLowerCase().includes(q));
   }
 
-  // Score and sort: worst first (drawn behind), best on top
+  // Score + sort worst-first so best appear on top
   const scored = cards.map(c => ({ c, pct: explorerScoreCard(c) }));
   scored.sort((a, b) => a.pct - b.pct);
 
   _mapHits = [];
 
   scored.forEach(({c, pct}) => {
-    const coords = _CARD_COORDS[c.name];
-    if (!coords) return; // unmapped card — skip
-    const [px, py] = coords;
-
-    // Only draw if within current viewport
-    if (px < _mapVP.x0 - 2 || px > _mapVP.x1 + 2 || py < _mapVP.y0 - 2 || py > _mapVP.y1 + 2) return;
+    const mc_entry = _MAP_CARDS.find(e => e[0] === c.name);
+    if (!mc_entry) return;
+    const [, px, py, cl] = mc_entry;
+    if (px < _mapVP.x0-2 || px > _mapVP.x1+2 || py < _mapVP.y0-2 || py > _mapVP.y1+2) return;
 
     const cx = toX(px), cy = toY(py);
     const myState = cardStates[c.id] || 'normal';
     const isDisc  = myState === 'discarded';
     const isPoss  = myState === 'possible';
     const mc = matchClass(pct, isDisc);
+    const scale = 100 / vpW;
+    const r = Math.max(3, Math.min(5.5, 4.5 * scale));
 
-    // Radius: fixed size, slightly bigger for possible
-    const r = isPoss ? 6 : 5;
-
-    // Alpha
-    const alpha = isDisc ? 0.25 : !EF.active ? 0.75 : Math.max(0.25, pct < 0 ? 0.6 : pct / 100);
-
-    // Fill
-    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2);
-    if (isPoss) {
-      ctx.fillStyle = 'rgba(200,150,10,0.9)';
-    } else {
-      ctx.fillStyle = mc.color;
+    // Probability ring
+    if (pct >= 0) {
+      const rr = r + Math.max(2, 2.5*scale);
+      ctx.beginPath(); ctx.arc(cx, cy, rr, 0, Math.PI*2);
+      ctx.strokeStyle = mc.color;
+      ctx.lineWidth = Math.max(1, 1.5*scale);
+      ctx.globalAlpha = Math.max(0.25, pct/100);
+      ctx.stroke(); ctx.globalAlpha = 1;
     }
-    ctx.globalAlpha = alpha;
+
+    // Dot fill
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2);
+    ctx.fillStyle = isPoss ? 'rgba(200,150,10,.9)' : _MAP_CL[cl].dot;
+    ctx.globalAlpha = isDisc ? 0.25 : !EF.active ? 0.82 : Math.max(0.3, pct<0 ? 0.6 : pct/100*0.9+0.1);
     ctx.fill();
+    ctx.globalAlpha = 1;
 
     // Possible: gold ring
     if (isPoss) {
-      ctx.beginPath(); ctx.arc(cx, cy, r + 2.5, 0, Math.PI*2);
-      ctx.strokeStyle = '#E8C040';
-      ctx.lineWidth = 1.5;
-      ctx.globalAlpha = 0.85;
-      ctx.stroke();
+      ctx.beginPath(); ctx.arc(cx, cy, r+2.5, 0, Math.PI*2);
+      ctx.strokeStyle = '#E8C040'; ctx.lineWidth = 1.5;
+      ctx.globalAlpha = 0.85; ctx.stroke(); ctx.globalAlpha = 1;
     }
 
-    ctx.globalAlpha = 1;
-
-    // Label for high-match cards (when zoomed in enough)
-    const vpW = _mapVP.x1 - _mapVP.x0;
-    if (!isDisc && vpW < 60 && ((!EF.active && !isPoss) ? false : (EF.active ? pct >= 60 : isPoss))) {
-      ctx.fillStyle = 'rgba(255,255,255,.75)';
-      ctx.font = 'bold 7px Barlow Condensed,sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(c.number, cx, cy - r - 2);
+    // BJCP number label when zoomed in
+    if (vpW < 30) {
+      const meta = _CARD_META[c.name];
+      const lbl = meta ? meta[0] : c.number || '';
+      const sz = Math.min(8, Math.round(7*scale));
+      ctx.font = `500 ${sz}px Barlow Condensed,sans-serif`;
+      ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(255,255,255,.8)';
+      ctx.fillText(lbl, cx, cy - r - 2);
     }
 
-    _mapHits.push({ c, pct, cx, cy, r: r + 7, state: myState });
+    _mapHits.push({ c, pct, cx, cy, r: r+7, cl, state: myState });
   });
 }
 // Map events (set up once)
@@ -637,44 +791,42 @@ function renderMapView() {
 
 // Quick card modal (shared by map tap + grid cell tap)
 function showQuickCardModal(c) {
-  const pct = explorerScoreCard(c);
-  const mc  = matchClass(pct, cardStates[c.id]==='discarded');
+  const pct  = explorerScoreCard(c);
+  const mc   = matchClass(pct, cardStates[c.id]==='discarded');
+  const meta = _CARD_META[c.name] || [c.number||'', c.category||''];
 
-  // Build compact stats row: ABV · IBU · SRM
   const abvTxt = c.abvMin!=null ? `${c.abvMin}–${c.abvMax}%` : '—';
   const ibuTxt = c.ibuMin!=null ? `${c.ibuMin}–${c.ibuMax}` : '—';
-  const srmTxt = c.srmMin!=null ? `${c.srmMin}–${c.srmMax}` : '—';
-
-  // SRM color swatch
   const srmMid = c.srmMin!=null ? (c.srmMin+c.srmMax)/2 : null;
   const srmCol = srmMid ? srmToColor(srmMid) : '#444';
+  const srmTxt = c.srmMin!=null ? `${c.srmMin}–${c.srmMax}` : '—';
 
-  // % badge
   const pctBlock = pct>=0
-    ? `<div style="font-family:var(--fd);font-size:2rem;color:${mc.color};line-height:1;margin-bottom:2px">${pct}%</div>
-       <div style="font-family:var(--fu);font-size:.6rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--m)">Coincidència</div>`
+    ? `<div style="background:var(--k3);padding:10px 8px;text-align:center">
+         <div style="font-family:var(--fd);font-size:1.5rem;color:${mc.color};line-height:1;margin-bottom:2px">${pct}%</div>
+         <div style="font-family:var(--fu);font-size:.58rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--m)">Coincid.</div>
+       </div>`
     : '';
 
-  showModal(c.number+' — '+c.name, `
-    <div style="font-family:var(--fu);font-size:.68rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--r);margin-bottom:14px">${c.category}</div>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr ${pct>=0?'1fr':'0'};gap:8px;margin-bottom:14px">
-      <div style="background:var(--k3);padding:10px 8px;text-align:center">
-        <div style="font-family:var(--fd);font-size:1.1rem;color:var(--sl)">${abvTxt}</div>
-        <div style="font-family:var(--fu);font-size:.58rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--m);margin-top:3px">ABV</div>
+  showModal(`${meta[0]} — ${c.name}`, `
+    <div style="font-family:var(--fu);font-size:.65rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--r);margin-bottom:12px">${meta[1]}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr${pct>=0?' 1fr':''};gap:6px">
+      <div style="background:var(--k3);padding:9px 6px;text-align:center">
+        <div style="font-family:var(--fd);font-size:1.05rem;color:var(--sl)">${abvTxt}</div>
+        <div style="font-family:var(--fu);font-size:.56rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--m);margin-top:3px">ABV</div>
       </div>
-      <div style="background:var(--k3);padding:10px 8px;text-align:center">
-        <div style="font-family:var(--fd);font-size:1.1rem;color:var(--sl)">${ibuTxt}</div>
-        <div style="font-family:var(--fu);font-size:.58rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--m);margin-top:3px">IBU</div>
+      <div style="background:var(--k3);padding:9px 6px;text-align:center">
+        <div style="font-family:var(--fd);font-size:1.05rem;color:var(--sl)">${ibuTxt}</div>
+        <div style="font-family:var(--fu);font-size:.56rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--m);margin-top:3px">IBU</div>
       </div>
-      <div style="background:var(--k3);padding:10px 8px;text-align:center">
-        <div style="display:flex;align-items:center;justify-content:center;gap:5px">
-          <div style="width:14px;height:14px;background:${srmCol};flex-shrink:0;border:1px solid rgba(255,255,255,.1)"></div>
-          <span style="font-family:var(--fd);font-size:1.1rem;color:var(--sl)">${srmTxt}</span>
+      <div style="background:var(--k3);padding:9px 6px;text-align:center">
+        <div style="display:flex;align-items:center;justify-content:center;gap:4px">
+          <div style="width:12px;height:12px;background:${srmCol};flex-shrink:0;border:1px solid rgba(255,255,255,.1)"></div>
+          <span style="font-family:var(--fd);font-size:1.05rem;color:var(--sl)">${srmTxt}</span>
         </div>
-        <div style="font-family:var(--fu);font-size:.58rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--m);margin-top:3px">SRM</div>
+        <div style="font-family:var(--fu);font-size:.56rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--m);margin-top:3px">SRM</div>
       </div>
-      ${pct>=0 ? `<div style="background:var(--k3);padding:10px 8px;text-align:center">${pctBlock}</div>` : ''}
+      ${pctBlock}
     </div>`);
 }
 

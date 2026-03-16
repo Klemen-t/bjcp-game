@@ -1,5 +1,5 @@
 # 🍺 BJCP Beer Style Game — Börn Loka Ales
-**v2026.12 · 15/03/2026**
+**v2026.22 · 15/03/2026**
 
 Joc de cartes multijugador en temps real per identificar estils de cervesa BJCP. Dissenyat per a sessions de cata en grup, optimitzat per a mòbil.
 
@@ -14,7 +14,7 @@ bjcp-game/
 │   └── cards.js      # 116 estils BJCP (dades completes)
 ├── js/
 │   ├── game.js       # Lògica Firebase, sessions, cartes d'acció
-│   └── ui.js         # Interfície, vistes, filtres sensorials
+│   └── ui.js         # Interfície, vistes, filtres sensorials, mapa
 └── README.md         # Aquest document
 ```
 
@@ -35,10 +35,9 @@ cd bjcp-game
 
 1. Ves a https://firebase.google.com
 2. Crea un nou projecte (ex: `bjcp-game`)
-3. Desactiva Google Analytics (opcional)
-4. Al panell, ves a **Realtime Database** → **Crear base de dades**
-5. Tria la ubicació (Europe - West recomanat)
-6. Inicia en **mode test** (30 dies d'accés obert; canvia les regles després)
+3. Al panell, ves a **Realtime Database** → **Crear base de dades**
+4. Tria la ubicació (Europe - West recomanat)
+5. Inicia en **mode test**
 
 ### 3. Configura la connexió Firebase
 
@@ -66,8 +65,6 @@ A Google Cloud Console → APIs i serveis → Credencials → la teva API Key �
 https://el-teu-usuari.github.io/*
 ```
 
-Això evita usos no autoritzats de la clau des d'altres dominis.
-
 ### 5. Puja a GitHub i activa Pages
 
 ```bash
@@ -78,13 +75,9 @@ git push origin main
 
 A GitHub → Settings → Pages → Source: **Deploy from branch** → `main` / `root` → Save.
 
-La URL serà: `https://klemen-t.github.io/bjcp-game/`
-
 ---
 
 ## 🔒 Regles Firebase (producció)
-
-Un cop fetes les proves, canvia les regles de la Realtime Database a:
 
 ```json
 {
@@ -106,49 +99,65 @@ Un cop fetes les proves, canvia les regles de la Realtime Database a:
 ### El Master (organitzador)
 1. Entra a la web → selecciona **Master**
 2. Introdueix el teu nom i la contrasenya Master
-3. Tria **Crear Partida** → el joc genera un codi de 5 lletres
+3. Tria **Crear Partida** → codi de 5 lletres
 4. Comparteix el codi amb els participants
 5. Quan tots estiguin connectats → **Iniciar Partida**
 
-**Cada ronda:**
-- Selecciona la cervesa i prem **Iniciar ronda amb aquesta cervesa**
-- Els equips examinen les cartes i envien propostes
-- Jutja cada proposta (correcta / incorrecta) i assigna punts i cartes d'acció
-- Quan totes les propostes estiguin jutjades, prem **Revelar Resultat a Tots**
-- Prem **Pròxima Ronda** per continuar
+**Cada ronda:** selecciona la cervesa → els equips fan propostes → jutja → revela resultats → pròxima ronda.
 
 ### Els Equips (participants)
-1. Entren a la mateixa URL → seleccionen **Equip**
-2. Introdueixen el codi de partida, el nom i l'equip
-3. Usen les tres vistes de la pestanya **Cartes**:
-   - **☰ Llista** — vista clàssica amb detalls expandibles
-   - **⊞ Graella** — vista compacta agrupada per categoria
-   - **◉ Mapa** — scatter plot IBU vs ABV
+1. Entren a la URL → seleccionen **Equip**
+2. Introdueixen el codi de partida, nom i equip
+3. Usen les **3 vistes** de la pestanya Cartes:
+   - **☰ Llista** — estils ordenats per % coincidència quan hi ha filtres actius
+   - **◉ Mapa** — mapa de famílies BJCP basat en el poster "Very Many Varieties of Beer"
 4. Obren **🎛️ Filtres sensorials** per descriure el que perceben
 5. Marquen cartes com ⭐ Possible o ✕ Descartada
-6. Quan estan segurs, premen 🎯 sobre una carta possible per proposar-la
-7. Usen les **Cartes d'Acció** (pestanya ⚡) per obtenir informació o sabotejar rivals
+6. Premen 🎯 sobre una carta possible per proposar-la
+7. Usen les **Cartes d'Acció** (pestanya ⚡)
+
+---
+
+## 🗺️ Mapa de famílies BJCP
+
+El mapa segueix la disposició del poster "The Very Many Varieties of Beer":
+
+| Color | Família |
+|-------|---------|
+| 🟢 Verd | Ale (britànica, americana, pale ale, IPA) |
+| 🔵 Blau | Lager (americana, internacional) |
+| 🟠 Taronja | Belga / Sour (lambic, saison, trappist) |
+| 🟣 Lila | Weizen / Ale alemanya (kölsch, altbier) |
+| 🔴 Vermell | Stout / Porter |
+| 🩵 Cian | Lager alemanya (Munich, Märzen, Bocks) |
+| ⬜ Gris | Especialitats |
+
+Les **línies** entre punts indiquen relacions de subestil o família directa.
+
+Quan hi ha **filtres sensorials actius**, cada estil mostra un anell de color:
+- 🟢 **Verd** ≥70% coincidència
+- 🟡 **Groc** 40–69%
+- 🔴 **Vermell** <40%
+
+**Controls del mapa:** dos dits per ampliar · un dit per desplaçar · doble toc per reiniciar.
 
 ---
 
 ## 🎛️ Filtres Sensorials
 
-El sistema de filtres permet descriure el que es percep i veure quins estils coincideixen. El percentatge de coincidència es calcula en temps real i apareix a totes tres vistes.
-
 | Filtre | Opcions |
 |--------|---------|
-| **Color** | Banda SRM visual + sliders (Pàl·lid / Daurat / Ambre / Marró / Negre) |
-| **Fermentació** | Ale · Lager · Salvatge · Híbrida |
-| **Alcohol** | Slider 0–15% + dreceres ràpides |
-| **Amargor** | Slider IBU + opcions en paraules (Gens / Lleuger / Moderat / Intens / Molt) |
+| **Color** | Banda SRM visual + Pàl·lid (1–4) · Daurat (4–9) · Ambre (9–18) · Marró (18–30) · Negre (30+) |
+| **Fermentació** | Ale (alt-ferm.) · Lager (baix-ferm.) · Salvatge · Híbrida |
+| **Alcohol** | Baix (2–3.5%) · Moderat (3.5–5%) · Normal (5–6.5%) · Alt (6.5–9%) · Fort (9%+) |
+| **Amargor** | Gens (0–12) · Suau (8–25) · Moderat (20–40) · Intens (35–60) · Molt amarg (55+) |
 | **Cos** | Lleuger · Mig · Ple |
-| **Caràcter** | Malta · Llúpol · Torrat · Àcid |
+| **Caràcter** | Malta · Llúpol · Torrat/Cafè · Àcid · Afruitat · Especiat/Herbes · Fumat |
+| **Final** | Sec · Dolç/Residual · Molt carbonat |
 
 ---
 
 ## 🃏 Cartes d'Acció
-
-S'aconsegueixen encertant rondes. S'usen des de la pestanya ⚡.
 
 | Carta | Efecte |
 |-------|--------|
@@ -175,11 +184,9 @@ S'aconsegueixen encertant rondes. S'usen des de la pestanya ⚡.
 | Error havent usat cartes d'info | **−1 pt** |
 | Error sense haver usat cartes d'info | **0 pts** |
 
-La puntuació d'equip mai baixa de 0.
-
 ---
 
-## ⚙️ Panell Master — Pestanyes
+## ⚙️ Panell Master
 
 | Pestanya | Contingut |
 |----------|-----------|
@@ -188,13 +195,11 @@ La puntuació d'equip mai baixa de 0.
 | **📋 Log** | Historial de propostes, info revelada, activitat de cartes |
 | **💬 Missatge** | Enviar avisos a equips o jugadors individuals |
 
-**Recuperar partida**: si el Master tanca el navegador, pot recuperar la sessió amb la contrasenya i el codi.
-
 ---
 
 ## ➕ Afegir o modificar estils BJCP
 
-Obre `data/cards.js`. Cada carta segueix aquest format:
+Obre `data/cards.js`. Format de cada carta:
 
 ```javascript
 {
@@ -204,10 +209,7 @@ Obre `data/cards.js`. Cada carta segueix aquest format:
   category: "IPA",
   categoryNumber: 21,
   overallImpression: "...",
-  aroma: "...",
-  appearance: "...",
-  flavor: "...",
-  mouthfeel: "...",
+  aroma: "...", appearance: "...", flavor: "...", mouthfeel: "...",
   ibuMin: 40, ibuMax: 70,
   abvMin: 5.5, abvMax: 7.5,
   srmMin: 6,  srmMax: 14,
@@ -216,17 +218,11 @@ Obre `data/cards.js`. Cada carta segueix aquest format:
 }
 ```
 
-Tags que influencien els filtres sensorials:
-- Fermentació: `top-fermented`, `bottom-fermented`, `lagered`, `wild-fermented`
-- Força: `session-strength`, `standard-strength`, `high-strength`, `very-high-strength`
-- Color: `pale-color`, `amber-color`, `dark-color`
-- Caràcter: `malty`, `hoppy`, `roasty`, `sour`, `bitter`, `balanced`
-
 ---
 
 ## 🔑 Contrasenya Master
 
-La validació de la contrasenya es fa comparant el hash SHA-256 de l'entrada amb el hash emmagatzemat directament al codi a `js/ui.js`. Per canviar-la, substitueix el valor del hash per un de propi.
+La validació es fa comparant el hash SHA-256 de l'entrada amb el hash emmagatzemat a `js/ui.js`. Per canviar-la, substitueix el valor del hash per un de propi.
 
 ---
 
