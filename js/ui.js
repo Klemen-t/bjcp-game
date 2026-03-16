@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
 //  UI.JS  —  Interface & interaction logic
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION = 'v2026.20 · 15/03/2026';
+const APP_VERSION = 'v2026.21 · 15/03/2026';
 
 // Add popup slide-up animation
 const _popupStyle = document.createElement('style');
@@ -312,116 +312,148 @@ function renderCurrentCardView() {
 
 // ── MAP VIEW ──────────────────────────────────────────────────
 let _mapHits = [];
-// Map viewport (for pinch zoom + pan)
-const _mapVP = { ibuMin:0, ibuMax:100, abvMin:2, abvMax:12 };
+// Map viewport: x and y in 0-100 poster space, with zoom/pan
+const _mapVP = { x0:0, x1:100, y0:0, y1:100 };
+
+const _CARD_COORDS = {"American Barleywine": [6, 8], "English Barley Wine": [8, 12], "Wheatwine": [10, 8], "Wee Heavy": [5, 22], "British Strong Ale": [11, 22], "Old Ale": [18, 16], "American Strong Ale": [16, 8], "Scottish Light": [4, 28], "Scottish Heavy": [4, 32], "Scottish Export": [6, 36], "Double IPA": [10, 28], "American IPA": [14, 34], "English IPA": [16, 40], "Hazy IPA": [10, 38], "Specialty IPA": [12, 44], "American Pale Ale": [28, 20], "British Golden Ale": [26, 28], "Ordinary Bitter": [20, 36], "Best Bitter": [22, 42], "Strong Bitter": [16, 46], "Australian Sparkling Ale": [30, 34], "Blonde Ale": [38, 16], "Cream Ale": [34, 26], "American Wheat Beer": [44, 12], "Dark Mild": [36, 32], "Irish Red Ale": [32, 40], "American Amber Ale": [44, 22], "American Brown Ale": [42, 28], "British Brown Ale": [40, 34], "Historical Beer: London Brown Ale": [38, 40], "English Porter": [20, 50], "American Porter": [22, 56], "Historical Beer: Pre-Prohibition Porter": [18, 56], "Irish Stout": [8, 54], "Irish Extra Stout": [8, 58], "Foreign Extra Stout": [12, 60], "American Stout": [22, 62], "Imperial Stout": [8, 68], "Sweet Stout": [18, 68], "Oatmeal Stout": [10, 76], "Tropical Stout": [14, 72], "Baltic Porter": [6, 80], "Historical Beer: Kentucky Common": [28, 68], "California Common": [26, 72], "Rauchbier": [30, 82], "Classic Style Smoked Beer": [24, 80], "Specialty Smoked Beer": [20, 80], "Wood-Aged Beer": [16, 84], "Specialty Wood-Aged Beer": [14, 84], "Lambic": [60, 22], "Gueuze": [68, 18], "Fruit Lambic": [76, 18], "Straight Sour Beer": [60, 28], "Mixed-Fermentation Sour Beer": [62, 32], "Brett Beer": [58, 34], "Wild Specialty Beer": [64, 28], "Witbier": [54, 22], "Oud Bruin": [70, 26], "Flanders Red Ale": [76, 28], "Saison": [78, 22], "Bière de Garde": [82, 26], "Belgian Single": [80, 34], "Belgian Pale Ale": [84, 34], "Belgian Blond Ale": [82, 40], "Belgian Dark Strong Ale": [82, 50], "Belgian Golden Strong Ale": [88, 44], "Belgian Tripel": [88, 52], "Belgian Dubbel": [78, 46], "Kolsch": [66, 52], "Altbier": [60, 52], "Historical Beer: Roggenbier": [66, 58], "Weissbier": [80, 58], "Dunkles Weissbier": [74, 62], "Weizenbock": [70, 66], "Berliner Weisse": [84, 66], "Gose": [88, 62], "Historical Beer: Lichtenhainer": [82, 72], "Historical Beer: Piwo Grodziskie": [76, 72], "Historical Beer: Sahti": [68, 72], "German Pils": [42, 80], "Czech Pale Lager": [48, 82], "Czech Premium Pale Lager": [50, 86], "Czech Amber Lager": [54, 82], "Czech Dark Lager": [58, 86], "American Lager": [26, 78], "American Light Lager": [18, 84], "Historical Beer: Pre-Prohibition Lager": [22, 76], "German Leichtbier": [38, 86], "International Pale Lager": [58, 78], "International Amber Lager": [62, 78], "International Dark Lager": [64, 84], "Munich Helles": [76, 82], "Festbier": [80, 78], "German Helles Exportbier": [72, 76], "Historical Beer: Kellerbier": [70, 78], "Marzen": [80, 84], "Vienna Lager": [74, 88], "Munich Dunkel": [82, 90], "Schwarzbier": [84, 86], "Helles Bock": [76, 72], "Dunkles Bock": [84, 76], "Doppelbock": [90, 80], "Eisbock": [92, 84], "Fruit Beer": [48, 42], "Specialty Fruit Beer": [50, 46], "Fruit and Spice Beer": [52, 42], "Spice, Herb, or Vegetable Beer": [52, 48], "Specialty Spice Beer": [54, 46], "Autumn Seasonal Beer": [48, 52], "Winter Seasonal Beer": [44, 52], "Grape Ale": [54, 34], "Experimental Beer": [46, 56], "Mixed-Style Beer": [48, 58], "Commercial Specialty Beer": [50, 60], "Alternative Grain Beer": [44, 60], "Alternative Sugar Beer": [46, 64]};
+
+// Cluster labels for orientation (drawn as faint background text)
+const _MAP_LABELS = [
+  {x:12, y:4,  t:'ALE FORTA'},
+  {x:12, y:32, t:'IPA'},
+  {x:10, y:60, t:'STOUT'},
+  {x:10, y:80, t:'PORTER'},
+  {x:36, y:24, t:'PALE ALE'},
+  {x:44, y:35, t:'ALE'},
+  {x:62, y:24, t:'SOUR'},
+  {x:84, y:40, t:'BELGA'},
+  {x:80, y:62, t:'WEIZEN'},
+  {x:44, y:70, t:'LAGER'},
+  {x:76, y:85, t:'LAGER ALEMANYA'},
+];
 
 function renderMapView() {
   const canvas = el('map-cv'); if (!canvas) return;
   const W = canvas.parentElement.clientWidth || 320;
-  const H = 360;
+  const H = Math.round(W * 0.85); // slightly taller than wide
   canvas.width  = W * devicePixelRatio;
   canvas.height = H * devicePixelRatio;
   canvas.style.height = H + 'px';
   const ctx = canvas.getContext('2d');
   ctx.scale(devicePixelRatio, devicePixelRatio);
 
-  const MAP_IBU_MIN = _mapVP.ibuMin, MAP_IBU_MAX = _mapVP.ibuMax;
-  const MAP_ABV_MIN = _mapVP.abvMin, MAP_ABV_MAX = _mapVP.abvMax;
-  const PAD = { l:36, r:10, t:14, b:28 };
-  const CW = W-PAD.l-PAD.r, CH = H-PAD.t-PAD.b;
+  const PAD = {l:4, r:4, t:4, b:4};
+  const CW = W - PAD.l - PAD.r;
+  const CH = H - PAD.t - PAD.b;
 
-  function ibuToX(ibu) { return PAD.l + (Math.min(Math.max(ibu,MAP_IBU_MIN),MAP_IBU_MAX)-MAP_IBU_MIN)/(MAP_IBU_MAX-MAP_IBU_MIN)*CW; }
-  function abvToY(abv) { return PAD.t + CH - (Math.min(Math.max(abv,MAP_ABV_MIN),MAP_ABV_MAX)-MAP_ABV_MIN)/(MAP_ABV_MAX-MAP_ABV_MIN)*CH; }
+  // Map poster coords (0-100) to canvas pixels
+  function toX(px) { return PAD.l + (px - _mapVP.x0) / (_mapVP.x1 - _mapVP.x0) * CW; }
+  function toY(py) { return PAD.t + (py - _mapVP.y0) / (_mapVP.y1 - _mapVP.y0) * CH; }
 
-  ctx.fillStyle='#0f0f0f'; ctx.fillRect(0,0,W,H);
+  // Background
+  ctx.fillStyle = '#0c0c0c';
+  ctx.fillRect(0, 0, W, H);
 
-  // Grid
-  ctx.strokeStyle='rgba(255,255,255,.05)'; ctx.lineWidth=1;
-  for (const ibu of [0,10,20,30,40,50,60,70,80,90,100]) {
-    const x=ibuToX(ibu);
-    ctx.beginPath(); ctx.moveTo(x,PAD.t); ctx.lineTo(x,PAD.t+CH); ctx.stroke();
-    ctx.fillStyle='rgba(255,255,255,.22)'; ctx.font='bold 7px Barlow Condensed,sans-serif';
-    ctx.textAlign='center'; ctx.fillText(ibu, x, PAD.t+CH+11);
+  // ── Cluster labels (faint background) ─────────────────────
+  ctx.textAlign = 'center';
+  _MAP_LABELS.forEach(lb => {
+    const lx = toX(lb.x), ly = toY(lb.y);
+    if (lx < -20 || lx > W+20 || ly < -20 || ly > H+20) return;
+    ctx.font = 'bold 9px Barlow Condensed,sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,.06)';
+    ctx.fillText(lb.t, lx, ly);
+  });
+
+  // ── ALE / LAGER dividing line ──────────────────────────────
+  const divY = toY(62); // approximate division between ale and lager territory
+  if (divY > 0 && divY < H) {
+    ctx.strokeStyle = 'rgba(255,255,255,.06)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 6]);
+    ctx.beginPath(); ctx.moveTo(PAD.l, divY); ctx.lineTo(PAD.l+CW, divY); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.font = 'bold 8px Barlow Condensed,sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,.1)';
+    ctx.textAlign = 'right';
+    ctx.fillText('ALE ↑', PAD.l + CW - 4, divY - 3);
+    ctx.fillText('LAGER ↓', PAD.l + CW - 4, divY + 10);
   }
-  for (const abv of [2,3,4,5,6,7,8,9,10,11,12]) {
-    const y=abvToY(abv);
-    ctx.beginPath(); ctx.moveTo(PAD.l,y); ctx.lineTo(PAD.l+CW,y); ctx.stroke();
-    ctx.fillStyle='rgba(255,255,255,.22)'; ctx.font='bold 7px Barlow Condensed,sans-serif';
-    ctx.textAlign='right'; ctx.fillText(abv+'%', PAD.l-3, y+3);
-  }
-  ctx.fillStyle='rgba(200,200,200,.25)'; ctx.font='bold 9px Barlow Condensed,sans-serif';
-  ctx.textAlign='center'; ctx.fillText('IBU', PAD.l+CW/2, H-3);
 
-  // Filter zone highlight
-  if (EF.active && (EF.ibuMin>MAP_IBU_MIN||EF.ibuMax<MAP_IBU_MAX||EF.abvMin>MAP_ABV_MIN||EF.abvMax<MAP_ABV_MAX)) {
-    const x1=ibuToX(EF.ibuMin), x2=ibuToX(EF.ibuMax);
-    const y1=abvToY(EF.abvMax), y2=abvToY(EF.abvMin);
-    ctx.fillStyle='rgba(255,255,255,.04)'; ctx.fillRect(x1,y1,x2-x1,y2-y1);
-    ctx.strokeStyle='rgba(255,255,255,.15)'; ctx.lineWidth=1; ctx.strokeRect(x1,y1,x2-x1,y2-y1);
-  }
-
-  // Get visible cards (respects filter + state filter)
+  // ── Get cards to show ──────────────────────────────────────
   let cards = getVisibleCards();
-  if (cardFilter==='possible') {
-    const tp=new Set(Object.values(gameState?.teams?.[game.teamId]?.players||{})
-      .flatMap(p=>Object.entries(p.cardStates||{}).filter(([,st])=>st==='possible').map(([id])=>id)));
-    cards=cards.filter(c=>tp.has(c.id));
-  } else if (cardFilter==='discarded') {
-    const td=new Set(Object.values(gameState?.teams?.[game.teamId]?.players||{})
-      .flatMap(p=>Object.entries(p.cardStates||{}).filter(([,st])=>st==='discarded').map(([id])=>id)));
-    cards=cards.filter(c=>td.has(c.id));
+  if (cardFilter === 'possible') {
+    const tp = new Set(Object.values(gameState?.teams?.[game.teamId]?.players||{})
+      .flatMap(p => Object.entries(p.cardStates||{}).filter(([,st])=>st==='possible').map(([id])=>id)));
+    cards = cards.filter(c => tp.has(c.id));
+  } else if (cardFilter === 'discarded') {
+    const td = new Set(Object.values(gameState?.teams?.[game.teamId]?.players||{})
+      .flatMap(p => Object.entries(p.cardStates||{}).filter(([,st])=>st==='discarded').map(([id])=>id)));
+    cards = cards.filter(c => td.has(c.id));
   }
   if (cardSearch) {
-    const q=cardSearch.toLowerCase();
-    cards=cards.filter(c=>c.name.toLowerCase().includes(q)||c.category.toLowerCase().includes(q));
+    const q = cardSearch.toLowerCase();
+    cards = cards.filter(c => c.name.toLowerCase().includes(q) || c.category.toLowerCase().includes(q));
   }
 
+  // Score and sort: worst first (drawn behind), best on top
+  const scored = cards.map(c => ({ c, pct: explorerScoreCard(c) }));
+  scored.sort((a, b) => a.pct - b.pct);
+
   _mapHits = [];
-  const meta = getCardMeta();
-  // Sort: high match on top (drawn last = visible)
-  const scored = cards.map(c=>({c, pct:explorerScoreCard(c)}));
-  scored.sort((a,b) => a.pct - b.pct); // draw worst first, best on top
 
   scored.forEach(({c, pct}) => {
+    const coords = _CARD_COORDS[c.name];
+    if (!coords) return; // unmapped card — skip
+    const [px, py] = coords;
+
+    // Only draw if within current viewport
+    if (px < _mapVP.x0 - 2 || px > _mapVP.x1 + 2 || py < _mapVP.y0 - 2 || py > _mapVP.y1 + 2) return;
+
+    const cx = toX(px), cy = toY(py);
     const myState = cardStates[c.id] || 'normal';
     const isDisc  = myState === 'discarded';
     const isPoss  = myState === 'possible';
     const mc = matchClass(pct, isDisc);
 
-    const ibu = c.ibuMin!=null ? (c.ibuMin+c.ibuMax)/2 : 35;
-    const abv = c.abvMin!=null ? (c.abvMin+c.abvMax)/2 : 5;
-    const m   = meta[c.id]||{};
-    const r   = m.body==='full'?8 : m.body==='light'?4 : 6;
+    // Radius: fixed size, slightly bigger for possible
+    const r = isPoss ? 6 : 5;
 
-    const x = ibuToX(ibu);
-    const y = abvToY(abv);
+    // Alpha
+    const alpha = isDisc ? 0.25 : !EF.active ? 0.75 : Math.max(0.25, pct < 0 ? 0.6 : pct / 100);
 
     // Fill
-    const alpha = isDisc ? .3 : (!EF.active ? .7 : (pct<0?.6:Math.max(.3, pct/100)));
-    ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2);
-    ctx.fillStyle = mc.color;
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2);
+    if (isPoss) {
+      ctx.fillStyle = 'rgba(200,150,10,0.9)';
+    } else {
+      ctx.fillStyle = mc.color;
+    }
     ctx.globalAlpha = alpha;
     ctx.fill();
 
-    // Possible ring
+    // Possible: gold ring
     if (isPoss) {
-      ctx.beginPath(); ctx.arc(x,y,r+2.5,0,Math.PI*2);
-      ctx.strokeStyle='#fff'; ctx.lineWidth=1.5; ctx.globalAlpha=.8; ctx.stroke();
-    }
-    ctx.globalAlpha=1;
-
-    // Label for high-match
-    if (!isDisc && EF.active && pct>=70 && r>=5) {
-      ctx.fillStyle='rgba(255,255,255,.7)';
-      ctx.font='bold 7px Barlow Condensed,sans-serif';
-      ctx.textAlign='center';
-      ctx.fillText(c.number, x, y-r-2);
+      ctx.beginPath(); ctx.arc(cx, cy, r + 2.5, 0, Math.PI*2);
+      ctx.strokeStyle = '#E8C040';
+      ctx.lineWidth = 1.5;
+      ctx.globalAlpha = 0.85;
+      ctx.stroke();
     }
 
-    _mapHits.push({c, pct, x, y, r: r+6, state: myState});
+    ctx.globalAlpha = 1;
+
+    // Label for high-match cards (when zoomed in enough)
+    const vpW = _mapVP.x1 - _mapVP.x0;
+    if (!isDisc && vpW < 60 && ((!EF.active && !isPoss) ? false : (EF.active ? pct >= 60 : isPoss))) {
+      ctx.fillStyle = 'rgba(255,255,255,.75)';
+      ctx.font = 'bold 7px Barlow Condensed,sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(c.number, cx, cy - r - 2);
+    }
+
+    _mapHits.push({ c, pct, cx, cy, r: r + 7, state: myState });
   });
 }
-
 // Map events (set up once)
 (function(){
   function setupMapEvents() {
@@ -465,28 +497,26 @@ function renderMapView() {
       clearTimeout(_tipTimer); _tipTimer=setTimeout(()=>tt?.classList.remove('show'),2000);
     },{passive:false});
     // ── Helpers: pixel ↔ data coords ────────────────────────────
-    const PADm = {l:36, r:10, t:14, b:28};
     function pxToData(px, py) {
-      const cvW = canvas.offsetWidth  - PADm.l - PADm.r;
-      const cvH = canvas.offsetHeight - PADm.t - PADm.b;
+      const cvW = canvas.offsetWidth;
+      const cvH = canvas.offsetHeight;
       return {
-        ibu: _mapVP.ibuMin + Math.max(0, Math.min(1, (px - PADm.l) / cvW)) * (_mapVP.ibuMax - _mapVP.ibuMin),
-        abv: _mapVP.abvMin + Math.max(0, Math.min(1, 1 - (py - PADm.t) / cvH)) * (_mapVP.abvMax - _mapVP.abvMin)
+        ibu: _mapVP.x0 + Math.max(0, Math.min(1, px / cvW)) * (_mapVP.x1 - _mapVP.x0),
+        abv: _mapVP.y0 + Math.max(0, Math.min(1, py / cvH)) * (_mapVP.y1 - _mapVP.y0)
       };
     }
 
-    function zoomAround(centerIbu, centerAbv, factor) {
-      // factor > 1 → zoom in (reduce range); factor < 1 → zoom out
-      const ibuR0 = _mapVP.ibuMax - _mapVP.ibuMin;
-      const abvR0 = _mapVP.abvMax - _mapVP.abvMin;
-      const ibuR1 = Math.min(105, Math.max(10, ibuR0 / factor));
-      const abvR1 = Math.min(11,  Math.max(1,  abvR0 / factor));
-      const fi = ibuR0 > 0 ? (centerIbu - _mapVP.ibuMin) / ibuR0 : 0.5;
-      const fa = abvR0 > 0 ? (centerAbv - _mapVP.abvMin) / abvR0 : 0.5;
-      _mapVP.ibuMin = Math.max(-2,  Math.min(102 - ibuR1, centerIbu - fi * ibuR1));
-      _mapVP.ibuMax = _mapVP.ibuMin + ibuR1;
-      _mapVP.abvMin = Math.max(0,   Math.min(15  - abvR1, centerAbv - fa * abvR1));
-      _mapVP.abvMax = _mapVP.abvMin + abvR1;
+    function zoomAround(centerX, centerY, factor) {
+      const xR0 = _mapVP.x1 - _mapVP.x0;
+      const yR0 = _mapVP.y1 - _mapVP.y0;
+      const xR1 = Math.min(102, Math.max(8,  xR0 / factor));
+      const yR1 = Math.min(102, Math.max(8,  yR0 / factor));
+      const fx = xR0 > 0 ? (centerX - _mapVP.x0) / xR0 : 0.5;
+      const fy = yR0 > 0 ? (centerY - _mapVP.y0) / yR0 : 0.5;
+      _mapVP.x0 = Math.max(-1,  Math.min(101 - xR1, centerX - fx * xR1));
+      _mapVP.x1 = _mapVP.x0 + xR1;
+      _mapVP.y0 = Math.max(-1,  Math.min(101 - yR1, centerY - fy * yR1));
+      _mapVP.y1 = _mapVP.y0 + yR1;
       renderMapView();
     }
 
@@ -506,9 +536,9 @@ function renderMapView() {
         const center = pxToData(midX, midY);
         _pinch0 = {
           dist:   Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY),
-          ibu:    center.ibu,
-          abv:    center.abv,
-          vpSnap: { ..._mapVP },   // snapshot at gesture start
+          ibu:    center.ibu,  // actually x in poster space
+          abv:    center.abv,  // actually y in poster space
+          vpSnap: { ..._mapVP },
         };
         _pan0 = null;
       } else if (e.touches.length === 1) {
@@ -533,17 +563,15 @@ function renderMapView() {
 
       } else if (e.touches.length === 1 && _pan0) {
         const cur  = pxToData(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
-        // Compute delta from the *snapshot* so there's no drift
         const snap = _pan0.vpSnap;
-        const ibuR = snap.ibuMax - snap.ibuMin;
-        const abvR = snap.abvMax - snap.abvMin;
-        // How much the data point has moved since start
-        const di = _pan0.startIbu - cur.ibu;
-        const da = _pan0.startAbv - cur.abv;
-        _mapVP.ibuMin = Math.max(-2,  Math.min(102 - ibuR, snap.ibuMin + di));
-        _mapVP.ibuMax = _mapVP.ibuMin + ibuR;
-        _mapVP.abvMin = Math.max(0,   Math.min(15  - abvR, snap.abvMin + da));
-        _mapVP.abvMax = _mapVP.abvMin + abvR;
+        const xR = snap.x1 - snap.x0;
+        const yR = snap.y1 - snap.y0;
+        const dx = _pan0.startIbu - cur.ibu;
+        const dy = _pan0.startAbv - cur.abv;
+        _mapVP.x0 = Math.max(-1,  Math.min(101 - xR, snap.x0 + dx));
+        _mapVP.x1 = _mapVP.x0 + xR;
+        _mapVP.y0 = Math.max(-1,  Math.min(101 - yR, snap.y0 + dy));
+        _mapVP.y1 = _mapVP.y0 + yR;
         renderMapView();
       }
     }, {passive:false});
@@ -560,7 +588,7 @@ function renderMapView() {
       const now = Date.now();
       // Double-tap: reset zoom
       if (now - _lastTap < 350 && !_didGesture) {
-        _mapVP.ibuMin=0; _mapVP.ibuMax=100; _mapVP.abvMin=2; _mapVP.abvMax=12;
+        _mapVP.x0=0; _mapVP.x1=100; _mapVP.y0=0; _mapVP.y1=100;
         renderMapView();
         _lastTap = 0;
         return;
