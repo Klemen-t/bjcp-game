@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
 //  UI.JS  —  Interface & interaction logic
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION = 'v2026.24 · 23/03/2026';
+const APP_VERSION = 'v2026.25 · 23/03/2026';
 
 // ═══ THEME TOGGLE ════════════════════════════════════════════
 function toggleTheme() {
@@ -1281,7 +1281,7 @@ async function startGame() {
 
 // ═══ TAB NAV ══════════════════════════════════════════════════════
 function switchTab(tab) {
-  ['cards','actions','ranking','messages'].forEach(t => {
+  ['cards','actions','ranking','history','messages'].forEach(t => {
     el('tab-'+t)  && (el('tab-'+t).style.display  = t===tab?'block':'none');
     el('nav-'+t)?.classList.toggle('active', t===tab);
   });
@@ -1371,6 +1371,7 @@ function updateTeamView(s) {
   renderCurrentCardView();
   renderTeamGuesses(s);
   updateRanking(s,'team-ranking','player-ranking');
+  renderTeamHistory(s);
 
   // Pending yes/no answer
   const pq = s.currentBeer?.pendingQuestion;
@@ -1668,17 +1669,21 @@ function renderBeerCards() {
     );
   }
 
-  // Always sort: by match % when filters active, else by categoryNumber + name
-  if (EF.active) {
-    cards = cards
-      .map(c => ({ c, pct: explorerScoreCard(c) }))
-      .sort((a, b) => b.pct - a.pct)
-      .map(x => x.c);
-  } else {
-    cards = cards.slice().sort((a, b) =>
-      (a.categoryNumber - b.categoryNumber) || a.name.localeCompare(b.name, 'ca')
-    );
-  }
+  // Sort: info-revealed range-match first, then filter %, then category
+  const _gI = gameState?.currentBeer?.revealedInfo||{};
+  const _tI = gameState?.currentBeer?.teamInfo?.[game.teamId]||{};
+  const withMeta = cards.map(c => ({
+    c,
+    pct: explorerScoreCard(c),
+    rv:  getRevealStatus(c, _gI, _tI)
+  }));
+  withMeta.sort((a, b) => {
+    const am = a.rv==='match' ? 1 : 0, bm = b.rv==='match' ? 1 : 0;
+    if (bm !== am) return bm - am;          // range-match always first
+    if (EF.active) return b.pct - a.pct;    // then by sensory filter %
+    return (a.c.categoryNumber - b.c.categoryNumber) || a.c.name.localeCompare(b.c.name, 'ca');
+  });
+  cards = withMeta.map(x => x.c);
 
   if (!cards.length) {
     const msg = cardFilter==='possible' ? '⭐ Cap carta marcada com a possible (ni tu ni el teu equip)'
@@ -1778,7 +1783,7 @@ function rangeBar(lbl,unit,min,max,sMin,sMax,color,revealed) {
   return `<div>
     <div style="display:flex;justify-content:space-between;margin-bottom:3px">
       <span class="stat-lbl">${lbl}</span><span class="stat-val">${min}–${max}${unit}</span></div>
-    <div style="position:relative;height:8px;background:rgba(255,255,255,.07);border-radius:4px;overflow:visible">
+    <div style="position:relative;height:8px;background:var(--k4);border-radius:4px;overflow:visible">
       ${ov}<div style="position:absolute;top:0;left:${l}%;width:${w}%;height:100%;background:${color};border-radius:4px;opacity:.85"></div></div>
     <div style="display:flex;justify-content:space-between;font-size:.58rem;color:rgba(255,255,255,.2);margin-top:2px"><span>${sMin}</span><span>${sMax}${unit}</span></div>
   </div>`;
@@ -2179,22 +2184,13 @@ async function revealResult() {
 }
 
 function openJudge(key, teamId, playerName, guessId) {
-  const correct    = guessId===gameState?.currentBeer?.id;
-  const guessName  = BJCP_CARDS.find(c=>c.id===guessId)?.name||guessId;
-  const alreadyPts = gameState?.currentBeer?.roundPointsGiven;
+  const correct   = guessId===gameState?.currentBeer?.id;
+  const guessName = BJCP_CARDS.find(c=>c.id===guessId)?.name||guessId;
 
-  // Points section: only for first correct guesser
-  const ptsSection = correct && !alreadyPts ? `
-    <p class="muted mb-8" style="font-size:.78rem">Punts a assignar:</p>
-    <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px">
-      ${[1,2,3].map(p=>`<button class="btn btn-primary btn-sm pts-btn" id="ptsb-${p}" onclick="selectPts(${p})">${p} pt${p>1?'s':''}</button>`).join('')}
-    </div>` : (correct && alreadyPts ? `<p class="muted mb-12" style="font-size:.78rem">⚠️ Punts ja assignats (1er encert). Pots donar carta.</p>` : '');
-
-  // Card section: available for ANY correct guess
-  // Card grant always available for correct guess (even if points already given to another team)
+  // Card grant (optional) only for correct guesses
   const cardSection = correct ? `
-    <p class="muted mb-8" style="font-size:.78rem">Carta d'acció per donar a ${playerName}:</p>
-    <select id="card-grant" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--k4);border-radius:9px;padding:11px;color:var(--t);font-family:'Syne',sans-serif;font-size:.85rem;margin-bottom:14px">
+    <p class="muted mb-8" style="font-size:.78rem">Carta d'acció per donar a ${playerName} (opcional):</p>
+    <select id="card-grant" style="width:100%;background:var(--k3);border:1px solid var(--k4);padding:11px;color:var(--t);font-family:var(--fu);font-size:.85rem;margin-bottom:14px">
       <option value="">Cap carta</option>
       ${ACTION_CARD_TYPES.map(ac=>`<option value="${ac.id}">${ac.icon} ${ac.name}</option>`).join('')}
     </select>` : '';
@@ -2203,34 +2199,23 @@ function openJudge(key, teamId, playerName, guessId) {
     <div class="judge-card ${correct?'judge-correct':'judge-wrong'}">
       <div class="muted" style="font-size:.7rem;margin-bottom:3px">Proposta de ${teamId}</div>
       <div style="font-weight:700">${guessName}</div>
-      <div style="font-size:1.6rem;margin-top:6px">${correct?'✅ CORRECTA':'❌ INCORRECTA'}</div>
+      <div style="font-size:1.6rem;margin-top:6px">${correct?'✅ CORRECTA (+1 punt)':'❌ INCORRECTA (0 punts)'}</div>
     </div>
-    ${ptsSection}${cardSection}
+    ${cardSection}
     <button class="btn btn-primary" onclick="confirmJudge('${key}','${teamId}','${playerName}','${guessId}')">
       ✅ ${correct?'Confirmar':'Marcar incorrecta'}
     </button>`);
-  window._judgePts = alreadyPts ? 0 : 3;
-  if (!alreadyPts) setTimeout(()=>selectPts(3), 50);
-}
-
-function selectPts(p) {
-  window._judgePts=p;
-  document.querySelectorAll('.pts-btn').forEach(b=>b.style.opacity='.5');
-  el('ptsb-'+p) && (el('ptsb-'+p).style.opacity='1');
 }
 
 async function confirmJudge(key, teamId, playerName, guessId) {
   const cardType = el('card-grant')?.value || '';
   closeModal();
   try {
-    const { correct, pts } = await game.judgeGuess(key, teamId, playerName, guessId, cardType||null);
+    const { correct } = await game.judgeGuess(key, teamId, playerName, guessId, cardType||null);
     const def = ACTION_CARD_TYPES.find(a => a.id === cardType);
-    const ptsLabel = pts > 0 ? `+${pts}pt${pts>1?'s':''}` : pts < 0 ? `${pts}pt` : '0pts';
     showToast(correct
-      ? `🎉 ${teamId} ${ptsLabel}!` + (cardType ? ` + ${def?.icon||'🃏'} ${def?.name||''}` : '')
-      : pts < 0
-        ? `❌ ${teamId} ${ptsLabel} (havia usat ajuda)`
-        : '❌ Resposta incorrecta jutjada');
+      ? `🎉 ${teamId} +1pt!` + (cardType ? ` + ${def?.icon||'🃏'} ${def?.name||''}` : '')
+      : '❌ Resposta incorrecta jutjada');
   } catch(e) { showToast('❌ '+e.message); }
 }
 
@@ -2495,6 +2480,52 @@ function updMsgBadge() {
     b.textContent=unreadMsgs>9?'!':String(unreadMsgs);
   });
 }
+
+// ═══ TEAM HISTORY (participant view — no master-private info) ══
+function renderTeamHistory(s) {
+  const g = el('team-history'); if (!g) return;
+  const history = s?.roundHistory;
+  if (!history || !Object.keys(history).length) {
+    g.innerHTML = '<div class="empty-state"><span class="empty-icon">📜</span><p>Cap ronda jugada encara</p></div>';
+    return;
+  }
+  const rounds = Object.values(history).sort((a,b) => a.round - b.round);
+  const infoLabels = { ibu:'IBU', abv:'ABV', srm:'Color', category:'Categoria', sensory:'Pista', yes_no:'Sí/No' };
+  g.innerHTML = rounds.map(r => {
+    const myResults = (r.results || {})[game.teamId] || [];
+    const rivals    = Object.entries(r.results || {}).filter(([tid]) => tid !== game.teamId);
+    const myInfoKeys = r.teamInfoUsed?.[game.teamId] || [];
+    const globalInfo = Object.keys(r.revealedInfo || {});
+    const allInfo    = [...new Set([...globalInfo, ...myInfoKeys])];
+    const myWon      = myResults.some(p => p.correct);
+    return `<div class="card mb-8" style="border-left:2px solid ${myWon ? 'var(--greenl)' : 'var(--m2)'}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+        <div>
+          <div style="font-family:var(--fu);font-size:.62rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--r)">Ronda ${r.round}</div>
+          <div style="font-family:var(--fu);font-size:.95rem;font-weight:700;color:var(--sl)">${r.beerName}</div>
+          <div style="font-family:var(--fu);font-size:.62rem;color:var(--m)">${r.beerNumber} · ${r.beerCategory}</div>
+        </div>
+        <div style="font-size:1.5rem;line-height:1">${myWon ? '✅' : '❌'}</div>
+      </div>
+      ${myResults.length ? `<div style="margin-bottom:6px">${myResults.map(p =>
+        `<div style="font-family:var(--fu);font-size:.76rem;padding:2px 0">
+          ${p.correct ? '✅' : '❌'} <strong>${p.playerName}</strong>: ${p.guess}
+          ${p.correct ? `<span style="color:var(--greenl)"> +${p.points}pt</span>` : ''}
+        </div>`).join('')}</div>` : ''}
+      ${rivals.map(([tid, res]) => {
+        const won = res.some(p => p.correct);
+        const correct = res.filter(p => p.correct).map(p => p.guess).join(', ');
+        return `<div style="font-family:var(--fu);font-size:.7rem;color:var(--m);padding:2px 0">
+          ${won ? '✅' : '❌'} <strong>${tid}</strong>${won ? `: ${correct}` : ''}
+        </div>`;
+      }).join('')}
+      ${allInfo.length ? `<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:3px">
+        ${allInfo.map(k => `<span class="info-pill" style="font-size:.58rem">${infoLabels[k]||k}</span>`).join('')}
+      </div>` : ''}
+    </div>`;
+  }).join('');
+}
+
 
 // ═══ RANKING ══════════════════════════════════════════════════════
 function updateRanking(s, teamEId, playerEId) {

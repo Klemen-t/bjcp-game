@@ -333,19 +333,15 @@ class BJCPGame {
     return Object.keys(teamInfo).length > 0;
   }
 
-  async judgeGuess(guessKey, teamId, playerName, guessId, cardTypeToGrant) {
+  async judgeGuess(guessKey, teamId, playerName, guessId, cardTypeToGrant = null) {
     const snap  = await this.gameRef.once('value');
     const state = snap.val();
     const beer  = state.currentBeer;
     const correct = (guessId === beer.id);
 
-    // Auto-calculate points based on rules:
-    // Correct + no help = 3pts | Correct + help = 1pt
-    // Wrong + help = -1pt      | Wrong + no help = 0pts
+    // Puntuació simplificada: encert = +1, error = 0
     const usedHelp = this._teamUsedHelp(state, teamId);
-    let pts = 0;
-    if (correct)  pts = usedHelp ? 1 : 3;
-    else          pts = usedHelp ? -1 : 0;
+    let pts = correct ? 1 : 0;
 
     const updates = {};
     updates[`currentBeer/guesses/${guessKey}/judged`]  = true;
@@ -378,8 +374,39 @@ class BJCPGame {
 
   // ── Master manually triggers reveal to all players ────────────
   async revealResult() {
-    // Just reveal results — card notifications delivered at next round start
+    const state = (await this.gameRef.once('value')).val();
+    const beer  = state.currentBeer;
+    const round = state.currentRound || 1;
     await this.gameRef.child('currentBeer').update({ revealed: true, resultsVisible: true });
+    // Save round to history for team log
+    if (beer) {
+      const guesses = beer.guesses || {};
+      const results = {};
+      Object.entries(guesses).forEach(([k, g]) => {
+        results[g.teamId] = results[g.teamId] || [];
+        results[g.teamId].push({
+          playerName: g.playerName,
+          guess: g.guess,
+          correct: g.correct || false,
+          points: g.points || 0
+        });
+      });
+      const revInfo = { ...beer.revealedInfo };
+      const teamInfoSummary = {};
+      Object.entries(beer.teamInfo || {}).forEach(([tid, info]) => {
+        teamInfoSummary[tid] = Object.keys(info);
+      });
+      await this.gameRef.child(`roundHistory/${round}`).set({
+        round,
+        beerName: beer.name || '?',
+        beerNumber: beer.number || '?',
+        beerCategory: beer.category || '?',
+        revealedAt: Date.now(),
+        results,
+        revealedInfo: revInfo,
+        teamInfoUsed: teamInfoSummary
+      });
+    }
   }
 
   // ── Reveal info (with lie support) ───────────────────────────
@@ -575,9 +602,10 @@ class BJCPGame {
           text: `🦝 Has robat "${def?.icon||'🃏'} ${def?.name||stolenCard.type}" de ${victim.pName} (${victim.tid})!`,
           ts: ts1, isSystemAlert: true
         });
+        // Notify entire victim team (not just the player)
         await this.gameRef.child(`messages/${ts1+1}`).set({
-          from: 'Sistema', fromRole: 'system', toTeam: victim.tid, toPlayer: victim.pName,
-          text: `🦝 ${teamId} t'ha robat "${def?.icon||'🃏'} ${def?.name||stolenCard.type}"!`,
+          from: 'Sistema', fromRole: 'system', toTeam: victim.tid, toPlayer: null,
+          text: `🦝 ${teamId} ha robat "${def?.icon||'🃏'} ${def?.name||stolenCard.type}" a ${victim.pName}!`,
           ts: ts1+1, isSystemAlert: true
         });
         return { ok: true, message: `Has robat una carta de ${victim.pName}!` };
@@ -699,16 +727,31 @@ class BJCPGame {
 
   // ── Master answers yes/no question ───────────────────────────
   async answerYesNo(answer) {
-    const pq = (await this.gameRef.once('value')).val()?.currentBeer?.pendingQuestion;
+    const state = (await this.gameRef.once('value')).val();
+    const pq = state?.currentBeer?.pendingQuestion;
     if (!pq) return;
+    // If lie card is active, invert the answer shown to the asking team
+    const lieTeam = state.activeLieTeam;
+    const mustLie = !!(lieTeam && lieTeam !== pq.teamId);
+    const shownAnswer = mustLie ? !answer : answer;
+    if (mustLie) await this.gameRef.child('activeLieTeam').set(null); // consume lie
     await this.gameRef.child('currentBeer/pendingQuestion/answered').set(true);
-    await this.gameRef.child('currentBeer/pendingQuestion/answer').set(answer);
+    await this.gameRef.child('currentBeer/pendingQuestion/answer').set(shownAnswer);
     const ts = Date.now();
+    // Show (possibly inverted) answer to asking team
     await this.gameRef.child(`messages/${ts}`).set({
       from: 'Master', fromRole: 'master', toTeam: pq.teamId, toPlayer: null,
-      text: `❓ Resposta del Master a "${pq.question}": ${answer ? '✅ SÍ' : '❌ NO'}`,
+      text: `❓ Resposta del Master a "${pq.question}": ${shownAnswer ? '✅ SÍ' : '❌ NO'}`,
       ts, isSystemAlert: true
     });
+    // Notify lie team privately
+    if (mustLie && lieTeam) {
+      await this.gameRef.child(`messages/${ts+1}`).set({
+        from: 'Sistema', fromRole: 'system', toTeam: lieTeam, toPlayer: null,
+        text: `🤡 Mentida executada! El Master va respondre ${answer ? 'SÍ' : 'NO'} però l'equip rival ha vist ${shownAnswer ? 'SÍ' : 'NO'}.`,
+        ts: ts+1, isSystemAlert: true
+      });
+    }
   }
 
   // ── Master sends sensory clue ────────────────────────────────
