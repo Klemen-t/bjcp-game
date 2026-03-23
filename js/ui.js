@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
 //  UI.JS  —  Interface & interaction logic
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION = 'v2026.23 · 23/03/2026';
+const APP_VERSION = 'v2026.24 · 23/03/2026';
 
 // ═══ THEME TOGGLE ════════════════════════════════════════════
 function toggleTheme() {
@@ -928,14 +928,14 @@ async function loadExistingGames() {
       const status = g.status === 'playing' ? `Ronda ${round}` : g.status || '?';
       return `<div style="display:flex;gap:6px;margin-bottom:6px;align-items:stretch">
         <button onclick="pickExistingGame('${code}')"
-          style="flex:1;text-align:left;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
+          style="flex:1;text-align:left;background:var(--k3);border:1px solid var(--k4);
                  border-radius:9px;padding:10px 12px;cursor:pointer;transition:.15s"
           onmouseover="this.style.borderColor='var(--amber)'" onmouseout="this.style.borderColor='rgba(255,255,255,.1)'">
           <div style="display:flex;justify-content:space-between;align-items:center">
             <span style="font-family:'Cormorant Garamond',serif;font-size:1.3rem;font-weight:700;color:var(--amber);letter-spacing:3px">${code}</span>
             <span class="muted" style="font-size:.68rem">${date}</span>
           </div>
-          <div style="font-size:.72rem;color:var(--muted);margin-top:2px">${teams} · ${status}</div>
+          <div style="font-size:.72rem;color:var(--m);margin-top:2px">${teams} · ${status}</div>
         </button>
         <button onclick="deleteGame('${code}')"
           style="background:rgba(139,32,32,.25);border:1px solid rgba(139,32,32,.4);border-radius:9px;
@@ -962,7 +962,7 @@ function pickExistingGame(code) {
   // Highlight selected
   el('existing-games-list').querySelectorAll('button').forEach(b => {
     b.style.borderColor = b.textContent.includes(code) ? 'var(--amber)' : 'rgba(255,255,255,.1)';
-    b.style.background  = b.textContent.includes(code) ? 'rgba(200,130,26,.12)' : 'rgba(255,255,255,.05)';
+    b.style.background  = b.textContent.includes(code) ? 'rgba(200,130,26,.15)' : 'var(--k3)';
   });
   showToast('Seleccionat: ' + code);
 }
@@ -1044,7 +1044,7 @@ async function loadTeamsForJoin() {
         <span style="font-size:1.2rem">🍻</span>
         <div style="text-align:left">
           <div style="font-weight:700">${t}</div>
-          <div style="font-size:.7rem;color:var(--muted)">${Object.keys(teams[t].players||{}).length} jugadors</div>
+          <div style="font-size:.7rem;color:var(--m)">${Object.keys(teams[t].players||{}).length} jugadors</div>
         </div>
       </button>`).join('');
     showModal('Selecciona equip', `
@@ -1315,7 +1315,7 @@ function initTeamView(s) {
         showModal('🃏🤡 Carta Anul·lada!', `
           <div style="text-align:center;padding:10px 0">
             <div style="font-size:3rem;margin-bottom:10px">🃏🤡</div>
-            <div style="font-size:.9rem;line-height:1.6;color:var(--text)">${m.text}</div>
+            <div style="font-size:.9rem;line-height:1.6;color:var(--t)">${m.text}</div>
             <button class="btn btn-primary mt-12" onclick="closeModal()">Entès</button>
           </div>`);
       }
@@ -1483,7 +1483,7 @@ function renderActionCards(cards) {
         <div><div style="font-weight:800;font-size:.9rem">${def.name}</div>
           <div class="muted" style="font-size:.65rem;text-transform:uppercase;letter-spacing:.5px">Carta d'Acció</div></div>
       </div>
-      <div style="font-size:.78rem;color:var(--muted);line-height:1.5">${def.desc}</div>
+      <div style="font-size:.78rem;color:var(--m);line-height:1.5">${def.desc}</div>
       <div style="margin-top:10px;text-align:center">
         <span style="font-size:.7rem;color:var(--amber-l);font-weight:700;text-transform:uppercase;letter-spacing:.5px">Toca per usar ▶</span>
       </div>
@@ -2194,7 +2194,7 @@ function openJudge(key, teamId, playerName, guessId) {
   // Card grant always available for correct guess (even if points already given to another team)
   const cardSection = correct ? `
     <p class="muted mb-8" style="font-size:.78rem">Carta d'acció per donar a ${playerName}:</p>
-    <select id="card-grant" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:9px;padding:11px;color:var(--text);font-family:'Syne',sans-serif;font-size:.85rem;margin-bottom:14px">
+    <select id="card-grant" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--k4);border-radius:9px;padding:11px;color:var(--t);font-family:'Syne',sans-serif;font-size:.85rem;margin-bottom:14px">
       <option value="">Cap carta</option>
       ${ACTION_CARD_TYPES.map(ac=>`<option value="${ac.id}">${ac.icon} ${ac.name}</option>`).join('')}
     </select>` : '';
@@ -2369,7 +2369,7 @@ function renderMasterLog(s) {
       const who = m.toPlayer ? `${m.toPlayer} (${m.toTeam})` : m.toTeam || 'Tots';
       return `<div style="font-size:.73rem;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.05)">
         <span class="muted" style="font-size:.66rem">${t}</span>
-        <span style="margin-left:5px;color:var(--muted)">→ ${who}:</span>
+        <span style="margin-left:5px;color:var(--m)">→ ${who}:</span>
         <span style="margin-left:4px">${m.text}</span></div>`;
     }).join('');
     html += `</div>`;
@@ -2387,7 +2387,7 @@ function renderMasterLog(s) {
         <div style="font-size:.68rem;margin-top:2px">
           ${active.length ? `✅ Actives: ${active.join(', ')}` : '<span class="muted">Sense cartes actives</span>'}
         </div>
-        ${used.length ? `<div style="font-size:.67rem;color:var(--muted)">Usades: ${used.join(', ')}</div>` : ''}
+        ${used.length ? `<div style="font-size:.67rem;color:var(--m)">Usades: ${used.join(', ')}</div>` : ''}
       </div>`;
     });
   });
@@ -2429,15 +2429,14 @@ function showMsgPopup(text, icon) {
   const d = document.createElement('div');
   d.id = 'msg-popup';
   d.style.cssText = 'position:fixed;bottom:80px;left:12px;right:12px;z-index:9999;' +
-    'background:linear-gradient(135deg,rgba(23,19,12,.98),rgba(15,12,8,.99));' +
-    'border:1px solid var(--amber);border-radius:13px;padding:14px 16px;' +
-    'box-shadow:0 8px 40px rgba(0,0,0,.8),0 0 20px rgba(200,130,26,.2);' +
+    'background:var(--k2);border:1px solid var(--r);padding:14px 16px;' +
+    'box-shadow:0 8px 32px rgba(0,0,0,.4);' +
     'animation:slideUp .25s ease;display:flex;align-items:flex-start;gap:10px;max-width:480px;margin:0 auto;';
   d.innerHTML =
     '<span style="font-size:1.3rem;flex-shrink:0">'+(icon||'📢')+'</span>' +
-    '<div style="flex:1;font-size:.82rem;line-height:1.5;color:var(--text)">'+text+'</div>' +
+    '<div style="flex:1;font-size:.82rem;line-height:1.5;color:var(--t)">'+text+'</div>' +
     '<button onclick="this.parentElement.remove()" style="background:none;border:none;' +
-    'color:var(--muted);font-size:1.1rem;cursor:pointer;flex-shrink:0;padding:0 0 0 8px;line-height:1">✕</button>';
+    'color:var(--m);font-size:1.1rem;cursor:pointer;flex-shrink:0;padding:0 0 0 8px;line-height:1">✕</button>';
   document.body.appendChild(d);
 }
 
