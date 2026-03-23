@@ -22,6 +22,34 @@
   --fb:'Barlow',sans-serif;
   --bsh:0 8px 32px rgba(0,0,0,.8);
 }
+/* ── MODE CLAR ── */
+body.light-mode{
+  --k:#F4F1ED; --k2:#FDFCFB; --k3:#EDE9E3; --k4:#D8D2C8;
+  --t:#1A1410; --m:#7A6E62; --m2:#C4B8A8; --m3:#D8CFBF;
+  --sl:#1A1410; --sd:#5A4F44; --s:#4A3F34;
+  --bsh:0 4px 20px rgba(0,0,0,.12);
+}
+body.light-mode .beer-card.mc-green  { background:rgba(46,128,64,.1) !important; }
+body.light-mode .beer-card.mc-yellow { background:rgba(184,160,16,.1) !important; }
+body.light-mode .beer-card.mc-red    { background:rgba(138,11,33,.07) !important; }
+body.light-mode .beer-card.possible  { background:rgba(200,150,10,.15) !important; }
+body.light-mode .filters-bar { background:rgba(244,241,237,.97); }
+body.light-mode .sf-panel    { background:rgba(244,241,237,.97); }
+body.light-mode .bnav        { background:rgba(244,241,237,.99); border-top-color:var(--k4); }
+body.light-mode .id-strip    { background:rgba(244,241,237,.97); }
+body.light-mode .view-subtabs{ background:rgba(244,241,237,.97); }
+body.light-mode #map-cv { filter: none; }
+body.light-mode .modal   { background:var(--k2); }
+body.light-mode .map-canvas-wrap { background:var(--k3); }
+/* Toggle button */
+#theme-toggle {
+  position:fixed; bottom:calc(env(safe-area-inset-bottom,6px) + 58px); right:14px;
+  z-index:600; background:var(--k2); border:1px solid var(--k4);
+  width:36px; height:36px; border-radius:50%; cursor:pointer;
+  font-size:1.1rem; display:flex; align-items:center; justify-content:center;
+  box-shadow:0 2px 8px rgba(0,0,0,.2); transition:all .2s;
+}
+#theme-toggle:active { transform:scale(.9); }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{background:var(--k);color:var(--t);font-family:var(--fb);min-height:100vh;overflow-x:hidden}
 
@@ -645,13 +673,13 @@ select option{background:var(--k3)}
 .sf-panel {
   background:var(--k2);
   border-bottom:1px solid var(--k4);
-  padding:10px 0 6px;
+  padding:8px 0 5px;
   position:sticky;top:33px;z-index:98;
   backdrop-filter:blur(16px);
 }
-/* SRM color bar (clickable) */
+/* SRM color bar */
 .sf-srm-bar {
-  display:flex;height:20px;margin-bottom:8px;
+  display:flex;height:22px;margin-bottom:6px;
   overflow:hidden;cursor:pointer;position:relative;
   border:1px solid var(--k4);
 }
@@ -659,44 +687,50 @@ select option{background:var(--k3)}
 .sf-srm-overlay {
   position:absolute;top:0;bottom:0;
   border:2px solid rgba(255,255,255,.9);
-  pointer-events:none;box-sizing:border-box;
-  display:none;
+  pointer-events:none;box-sizing:border-box;display:none;
 }
-/* Scrollable row of pills */
+/* Scrollable rows */
 .sf-row {
   display:flex;gap:5px;overflow-x:auto;
-  scrollbar-width:none;padding-bottom:4px;margin-bottom:3px;
-  align-items:center;
+  scrollbar-width:none;padding-bottom:3px;margin-bottom:2px;
+  align-items:stretch;
 }
 .sf-row::-webkit-scrollbar { display:none; }
 .sf-label {
-  font-family:var(--fu);font-size:.58rem;font-weight:700;
-  letter-spacing:.16em;text-transform:uppercase;color:var(--r);
-  flex-shrink:0;min-width:44px;
+  font-family:var(--fu);font-size:.7rem;font-weight:700;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--r);
+  flex-shrink:0;min-width:48px;display:flex;align-items:center;
 }
+/* Pills — més grans i fàcils de tocar */
 .sf-pill {
-  font-family:var(--fu);font-size:.65rem;font-weight:700;
-  letter-spacing:.07em;text-transform:uppercase;
-  padding:5px 11px;border:1px solid var(--k4);
+  font-family:var(--fu);font-size:.72rem;font-weight:700;
+  letter-spacing:.05em;text-transform:uppercase;
+  padding:8px 13px;min-height:36px;
+  border:1px solid var(--k4);
   background:transparent;color:var(--m);
-  cursor:pointer;transition:all .12s;white-space:nowrap;flex-shrink:0;
+  cursor:pointer;transition:background .12s,border-color .12s,color .12s;
+  white-space:nowrap;flex-shrink:0;
+  display:flex;align-items:center;
 }
-.sf-pill:active { transform:scale(.93); }
-.sf-pill.on { background:rgba(196,18,48,.14);border-color:var(--r);color:var(--rl); }
-/* Reset + active count row */
+.sf-pill:active { opacity:.7; }
+.sf-pill.on {
+  background:rgba(196,18,48,.16);border-color:var(--r);
+  color:var(--rl);
+}
+/* Reset row */
 .sf-status-row {
   display:flex;justify-content:space-between;align-items:center;
-  padding-top:4px;
+  padding-top:5px;
 }
 .sf-reset {
-  font-family:var(--fu);font-size:.62rem;font-weight:700;
+  font-family:var(--fu);font-size:.65rem;font-weight:700;
   letter-spacing:.1em;text-transform:uppercase;
-  background:none;border:none;color:var(--m);cursor:pointer;padding:0;
+  background:none;border:none;color:var(--m);cursor:pointer;padding:2px 0;
   transition:color .15s;
 }
 .sf-reset:active { color:var(--rl); }
 .sf-active-count {
-  font-family:var(--fu);font-size:.62rem;font-weight:700;
+  font-family:var(--fu);font-size:.65rem;font-weight:700;
   letter-spacing:.08em;color:var(--r);display:none;
 }
 
@@ -1049,8 +1083,10 @@ select option{background:var(--k3)}
           <canvas id="map-cv" height="360"></canvas>
           <div class="map-tooltip" id="map-tooltip">
             <div class="mtt-name" id="mtt-name"></div>
+            <div class="mtt-num"  id="mtt-num" style="font-family:var(--fd);font-size:.75rem;color:var(--rd);margin-bottom:1px"></div>
             <div class="mtt-cat"  id="mtt-cat"></div>
             <div class="mtt-pct"  id="mtt-pct"></div>
+            <div class="mtt-fam"  id="mtt-fam" style="font-family:var(--fu);font-size:.58rem;color:var(--m);opacity:.7;margin-top:2px"></div>
           </div>
         </div>
         <div class="map-legend">
@@ -1250,6 +1286,7 @@ select option{background:var(--k3)}
   </div>
 </div>
 
+<button id="theme-toggle" onclick="toggleTheme()" title="Canviar tema">☀</button>
 <div id="toast"></div>
 
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>

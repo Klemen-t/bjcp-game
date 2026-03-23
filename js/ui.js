@@ -1,7 +1,19 @@
 // ═══════════════════════════════════════════════════════════════
 //  UI.JS  —  Interface & interaction logic
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION = 'v2026.22 · 15/03/2026';
+const APP_VERSION = 'v2026.23 · 23/03/2026';
+
+// ═══ THEME TOGGLE ════════════════════════════════════════════
+function toggleTheme() {
+  const isLight = document.body.classList.toggle('light-mode');
+  const btn = document.getElementById('theme-toggle');
+  if (btn) btn.textContent = isLight ? '🌙' : '☀';
+  try { localStorage.setItem('bjcp-theme', isLight ? 'light' : 'dark'); } catch(e){}
+  // Redraw map with new background
+  if (currentCardView === 'map') renderMapView();
+}
+
+
 
 // Add popup slide-up animation
 const _popupStyle = document.createElement('style');
@@ -622,10 +634,13 @@ function renderMapView() {
       const scaleY = canvas.height / devicePixelRatio / rect.height;
       const mx = (cx-rect.left)*scaleX, my = (cy-rect.top)*scaleY;
       let found = null;
-      for (const h of _mapHits) { if(Math.hypot(mx-h.x,my-h.y)<=h.r){found=h;break;} }
+      for (const h of _mapHits) { if(Math.hypot(mx-h.cx,my-h.cy)<=h.r){found=h;break;} }
       if (found && tt) {
-        el('mtt-name').textContent = found.c.number+' — '+found.c.name;
-        el('mtt-cat').textContent  = found.c.category;
+        el('mtt-name').textContent = found.c.name;
+        const _m = _CARD_META[found.c.name] || [found.c.number||'', found.c.category||''];
+        const _mnum = el('mtt-num'); if(_mnum) _mnum.textContent = _m[0];
+        el('mtt-cat').textContent  = _m[1];
+        const _mfam = el('mtt-fam'); if(_mfam) _mfam.textContent = _MAP_CL[found.cl]?.name||'';
         const pctEl = el('mtt-pct');
         if (pctEl) {
           if (found.pct < 0) { pctEl.textContent=''; }
@@ -757,7 +772,7 @@ function renderMapView() {
       const mx = (t.clientX - rect.left) * scaleX;
       const my = (t.clientY - rect.top)  * scaleY;
       for (const h of _mapHits) {
-        if (Math.hypot(mx - h.x, my - h.y) <= h.r + 6) {
+        if (Math.hypot(mx - h.cx, my - h.cy) <= h.r + 6) {
           showQuickCardModal(h.c); break;
         }
       }
@@ -771,7 +786,7 @@ function renderMapView() {
       const mx = (e.clientX - rect.left) * scaleX;
       const my = (e.clientY - rect.top)  * scaleY;
       for (const h of _mapHits) {
-        if (Math.hypot(mx - h.x, my - h.y) <= h.r + 4) {
+        if (Math.hypot(mx - h.cx, my - h.cy) <= h.r + 4) {
           showQuickCardModal(h.c); break;
         }
       }
@@ -2520,6 +2535,15 @@ function showPlayerSettings() {
 
 // ═══ INIT ════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', async () => {
+  // Restore saved theme
+  try {
+    const saved = localStorage.getItem('bjcp-theme');
+    if (saved === 'light') {
+      document.body.classList.add('light-mode');
+      const btn = document.getElementById('theme-toggle');
+      if (btn) btn.textContent = '🌙';
+    }
+  } catch(e){}
   // Show version
   const vEl = el('app-version');
   if (vEl) vEl.textContent = APP_VERSION;
