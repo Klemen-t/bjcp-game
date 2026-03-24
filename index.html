@@ -1,0 +1,1404 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>BJCP — Börn Loka Ales 🍺</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@300;400;500;600;700;900&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════
+   BÖRN LOKA ALES — BJCP GAME UI
+   Paleta: negre #080808 · vermell #C41230 · plata #C8C8C8
+═══════════════════════════════════════════ */
+:root{
+  --r:#C41230; --rl:#E5172F; --rd:#8A0B21;
+  --s:#C8C8C8; --sl:#EDEDED; --sd:#888;
+  --k:#080808; --k2:#0f0f0f; --k3:#161616; --k4:#1e1e1e;
+  --t:#CCCCCC; --m:#555; --m2:#3a3a3a; --m3:#2a2a2a;
+  --green:#1E5C2C; --greenl:#2E8040; --red-err:#7a1c1c;
+  --fd:'Bebas Neue',sans-serif;
+  --fu:'Barlow Condensed',sans-serif;
+  --fb:'Barlow',sans-serif;
+  --bsh:0 8px 32px rgba(0,0,0,.8);
+}
+/* ── MODE CLAR ── */
+body.light-mode{
+  --k:#F4F1ED; --k2:#FDFCFB; --k3:#EDE9E3; --k4:#D8D2C8;
+  --t:#1A1410; --m:#7A6E62; --m2:#C4B8A8; --m3:#D8CFBF;
+  --sl:#1A1410; --sd:#5A4F44; --s:#4A3F34;
+  --bsh:0 4px 20px rgba(0,0,0,.12);
+}
+body.light-mode .beer-card.mc-green  { background:rgba(46,128,64,.1) !important; }
+body.light-mode .beer-card.mc-yellow { background:rgba(184,160,16,.1) !important; }
+body.light-mode .beer-card.mc-red    { background:rgba(138,11,33,.07) !important; }
+body.light-mode .beer-card.possible  { background:rgba(200,150,10,.15) !important; }
+body.light-mode .filters-bar { background:rgba(244,241,237,.97); }
+body.light-mode .sf-panel    { background:rgba(244,241,237,.97); }
+body.light-mode .bnav        { background:rgba(244,241,237,.99); border-top-color:var(--k4); }
+body.light-mode .id-strip    { background:rgba(244,241,237,.97); }
+body.light-mode .view-subtabs{ background:rgba(244,241,237,.97); }
+body.light-mode #map-cv { filter: none; }
+body.light-mode .modal   { background:var(--k2); }
+body.light-mode .map-canvas-wrap { background:var(--k3); }
+body.light-mode .round-bar { background:rgba(196,18,48,.06); }
+body.light-mode .card { background:var(--k2); border-color:var(--k4); }
+body.light-mode .beer-card { background:var(--k2); border-color:var(--k4); }
+body.light-mode .msg-bubble { background:var(--k3); }
+body.light-mode #toast { background:var(--k2); color:var(--t); }
+body.light-mode .action-card-full { background:rgba(196,18,48,.05); }
+body.light-mode .modal-overlay { background:rgba(180,170,155,.7); }
+body.light-mode .beer-card.discarded { opacity:.25; }
+body.light-mode .pending-yn { background:rgba(20,60,140,.07); }
+body.light-mode .pending-sensory { background:rgba(30,80,40,.07); }
+/* Toggle button — visible en dark (fons clar) i light (fons fosc) */
+#theme-toggle {
+  position:fixed; bottom:calc(env(safe-area-inset-bottom,6px) + 58px); right:14px;
+  z-index:600;
+  background:#E8E0D0; border:1.5px solid #9A8870;
+  color:#2A1F10;
+  width:38px; height:38px; border-radius:50%; cursor:pointer;
+  font-size:1rem; display:flex; align-items:center; justify-content:center;
+  box-shadow:0 2px 10px rgba(0,0,0,.35); transition:all .2s;
+}
+body.light-mode #theme-toggle {
+  background:#1C1510; border-color:#3A2A18;
+  color:#E8C060;
+  box-shadow:0 2px 10px rgba(0,0,0,.5);
+}
+#theme-toggle:active { transform:scale(.88); }
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{background:var(--k);color:var(--t);font-family:var(--fb);min-height:100vh;overflow-x:hidden}
+
+/* Grain texture overlay */
+body::before{content:'';position:fixed;inset:0;z-index:9000;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23f)' opacity='.04'/%3E%3C/svg%3E");
+  opacity:.45;mix-blend-mode:overlay}
+
+/* ── SCREENS ── */
+.screen{display:none;min-height:100vh;padding:16px}
+.screen.active{display:flex;flex-direction:column}
+
+/* ── TYPOGRAPHY ── */
+.title{
+  font-family:var(--fd);font-size:clamp(2.2rem,9vw,3.4rem);
+  letter-spacing:.03em;color:var(--sl);line-height:.95
+}
+.title .r{color:var(--r)}
+.subtitle{
+  font-family:var(--fu);font-size:.68rem;font-weight:600;
+  letter-spacing:.28em;text-transform:uppercase;color:var(--r);
+  margin-top:4px
+}
+.sec-title{
+  font-family:var(--fu);font-size:.95rem;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--sl);
+  margin-bottom:10px;display:flex;align-items:center;gap:8px
+}
+.sec-title::before{content:'';width:14px;height:1px;background:var(--r);flex-shrink:0}
+.muted{color:var(--m)}
+.mb-8{margin-bottom:8px}.mb-12{margin-bottom:12px}.mb-16{margin-bottom:16px}
+.mt-8{margin-top:8px}.mt-12{margin-top:12px}.mt-16{margin-top:16px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+/* ── CARD ── */
+.card{
+  background:var(--k2);
+  border:1px solid var(--k4);
+  border-top:2px solid var(--m3);
+  padding:16px;
+  box-shadow:var(--bsh)
+}
+.card:hover{border-top-color:var(--rd)}
+
+/* ── BUTTONS ── */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  padding:12px 18px;
+  font-family:var(--fu);font-size:.82rem;font-weight:700;
+  letter-spacing:.12em;text-transform:uppercase;
+  border:none;cursor:pointer;transition:all .15s;
+  width:100%;min-height:46px
+}
+.btn:active{transform:scale(.97)}
+.btn-primary{
+  background:var(--r);color:#fff;
+  box-shadow:0 4px 20px rgba(196,18,48,.3)
+}
+.btn-primary:hover{background:var(--rl);box-shadow:0 6px 28px rgba(196,18,48,.45)}
+.btn-secondary{
+  background:transparent;color:var(--s);
+  border:1px solid var(--k4)
+}
+.btn-secondary:hover{border-color:var(--m2)}
+.btn-success{
+  background:var(--green);color:#fff;
+  border-left:2px solid var(--greenl)
+}
+.btn-success:hover{background:var(--greenl)}
+.btn-danger{
+  background:var(--red-err);color:#fff;
+  border-left:2px solid #b02020
+}
+.btn-info{
+  background:rgba(30,60,100,.5);color:var(--sl);
+  border:1px solid rgba(50,90,150,.4)
+}
+.btn-info:hover{background:rgba(40,80,130,.6)}
+.btn-ghost{
+  background:transparent;border:1px solid var(--m2);
+  color:var(--sd);width:auto;min-height:auto;
+  padding:7px 13px;font-size:.73rem
+}
+.btn-ghost:hover{border-color:var(--r);color:var(--rl)}
+.btn-sm{padding:7px 13px;font-size:.73rem;min-height:32px}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn-yn-yes{background:var(--green);color:#fff;width:auto;flex:1}
+.btn-yn-no{background:var(--red-err);color:#fff;width:auto;flex:1}
+
+/* ── INPUTS ── */
+.ig{margin-bottom:11px}
+.ig label{
+  display:block;
+  font-family:var(--fu);font-size:.65rem;font-weight:700;
+  text-transform:uppercase;letter-spacing:.2em;
+  color:var(--m);margin-bottom:5px
+}
+input,select,textarea{
+  width:100%;background:rgba(255,255,255,.03);
+  border:none;border-bottom:1px solid var(--m2);
+  padding:11px 14px;color:var(--t);
+  font-family:var(--fb);font-size:.86rem;
+  outline:none;transition:border-color .2s,background .2s
+}
+input:focus,select:focus,textarea:focus{
+  border-bottom-color:var(--r);background:rgba(196,18,48,.04)
+}
+input::placeholder,textarea::placeholder{color:var(--m3)}
+select option{background:var(--k3)}
+
+/* ── ROLE CARDS ── */
+.role-wrap{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px}
+.role-card{
+  background:rgba(255,255,255,.02);
+  border:1px solid var(--k4);border-bottom:2px solid transparent;
+  padding:20px 10px;text-align:center;cursor:pointer;
+  transition:all .18s
+}
+.role-card:hover,.role-card.selected{
+  border-bottom-color:var(--r);background:rgba(196,18,48,.06)
+}
+.role-icon{font-size:1.9rem;display:block;margin-bottom:5px}
+.role-name{
+  font-family:var(--fu);font-size:.72rem;font-weight:800;
+  color:var(--m);text-transform:uppercase;letter-spacing:.1em
+}
+.role-card.selected .role-name{color:var(--rl)}
+
+/* ── GAME CODE ── */
+.game-code{
+  font-family:var(--fd);font-size:3rem;
+  color:var(--sl);letter-spacing:14px;
+  text-align:center;padding:12px
+}
+
+/* ── BEER CARDS ── */
+#cards-container{display:flex;flex-direction:column;gap:4px;padding-bottom:86px}
+.beer-card{
+  background:var(--k2);
+  border:1px solid var(--k4);
+  border-left:2px solid transparent;
+  overflow:hidden;
+  transition:border-color .22s,box-shadow .22s,opacity .22s
+}
+.beer-card.discarded{opacity:.2;border-left-color:var(--rd)}
+.beer-card.possible{
+  border-left-color:#C8960A;
+  border-top:1px solid rgba(200,150,10,.35);
+  border-right:1px solid rgba(200,150,10,.15);
+  border-bottom:1px solid rgba(200,150,10,.15);
+  background:rgba(200,150,10,.13);
+}
+/* Card name color inside a possible card */
+.beer-card.possible .card-name { color:#E8C040; }
+.beer-card.possible .card-num  { background:#7A5800; }
+/* Green highlight when info range matches */
+.beer-card.range-match{
+  border-left-color:#2E8040;
+  background:rgba(46,128,64,.05)
+}
+.card-hdr{
+  display:flex;align-items:flex-start;
+  padding:10px 12px;gap:7px;cursor:pointer;user-select:none
+}
+.card-num{
+  background:var(--rd);color:#fff;
+  font-family:var(--fu);font-size:.58rem;font-weight:800;
+  padding:2px 7px;white-space:nowrap;margin-top:2px;flex-shrink:0;
+  letter-spacing:.06em
+}
+.card-name{
+  font-family:var(--fu);font-size:1rem;font-weight:700;
+  letter-spacing:.04em;line-height:1.2;color:var(--sl)
+}
+.card-cat{
+  font-family:var(--fu);font-size:.62rem;font-weight:500;
+  letter-spacing:.08em;color:var(--m);margin-top:1px;
+  text-transform:uppercase
+}
+.team-tags{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px}
+.team-tag{
+  font-family:var(--fu);font-size:.6rem;font-weight:700;
+  padding:2px 7px;letter-spacing:.06em
+}
+.tag-possible{background:rgba(200,150,10,.18);color:#D4A020}
+.tag-discarded{background:rgba(122,28,28,.2);color:#d44}
+.card-btns{display:flex;gap:4px;flex-shrink:0;padding-top:2px}
+.mini-btn{
+  width:27px;height:27px;border:1px solid var(--k4);
+  cursor:pointer;font-size:.78rem;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(255,255,255,.03);transition:all .14s;color:var(--m)
+}
+.mini-btn:active{transform:scale(.85)}
+.mb-star-on{background:rgba(196,18,48,.2);border-color:var(--r);color:var(--rl)}
+.mb-x-on{background:rgba(122,28,28,.2);border-color:var(--rd);color:#d44}
+.mb-propose{background:rgba(30,92,44,.25);border-color:rgba(46,128,64,.5);color:#6DBF7E}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:none;opacity:1}}
+.card-body{padding:0 12px 12px;display:none;border-top:1px solid var(--k4)}
+.card-body.open{display:block;animation:fd .16s ease}
+@keyframes fd{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.stats-block{display:flex;flex-direction:column;gap:9px;margin:11px 0}
+.stat-lbl{
+  font-family:var(--fu);font-size:.62rem;font-weight:700;
+  color:var(--m);text-transform:uppercase;letter-spacing:.12em
+}
+.stat-val{
+  font-family:var(--fu);font-size:.82rem;font-weight:700;
+  color:var(--rl);letter-spacing:.04em
+}
+.desc-tabs{display:flex;flex-wrap:wrap;gap:4px;margin:9px 0 6px}
+.desc-tab{
+  padding:4px 12px;font-family:var(--fu);font-size:.65rem;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;
+  cursor:pointer;background:rgba(255,255,255,.03);
+  border:1px solid var(--k4);color:var(--m);transition:all .14s
+}
+.desc-tab.active{background:rgba(196,18,48,.1);border-color:var(--r);color:var(--rl)}
+.desc-text{font-size:.77rem;line-height:1.65;color:var(--m)}
+.commercial{
+  font-family:var(--fu);font-size:.7rem;font-weight:600;
+  letter-spacing:.04em;color:var(--rl);
+  margin-top:8px;padding-top:8px;border-top:1px solid var(--k4)
+}
+.rev-icon{font-size:.85rem;flex-shrink:0}
+
+/* ── ACTION CARD ── */
+.action-card-full{
+  background:rgba(196,18,48,.06);
+  border:1px solid rgba(196,18,48,.2);
+  border-left:2px solid var(--r);
+  padding:16px;margin-bottom:10px;cursor:pointer;
+  transition:transform .18s,box-shadow .18s
+}
+.action-card-full:hover{
+  transform:scale(1.01);
+  box-shadow:0 4px 20px rgba(196,18,48,.15)
+}
+
+/* ── FILTERS ── */
+.filters-bar{
+  position:sticky;top:0;z-index:100;
+  background:var(--k2);
+  padding:8px 0;margin-bottom:8px;
+  backdrop-filter:blur(16px)
+}
+.search-wrap{position:relative;margin-bottom:6px}
+.search-wrap input{padding-left:34px}
+.search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--m);font-size:.82rem}
+.chips{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{
+  white-space:nowrap;padding:5px 14px;
+  font-family:var(--fu);font-size:.65rem;font-weight:700;
+  letter-spacing:.12em;text-transform:uppercase;
+  border:1px solid var(--k4);background:transparent;
+  color:var(--m);cursor:pointer;transition:all .14s
+}
+.chip.active{background:rgba(196,18,48,.1);border-color:var(--r);color:var(--rl)}
+
+/* ── ROUND BAR ── */
+.round-bar{
+  background:rgba(196,18,48,.06);
+  border:1px solid rgba(196,18,48,.18);
+  border-left:2px solid var(--r);
+  padding:11px 14px;margin-bottom:11px
+}
+.round-num{
+  font-family:var(--fd);font-size:1.2rem;
+  letter-spacing:.04em;color:var(--sl)
+}
+.info-pill{
+  background:rgba(196,18,48,.12);
+  border:1px solid rgba(196,18,48,.25);
+  padding:3px 10px;
+  font-family:var(--fu);font-size:.7rem;font-weight:600;
+  letter-spacing:.08em;
+  display:inline-flex;align-items:center;gap:3px;
+  margin-top:5px;margin-right:3px
+}
+
+/* ── IDENTITY STRIP ── */
+.id-strip{
+  background:rgba(196,18,48,.08);
+  border-bottom:1px solid rgba(196,18,48,.18);
+  padding:8px 14px;
+  font-family:var(--fu);font-size:.75rem;font-weight:700;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--rl);
+  display:flex;justify-content:space-between;align-items:center;
+  flex-shrink:0;width:100%;position:sticky;top:0;z-index:200
+}
+
+/* ── BOTTOM NAV ── */
+.bnav{
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--k2);
+  border-top:1px solid var(--k4);
+  display:flex;padding:6px 0 env(safe-area-inset-bottom,6px);
+  z-index:500;backdrop-filter:blur(20px)
+}
+.nav-btn{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:6px 3px;background:none;border:none;cursor:pointer;
+  color:var(--m);
+  font-family:var(--fu);font-size:.56rem;font-weight:700;
+  letter-spacing:.12em;text-transform:uppercase;
+  transition:color .14s
+}
+.nav-btn.active{color:var(--rl)}
+.nav-btn.active .nav-icon{filter:drop-shadow(0 0 6px rgba(196,18,48,.5))}
+.nav-icon{font-size:1.2rem}
+.nav-wrap{position:relative;display:inline-block}
+.badge{
+  display:inline-flex;align-items:center;justify-content:center;
+  background:var(--r);color:#fff;
+  width:14px;height:14px;font-size:.52rem;font-weight:800;
+  position:absolute;top:-3px;right:-5px
+}
+
+/* ── MASTER ELEMENTS ── */
+.team-scores{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:7px;margin-bottom:11px}
+.score-box{
+  background:var(--k2);border:1px solid var(--k4);
+  border-bottom:2px solid var(--rd);
+  padding:10px;text-align:center;
+  transition:border-color .25s
+}
+.score-box:hover{border-bottom-color:var(--r)}
+.score-name{font-family:var(--fu);font-weight:700;font-size:.75rem;letter-spacing:.06em;text-transform:uppercase}
+.score-pts{
+  font-family:var(--fd);font-size:2rem;
+  color:var(--rl);line-height:1
+}
+.beer-grid{display:flex;flex-direction:column;gap:4px;max-height:320px;overflow-y:auto}
+.beer-item{
+  background:rgba(255,255,255,.02);border:1px solid var(--k4);
+  border-left:2px solid transparent;
+  padding:9px 12px;cursor:pointer;transition:all .14s
+}
+.beer-item:hover{background:rgba(196,18,48,.05);border-left-color:var(--rd)}
+.beer-item.selected{background:rgba(196,18,48,.08);border-left-color:var(--r)}
+.bsn{font-family:var(--fu);font-weight:700;font-size:.84rem;letter-spacing:.04em;color:var(--sl)}
+.bsnum{font-family:var(--fu);font-size:.64rem;font-weight:500;color:var(--m);margin-top:1px;letter-spacing:.06em}
+.guess-row{
+  background:rgba(255,255,255,.02);border:1px solid var(--k4);
+  border-left:2px solid var(--m2);
+  padding:9px 12px;display:flex;justify-content:space-between;
+  align-items:center;gap:8px;margin-bottom:5px
+}
+.guess-who{font-family:var(--fu);font-size:.64rem;font-weight:500;letter-spacing:.06em;color:var(--m);text-transform:uppercase}
+.guess-what{font-family:var(--fu);font-weight:700;font-size:.85rem;letter-spacing:.04em;color:var(--sl)}
+
+/* ── PENDING BANNERS ── */
+.pending-banner{padding:12px 14px;margin-bottom:9px;border-left:2px solid transparent}
+.pending-yn{
+  background:rgba(30,70,140,.1);
+  border:1px solid rgba(50,100,180,.3);
+  border-left-color:rgba(80,140,220,.8);
+  animation:pulb 2s infinite
+}
+.pending-sensory{
+  background:rgba(30,80,40,.1);
+  border:1px solid rgba(46,128,64,.3);
+  border-left-color:var(--greenl);
+  animation:pulb 2s infinite
+}
+.pending-lie{
+  background:rgba(110,20,20,.1);
+  border:1px solid rgba(160,30,30,.3);
+  border-left-color:var(--r)
+}
+.pending-cancel{
+  background:rgba(60,36,110,.1);
+  border:1px solid rgba(90,60,150,.3);
+  border-left-color:#7a5abf
+}
+@keyframes pulb{0%,100%{box-shadow:0 0 0 0 rgba(80,140,220,.25)}50%{box-shadow:0 0 0 5px transparent}}
+
+/* ── PLAYER ROW ── */
+.player-row{
+  display:flex;align-items:center;gap:9px;
+  background:rgba(255,255,255,.02);border:1px solid var(--k4);
+  border-left:2px solid var(--rd);
+  padding:9px 11px;margin-bottom:5px
+}
+.p-avatar{
+  width:29px;height:29px;
+  background:linear-gradient(135deg,var(--r),var(--rd));
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--fd);font-size:1rem;color:#fff;flex-shrink:0
+}
+
+/* ── RANKING ── */
+.rank-row{
+  display:flex;align-items:center;gap:10px;
+  background:rgba(255,255,255,.02);border:1px solid var(--k4);
+  border-left:2px solid var(--m2);
+  padding:11px 12px;margin-bottom:6px;
+  transition:border-color .2s
+}
+.rank-row:hover{border-left-color:var(--rd)}
+.rank-pos{
+  font-family:var(--fd);font-size:1.4rem;
+  color:var(--m2);min-width:26px
+}
+.rank-pos.first{color:#D4AF37}
+.rank-pos.second{color:#A8A9AD}
+.rank-pos.third{color:#CD7F32}
+.rank-info{flex:1}
+.rank-name{font-family:var(--fu);font-weight:700;font-size:.86rem;letter-spacing:.05em;color:var(--sl)}
+.rank-sub{font-family:var(--fu);font-size:.65rem;letter-spacing:.06em;color:var(--m)}
+.rank-pts{font-family:var(--fd);font-size:1.4rem;color:var(--rl);letter-spacing:.02em}
+
+/* ── JUDGE CARD ── */
+.judge-card{padding:12px 14px;margin-bottom:13px;border-left:2px solid transparent}
+.judge-correct{
+  background:rgba(30,92,44,.12);
+  border:1px solid rgba(46,128,64,.35);
+  border-left-color:var(--greenl)
+}
+.judge-wrong{
+  background:rgba(110,28,28,.12);
+  border:1px solid rgba(160,40,40,.3);
+  border-left-color:var(--r)
+}
+.pts-btn{opacity:.5;transition:opacity .15s}
+
+/* ── TEAM PICK ── */
+.team-pick-btn{
+  display:flex;align-items:center;gap:10px;width:100%;
+  background:rgba(255,255,255,.02);
+  border:1px solid var(--k4);border-bottom:2px solid transparent;
+  padding:11px 13px;margin-bottom:7px;cursor:pointer;
+  color:var(--t);font-family:var(--fu);font-size:.88rem;
+  font-weight:600;letter-spacing:.06em;
+  transition:border-color .18s
+}
+.team-pick-btn:hover,.team-pick-btn.selected{
+  border-bottom-color:var(--r);background:rgba(196,18,48,.05)
+}
+
+/* ── MODAL ── */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.88);
+  z-index:1000;display:flex;align-items:flex-end;
+  justify-content:center;backdrop-filter:blur(8px)
+}
+.modal-overlay.hidden{display:none}
+.modal{
+  background:var(--k2);
+  border:1px solid var(--k4);
+  border-top:2px solid var(--r);
+  padding:20px 16px 28px;width:100%;
+  max-width:520px;max-height:88vh;overflow-y:auto
+}
+.modal-title{
+  font-family:var(--fu);font-size:1rem;font-weight:700;
+  letter-spacing:.12em;text-transform:uppercase;
+  color:var(--rl);margin-bottom:13px;
+  display:flex;align-items:center;gap:10px
+}
+.modal-title::before{content:'';width:16px;height:2px;background:var(--r)}
+
+/* ── RESULT OVERLAY ── */
+.result-overlay{
+  position:fixed;inset:0;z-index:900;display:none;
+  flex-direction:column;animation:rin .38s ease
+}
+@keyframes rin{from{opacity:0;transform:scale(.93)}to{opacity:1;transform:none}}
+/* Personal half */
+.res-pers-win #res-personal{
+  background:radial-gradient(ellipse at 50% 80%,rgba(22,78,40,.98),rgba(8,25,14,.99))
+}
+.res-pers-lose #res-personal{
+  background:radial-gradient(ellipse at 50% 80%,rgba(100,20,20,.98),rgba(30,8,8,.99))
+}
+/* Team half */
+.res-team-win #res-team-half{
+  background:radial-gradient(ellipse at 50% 20%,rgba(22,78,40,.98),rgba(8,25,14,.99))
+}
+.res-team-tie #res-team-half{
+  background:radial-gradient(ellipse at 50% 20%,rgba(110,65,8,.98),rgba(40,22,4,.99))
+}
+.res-team-lose #res-team-half{
+  background:radial-gradient(ellipse at 50% 20%,rgba(100,20,20,.98),rgba(30,8,8,.99))
+}
+@keyframes bounce{from{transform:translateY(0)}to{transform:translateY(-8px)}}
+.res-bounce{animation:bounce .55s ease infinite alternate}
+
+/* Result typography */
+#res-personal-title,#res-team-title{
+  font-family:var(--fd);font-size:1.8rem;letter-spacing:.04em;color:#fff
+}
+#res-personal-detail,#res-team-detail{
+  font-family:var(--fu);font-size:.82rem;font-weight:500;
+  letter-spacing:.06em;color:rgba(255,255,255,.65);
+  line-height:1.6;text-align:center
+}
+
+/* ── SETTINGS ── */
+.settings-code-box{
+  background:var(--k3);border:1px solid var(--k4);
+  padding:14px;margin-bottom:10px;text-align:center
+}
+.settings-row{
+  background:rgba(255,255,255,.02);border:1px solid var(--k4);
+  padding:10px 14px;display:flex;justify-content:space-between;
+  align-items:center;margin-bottom:8px;
+  font-family:var(--fu);font-size:.82rem;font-weight:600;
+  letter-spacing:.05em;color:var(--s)
+}
+
+/* ── MESSAGES ── */
+.msg-bubble{
+  background:rgba(255,255,255,.02);
+  border:1px solid var(--k4);
+  border-left:3px solid var(--r);
+  padding:10px 13px;margin-bottom:7px
+}
+.msg-from{
+  font-family:var(--fu);font-size:.7rem;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--rl)
+}
+.msg-system{border-left-color:var(--rd);background:rgba(196,18,48,.04)}
+.msg-alert{border-left-color:var(--r);background:rgba(196,18,48,.08)}
+
+/* ── CARD POOL ── */
+.pool-list{max-height:48vh;overflow-y:auto;display:flex;flex-direction:column;gap:3px}
+.pool-row{
+  display:flex;align-items:center;gap:8px;padding:8px 10px;
+  cursor:pointer;transition:background .14s;
+  border:1px solid transparent
+}
+.pool-on{background:rgba(196,18,48,.06);border-color:rgba(196,18,48,.18)}
+.pool-off{background:rgba(255,255,255,.01);opacity:.5}
+.pool-row input{width:auto;min-width:0;flex-shrink:0;accent-color:var(--r)}
+.pool-num{
+  font-family:var(--fu);font-size:.62rem;font-weight:700;
+  letter-spacing:.06em;color:var(--rl);min-width:34px
+}
+.pool-name{font-family:var(--fu);font-size:.8rem;font-weight:700;letter-spacing:.04em;flex:1;color:var(--sl)}
+.pool-cat{font-family:var(--fu);font-size:.62rem;letter-spacing:.06em;color:var(--m)}
+
+/* ── ACTION CARD STATES ── */
+.card-disabled{opacity:.45;cursor:default}
+.action-card-used{
+  display:flex;align-items:center;gap:10px;padding:10px 13px;
+  border:1px solid var(--k4);margin-bottom:6px;
+  background:rgba(255,255,255,.01)
+}
+
+/* ── TOAST ── */
+#toast{
+  position:fixed;bottom:90px;left:50%;transform:translateX(-50%);
+  background:var(--k2);
+  border:1px solid var(--r);
+  padding:10px 20px;
+  font-family:var(--fu);font-size:.82rem;font-weight:700;
+  letter-spacing:.08em;text-transform:uppercase;
+  color:var(--t);z-index:2000;opacity:0;box-shadow:0 4px 20px rgba(0,0,0,.3);
+  transition:opacity .25s;pointer-events:none;
+  white-space:nowrap;max-width:90vw;text-align:center
+}
+#toast.show{opacity:1}
+
+/* ── MISC ── */
+.status-dot{
+  display:inline-block;width:6px;height:6px;
+  background:var(--greenl);margin-right:5px;
+  animation:blink 1.8s infinite
+}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.divider{border:none;border-top:1px solid var(--k4);margin:11px 0}
+.empty-state{text-align:center;padding:30px 14px;color:var(--m)}
+.empty-icon{font-size:2.4rem;display:block;margin-bottom:8px;opacity:.5}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-thumb{background:var(--rd)}
+
+/* ── WELCOME SCREEN SPECIFIC ── */
+#screen-welcome{
+  background:radial-gradient(ellipse 70% 50% at 10% 5%,rgba(196,18,48,.06) 0%,transparent 70%)
+}
+.welcome-version{
+  font-family:var(--fu);font-size:.68rem;font-weight:700;
+  letter-spacing:.2em;text-transform:uppercase;
+  color:var(--r);opacity:.8;margin-top:6px
+}
+
+/* ── MODE TOGGLE ── */
+.mode-toggle{
+  display:flex;background:rgba(255,255,255,.04);
+  border:1px solid var(--k4);padding:3px;gap:3px;margin-bottom:12px
+}
+.mode-btn{
+  flex:1;padding:8px;border:none;cursor:pointer;
+  font-family:var(--fu);font-size:.78rem;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;
+  background:transparent;color:var(--m);transition:all .2s
+}
+.mode-btn.active{background:var(--r);color:#fff}
+
+/* ══ EXPLORER VIEWS ════════════════════════════════════════════ */
+
+/* Sub-tabs Llista / Mapa */
+.view-subtabs {
+  display:flex;gap:3px;padding:6px 0 4px;
+  position:sticky;top:0;z-index:99;
+  background:var(--k2);backdrop-filter:blur(16px);
+}
+.vstab {
+  flex:1;padding:8px 4px;text-align:center;
+  font-family:var(--fu);font-size:.65rem;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;
+  border:1px solid var(--k4);background:transparent;
+  color:var(--m);cursor:pointer;transition:all .14s;
+}
+.vstab:active { transform:scale(.96); }
+.vstab.active { background:rgba(196,18,48,.12);border-color:var(--r);color:var(--rl); }
+
+/* ── SENSORY FILTER PANEL — always visible, compact ── */
+.sf-panel {
+  background:var(--k2);
+  border-bottom:1px solid var(--k4);
+  padding:8px 0 5px;
+  position:sticky;top:33px;z-index:98;
+  backdrop-filter:blur(16px);
+}
+/* SRM color bar */
+.sf-srm-bar {
+  display:flex;height:22px;margin-bottom:6px;
+  overflow:hidden;cursor:pointer;position:relative;
+  border:1px solid var(--k4);
+}
+.sf-srm-cell { flex:1; }
+.sf-srm-overlay {
+  position:absolute;top:0;bottom:0;
+  border:2px solid rgba(255,255,255,.9);
+  pointer-events:none;box-sizing:border-box;display:none;
+}
+/* Scrollable rows */
+.sf-row {
+  display:flex;gap:5px;overflow-x:auto;
+  scrollbar-width:none;padding-bottom:3px;margin-bottom:2px;
+  align-items:stretch;
+}
+.sf-row::-webkit-scrollbar { display:none; }
+.sf-label {
+  font-family:var(--fu);font-size:.7rem;font-weight:700;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--r);
+  flex-shrink:0;min-width:48px;display:flex;align-items:center;
+}
+/* Pills — més grans i fàcils de tocar */
+.sf-pill {
+  font-family:var(--fu);font-size:.72rem;font-weight:700;
+  letter-spacing:.05em;text-transform:uppercase;
+  padding:8px 13px;min-height:36px;
+  border:1px solid var(--k4);
+  background:transparent;color:var(--m);
+  cursor:pointer;transition:background .12s,border-color .12s,color .12s;
+  white-space:nowrap;flex-shrink:0;
+  display:flex;align-items:center;
+}
+.sf-pill:active { opacity:.7; }
+.sf-pill.on {
+  background:rgba(196,18,48,.16);border-color:var(--r);
+  color:var(--rl);
+}
+/* Reset row */
+.sf-status-row {
+  display:flex;justify-content:space-between;align-items:center;
+  padding-top:5px;
+}
+.sf-reset {
+  font-family:var(--fu);font-size:.65rem;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;
+  background:none;border:none;color:var(--m);cursor:pointer;padding:2px 0;
+  transition:color .15s;
+}
+.sf-reset:active { color:var(--rl); }
+.sf-active-count {
+  font-family:var(--fu);font-size:.65rem;font-weight:700;
+  letter-spacing:.08em;color:var(--r);display:none;
+}
+
+/* ── MATCH COLORS on beer cards ── */
+/* Left border = match color; background tint */
+.beer-card.mc-green  { border-left-color:#2E8040 !important; background:rgba(46,128,64,.07) !important; }
+.beer-card.mc-yellow { border-left-color:#B8A010 !important; background:rgba(184,160,16,.06) !important; }
+.beer-card.mc-red    { border-left-color:#8A0B21 !important; background:rgba(138,11,33,.06) !important; opacity:.75; }
+.beer-card.mc-grey   { border-left-color:#333 !important; background:rgba(255,255,255,.01) !important; opacity:.28; }
+
+/* Match % badge inside card header */
+.match-pct-badge {
+  font-family:var(--fd);font-size:.78rem;letter-spacing:.02em;flex-shrink:0;
+}
+.mpb-green  { color:#6DBF7E; }
+.mpb-yellow { color:#D4C040; }
+.mpb-red    { color:var(--rd); }
+.mpb-grey   { color:var(--m); }
+
+/* ── MAP VIEW ── */
+#cards-view-map { display:none; padding-bottom:86px; }
+.map-info-bar {
+  font-family:var(--fu);font-size:.6rem;font-weight:600;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--m);
+  padding:5px 0 6px;text-align:center;
+}
+.map-canvas-wrap {
+  border:1px solid var(--k4);background:var(--k2);position:relative;
+}
+#map-cv { display:block;width:100%; }
+.map-legend {
+  display:flex;flex-wrap:wrap;gap:8px;padding:6px 0 3px;justify-content:center;
+}
+.map-leg-item { display:flex;align-items:center;gap:4px; }
+.map-leg-dot  { width:10px;height:10px; }
+.map-leg-lbl  {
+  font-family:var(--fu);font-size:.58rem;font-weight:600;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--m);
+}
+/* Tooltip */
+.map-tooltip {
+  position:absolute;pointer-events:none;z-index:500;
+  background:var(--k2);border:1px solid var(--k4);
+  border-left:2px solid var(--r);
+  padding:8px 11px;max-width:190px;
+  box-shadow:0 4px 20px rgba(0,0,0,.7);
+  opacity:0;transition:opacity .1s;
+}
+.map-tooltip.show { opacity:1; }
+.mtt-name {
+  font-family:var(--fu);font-size:.82rem;font-weight:700;
+  letter-spacing:.04em;color:var(--sl);margin-bottom:1px;
+}
+.mtt-cat  {
+  font-family:var(--fu);font-size:.58rem;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--r);margin-bottom:4px;
+}
+.mtt-pct  {
+  font-family:var(--fd);font-size:1.1rem;letter-spacing:.02em;
+}
+
+</style>
+</head>
+<body>
+
+<!-- ══ RESULT OVERLAY ══════════════════════════════════ -->
+<div id="result-overlay" class="result-overlay" style="padding:0;flex-direction:column">
+  <div id="res-personal" style="flex:1;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 24px 16px;border-bottom:1px solid rgba(255,255,255,.1)">
+    <div id="res-personal-icon" style="font-size:3.8rem;margin-bottom:8px">🎯</div>
+    <div id="res-personal-title"></div>
+    <div id="res-personal-detail" style="margin-top:6px"></div>
+  </div>
+  <div id="res-team-half" style="flex:1;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 24px 24px">
+    <div id="res-team-icon" style="font-size:3.2rem;margin-bottom:6px">🍻</div>
+    <div id="res-team-title"></div>
+    <div id="res-team-detail" style="margin-top:6px"></div>
+    <div id="res-beer" style="font-family:var(--fu);font-size:.78rem;letter-spacing:.08em;color:rgba(255,255,255,.45);margin-top:10px"></div>
+  </div>
+  <button class="btn btn-ghost" style="position:absolute;top:14px;right:14px;width:auto;padding:6px 14px;font-size:.75rem;z-index:10"
+    onclick="document.getElementById('result-overlay').style.display='none'">✕ Tancar</button>
+</div>
+
+<!-- ══ WELCOME ════════════════════════════════════════ -->
+<div id="screen-welcome" class="screen active" style="position:relative;overflow:hidden">
+  <canvas id="beer-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;opacity:.6"></canvas>
+
+  <div style="position:relative;z-index:1;padding:32px 0 16px;text-align:center">
+    <div class="title">🍺 BJCP</div>
+    <div class="subtitle">Beer Style Game</div>
+    <div class="welcome-version" id="app-version"></div>
+  </div>
+
+  <div style="position:relative;z-index:1;flex:1;display:flex;flex-direction:column;justify-content:center;gap:11px;max-width:400px;margin:0 auto;width:100%">
+    <div class="card">
+      <div class="sec-title" style="margin-bottom:14px">Entra a la partida</div>
+
+      <div class="role-wrap">
+        <div class="role-card" id="role-master" onclick="selectRole('master')">
+          <span class="role-icon">👑</span>
+          <span class="role-name">Master</span>
+        </div>
+        <div class="role-card" id="role-team" onclick="selectRole('team')">
+          <span class="role-icon">🍻</span>
+          <span class="role-name">Equip</span>
+        </div>
+      </div>
+
+      <div id="form-master" style="display:none">
+        <div class="ig"><label>El teu nom</label><input type="text" id="master-name" placeholder="Master…" maxlength="20" value="Klemen"></div>
+        <div class="ig"><label>Contrasenya Master</label><input type="password" id="master-password" placeholder="••••••••"></div>
+        <div class="mode-toggle">
+          <button id="btn-mode-create" class="mode-btn active" onclick="setMasterMode('create')">✨ Crear</button>
+          <button id="btn-mode-rejoin" class="mode-btn" onclick="setMasterMode('rejoin')">🔑 Recuperar</button>
+        </div>
+        <div id="master-create-section">
+          <button class="btn btn-primary" onclick="createGame()">✨ Crear Partida</button>
+        </div>
+        <div id="master-rejoin-section" style="display:none">
+          <button class="btn btn-ghost" style="width:100%;margin-bottom:8px" onclick="loadExistingGames()">🔍 Cercar partides</button>
+          <div id="existing-games-list" style="max-height:220px;overflow-y:auto;margin-bottom:8px"></div>
+          <div class="ig" style="margin-bottom:8px">
+            <label>O introdueix el codi manualment</label>
+            <input type="text" id="master-rejoin-input" placeholder="XXXXX" maxlength="5"
+              style="text-transform:uppercase;letter-spacing:5px;font-size:1.3rem;text-align:center;font-family:var(--fd)">
+          </div>
+          <button class="btn btn-primary" onclick="rejoinAsMaster()">🔑 Recuperar Partida</button>
+        </div>
+      </div>
+
+      <div id="form-team" style="display:none">
+        <div class="ig">
+          <label>Codi de partida</label>
+          <input type="text" id="join-code" placeholder="XXXXX" maxlength="5"
+            style="text-transform:uppercase;letter-spacing:5px;font-size:1.6rem;text-align:center;font-family:var(--fd)">
+        </div>
+        <div class="ig"><label>El teu nom</label><input type="text" id="player-name" placeholder="El teu nom…" maxlength="20"></div>
+        <button class="btn btn-primary" onclick="loadTeamsForJoin()">🍺 Veure Equips i Entrar</button>
+      </div>
+    </div>
+
+    <div class="card" style="padding:11px;text-align:center">
+      <p class="muted" style="font-family:var(--fu);font-size:.68rem;font-weight:500;letter-spacing:.08em;line-height:1.9;text-transform:uppercase">
+        📱 Compatible mòbils · 🌐 Sense instal·lació<br>🔄 Sessió desada automàticament
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ══ LOBBY MASTER ═══════════════════════════════════ -->
+<div id="screen-lobby-master" class="screen">
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:22px 0 13px">
+    <div>
+      <div class="title" style="font-size:1.8rem">Sala d'Espera</div>
+      <div class="subtitle">Comparteix el codi</div>
+    </div>
+    <button class="btn btn-ghost" onclick="showSettings()">⚙️</button>
+  </div>
+  <div style="max-width:400px;margin:0 auto;width:100%;flex:1">
+    <div class="card mb-12">
+      <div class="muted" style="font-family:var(--fu);font-size:.62rem;font-weight:700;letter-spacing:.22em;text-transform:uppercase;text-align:center;margin-bottom:4px">Codi de partida</div>
+      <div class="game-code" id="display-code">—</div>
+      <button class="btn btn-secondary btn-sm" onclick="cpCode(document.getElementById('display-code').textContent)">📋 Copiar codi</button>
+    </div>
+    <div class="card mb-12">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div class="sec-title" style="margin:0">🎴 Cartes del joc</div>
+        <button class="btn btn-ghost" style="font-size:.7rem" onclick="openCardPoolManager()">Gestionar</button>
+      </div>
+      <p class="muted" style="font-family:var(--fu);font-size:.72rem;letter-spacing:.06em" id="pool-info">🎴 Totes les cartes actives</p>
+    </div>
+    <div class="card mb-12">
+      <div class="sec-title">👥 Jugadors connectats</div>
+      <div id="lobby-players-list">
+        <div class="empty-state"><span class="empty-icon">⏳</span><p>Esperant jugadors…</p></div>
+      </div>
+    </div>
+    <button class="btn btn-success mb-8" id="btn-start" onclick="startGame()" disabled>🚀 Iniciar Partida</button>
+    <p style="text-align:center;font-family:var(--fu);font-size:.67rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--m)">Mínim 1 equip per iniciar</p>
+  </div>
+</div>
+
+<!-- ══ LOBBY TEAM ══════════════════════════════════════ -->
+<div id="screen-lobby-team" class="screen">
+  <div style="padding:22px 0 13px;text-align:center">
+    <div class="title" style="font-size:1.8rem">Sala d'Espera</div>
+    <div class="subtitle" id="lobby-team-info">Connectat!</div>
+  </div>
+  <div style="max-width:400px;margin:0 auto;width:100%;flex:1">
+    <div class="card mb-12">
+      <div class="sec-title">👥 Jugadors</div>
+      <div id="lobby-team-list"></div>
+    </div>
+    <div class="card" style="text-align:center;padding:16px">
+      <span class="status-dot"></span>
+      <span class="muted" style="font-family:var(--fu);font-size:.8rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Esperant que el Master iniciï la partida…</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══ GAME: TEAM ══════════════════════════════════════ -->
+<div id="screen-game-team" class="screen" style="padding:0">
+  <div class="id-strip">
+    <span id="player-strip">👤 —</span>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span id="cards-strip" style="color:var(--m);font-size:.7rem">🃏 0</span>
+      <button onclick="showPlayerSettings()" style="background:none;border:none;cursor:pointer;font-size:.9rem;color:var(--m);padding:2px 5px">⚙️</button>
+    </div>
+  </div>
+
+  <div style="flex:1;overflow-y:auto;padding:0 14px 82px">
+    <!-- TAB CARTES -->
+    <div id="tab-cards">
+
+      <!-- Sub-tabs: Llista / Mapa -->
+      <div class="view-subtabs">
+        <button class="vstab active" id="vstab-list" onclick="setCardView('list')">☰ Llista</button>
+        <button class="vstab"        id="vstab-map"  onclick="setCardView('map')">◉ Mapa</button>
+      </div>
+
+      <!-- FILTRE SENSORIAL — sempre visible, compacte -->
+      <div class="sf-panel" id="sf-panel">
+
+        <!-- Banda SRM visual clicable -->
+        <div id="sf-srm-bar" class="sf-srm-bar"></div>
+
+        <!-- Fila 1: Color -->
+        <div class="sf-row">
+          <span class="sf-label">Color</span>
+          <span class="sf-pill" data-esrm="1,4">Pàl·lid (1–4)</span>
+          <span class="sf-pill" data-esrm="4,9">Daurat (4–9)</span>
+          <span class="sf-pill" data-esrm="9,18">Ambre (9–18)</span>
+          <span class="sf-pill" data-esrm="18,30">Marró (18–30)</span>
+          <span class="sf-pill" data-esrm="30,40">Negre (30+)</span>
+        </div>
+
+        <!-- Fila 2: Fermentació -->
+        <div class="sf-row">
+          <span class="sf-label">Ferm.</span>
+          <span class="sf-pill" data-eferm="ale">Ale (alt-ferm.)</span>
+          <span class="sf-pill" data-eferm="lager">Lager (baix-ferm.)</span>
+          <span class="sf-pill" data-eferm="wild">Salvatge</span>
+          <span class="sf-pill" data-eferm="hybrid">Híbrida</span>
+        </div>
+
+        <!-- Fila 3: Alcohol (amb rangs reals) -->
+        <div class="sf-row">
+          <span class="sf-label">Alcohol</span>
+          <span class="sf-pill" data-eabv="2,3.5">Baix (2–3.5%)</span>
+          <span class="sf-pill" data-eabv="3.5,5">Moderat (3.5–5%)</span>
+          <span class="sf-pill" data-eabv="5,6.5">Normal (5–6.5%)</span>
+          <span class="sf-pill" data-eabv="6.5,9">Alt (6.5–9%)</span>
+          <span class="sf-pill" data-eabv="9,14">Fort (9%+)</span>
+        </div>
+
+        <!-- Fila 4: Amargor (amb rangs reals) -->
+        <div class="sf-row">
+          <span class="sf-label">Amargor</span>
+          <span class="sf-pill" data-eibu="0,12">Gens (0–12)</span>
+          <span class="sf-pill" data-eibu="8,25">Suau (8–25)</span>
+          <span class="sf-pill" data-eibu="20,40">Moderat (20–40)</span>
+          <span class="sf-pill" data-eibu="35,60">Intens (35–60)</span>
+          <span class="sf-pill" data-eibu="55,100">Molt amarg (55+)</span>
+        </div>
+
+        <!-- Fila 5: Cos -->
+        <div class="sf-row">
+          <span class="sf-label">Cos</span>
+          <span class="sf-pill" data-ebody="light">Lleuger</span>
+          <span class="sf-pill" data-ebody="medium">Mig</span>
+          <span class="sf-pill" data-ebody="full">Ple</span>
+        </div>
+
+        <!-- Fila 6: Caràcter sensorial -->
+        <div class="sf-row">
+          <span class="sf-label">Caràcter</span>
+          <span class="sf-pill" data-echar="malty">Malta</span>
+          <span class="sf-pill" data-echar="hoppy">Llúpol</span>
+          <span class="sf-pill" data-echar="roasty">Torrat/Cafè</span>
+          <span class="sf-pill" data-echar="sour">Àcid</span>
+          <span class="sf-pill" data-echar="fruity">Afruitat</span>
+          <span class="sf-pill" data-echar="spice">Especiat/Herbes</span>
+          <span class="sf-pill" data-echar="smoke">Fumat</span>
+        </div>
+
+        <!-- Fila 7: Final -->
+        <div class="sf-row">
+          <span class="sf-label">Final</span>
+          <span class="sf-pill" data-echar="dry">Sec</span>
+          <span class="sf-pill" data-echar="sweet">Dolç/Residual</span>
+          <span class="sf-pill" data-echar="hicarb">Molt carbonat.</span>
+        </div>
+
+        <!-- Reset + recompte actius -->
+        <div class="sf-status-row">
+          <button class="sf-reset" onclick="explorerResetFilters()">↺ Reiniciar</button>
+          <span class="sf-active-count" id="sf-active-count">— filtres actius</span>
+        </div>
+      </div>
+
+      <!-- Cerca + estat chips -->
+      <div class="filters-bar" style="padding-top:6px">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="card-search" placeholder="Buscar estil…" oninput="filterCards()">
+        </div>
+        <div class="chips">
+          <span class="chip active" onclick="setFilter(this,'all')">Totes</span>
+          <span class="chip" onclick="setFilter(this,'possible')">⭐ Possibles</span>
+          <span class="chip" onclick="setFilter(this,'discarded')">✕ Descartades</span>
+        </div>
+      </div>
+
+      <div id="cards-lock-banner" style="display:none;padding:20px;text-align:center;margin-bottom:10px;background:rgba(196,18,48,.05);border:1px solid rgba(196,18,48,.2);border-left:2px solid var(--rd)">
+        <div style="font-size:2rem;margin-bottom:6px">🔒</div>
+        <div style="font-family:var(--fu);font-weight:700;letter-spacing:.06em;color:var(--sl)">Cartes bloquejades</div>
+        <div class="muted" style="font-family:var(--fu);font-size:.76rem;letter-spacing:.04em;margin-top:4px">Esperant que el Master seleccioni la cervesa de la ronda...</div>
+      </div>
+
+      <div class="round-bar" id="round-bar" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div class="round-num" id="round-display">—</div>
+            <div class="muted" style="font-family:var(--fu);font-size:.72rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-top:2px">🍺 Identifica la cervesa!</div>
+          </div>
+          <div style="text-align:right">
+            <div class="muted" style="font-family:var(--fu);font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.14em">Cartes ⚡</div>
+            <div style="font-family:var(--fd);font-size:1.5rem;color:var(--rl)" id="action-count">0</div>
+          </div>
+        </div>
+        <div id="revealed-bar" style="margin-top:6px;display:flex;flex-wrap:wrap;gap:3px"></div>
+        <div id="pool-count-display" class="muted" style="font-family:var(--fu);font-size:.65rem;letter-spacing:.06em;margin-top:4px"></div>
+      </div>
+
+      <div id="cancel-shield-info" class="pending-banner pending-cancel" style="display:none">
+        🚫 <strong>Escut actiu!</strong> La pròxima carta d'info rival quedarà bloquejada.
+      </div>
+
+      <div id="team-guesses-wrap" style="display:none;margin:0 0 10px">
+        <div id="team-guesses"></div>
+      </div>
+      <!-- LIST VIEW -->
+      <div id="cards-view-list">
+        <div id="cards-container"></div>
+      </div>
+
+      <!-- MAP VIEW -->
+      <div id="cards-view-map">
+        <div class="map-info-bar">Mapa de famílies BJCP · <span style="color:var(--r)">Dos dits per ampliar · Doble toc per reiniciar</span></div>
+        <div class="map-canvas-wrap">
+          <canvas id="map-cv" height="360"></canvas>
+          <div class="map-tooltip" id="map-tooltip">
+            <div class="mtt-name" id="mtt-name"></div>
+            <div class="mtt-num"  id="mtt-num" style="font-family:var(--fd);font-size:.75rem;color:var(--rd);margin-bottom:1px"></div>
+            <div class="mtt-cat"  id="mtt-cat"></div>
+            <div class="mtt-pct"  id="mtt-pct"></div>
+            <div class="mtt-fam"  id="mtt-fam" style="font-family:var(--fu);font-size:.58rem;color:var(--m);opacity:.7;margin-top:2px"></div>
+          </div>
+        </div>
+        <div class="map-legend">
+          <div class="map-leg-item"><div class="map-leg-dot" style="background:#5b9d4a"></div><span class="map-leg-lbl">Ale</span></div>
+          <div class="map-leg-item"><div class="map-leg-dot" style="background:#4a7fc1"></div><span class="map-leg-lbl">Lager</span></div>
+          <div class="map-leg-item"><div class="map-leg-dot" style="background:#c17a3a"></div><span class="map-leg-lbl">Belga/Sour</span></div>
+          <div class="map-leg-item"><div class="map-leg-dot" style="background:#8f5bb5"></div><span class="map-leg-lbl">Weizen</span></div>
+          <div class="map-leg-item"><div class="map-leg-dot" style="background:#c14a4a"></div><span class="map-leg-lbl">Stout</span></div>
+          <div class="map-leg-item"><div class="map-leg-dot" style="background:#6aabb5"></div><span class="map-leg-lbl">Lager al.</span></div>
+          <div class="map-leg-item"><div class="map-leg-dot" style="background:#888"></div><span class="map-leg-lbl">Especial.</span></div>
+          <div class="map-leg-item"><div class="map-leg-dot" style="background:#C8960A;border:2px solid #E8C040"></div><span class="map-leg-lbl">⭐ Possible</span></div>
+        </div>
+        <div class="map-legend" style="margin-top:2px">
+          <span class="map-leg-lbl" style="color:var(--sd)">Coincid.:</span>
+          <div class="map-leg-item"><div class="map-leg-dot" style="border:2px solid #2E8040;background:transparent"></div><span class="map-leg-lbl">≥70%</span></div>
+          <div class="map-leg-item"><div class="map-leg-dot" style="border:2px solid #B8A010;background:transparent"></div><span class="map-leg-lbl">40–69%</span></div>
+          <div class="map-leg-item"><div class="map-leg-dot" style="border:2px solid #8A0B21;background:transparent"></div><span class="map-leg-lbl">&lt;40%</span></div>
+          <div class="map-leg-item" style="display:flex;align-items:center;gap:4px"><div style="width:16px;height:1px;background:rgba(255,255,255,.3)"></div><span class="map-leg-lbl">Subestil</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB ACCIONS -->
+    <div id="tab-actions" style="display:none">
+      <div class="round-bar" style="margin-top:4px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div class="sec-title" style="margin:0">🃏 Les teves cartes d'acció</div>
+          <div style="font-family:var(--fd);font-size:1.6rem;color:var(--rl)" id="action-count2">0</div>
+        </div>
+        <p class="muted mt-8" style="font-family:var(--fu);font-size:.73rem;letter-spacing:.04em">Toca una carta per usar-la.</p>
+      </div>
+      <div id="team-action-cards" style="margin-top:10px"></div>
+    </div>
+
+    <!-- TAB RANKING -->
+    <div id="tab-ranking" style="display:none">
+      <div class="sec-title" style="margin-top:6px">🏆 Equips</div>
+      <div id="team-ranking" class="mb-12"></div>
+      <div class="sec-title">👤 Individual</div>
+      <div id="player-ranking"></div>
+    </div>
+
+    <!-- TAB HISTORIAL -->
+    <div id="tab-history" style="display:none">
+      <div class="sec-title" style="margin-top:6px">📜 Rondes jugades</div>
+      <div id="team-history">
+        <div class="empty-state"><span class="empty-icon">📜</span><p>Cap ronda jugada encara</p></div>
+      </div>
+    </div>
+
+    <!-- TAB MISSATGES -->
+    <div id="tab-messages" style="display:none">
+      <div class="sec-title" style="margin-top:6px">💬 Avisos</div>
+      <div id="team-msgs">
+        <div class="empty-state"><span class="empty-icon">💬</span><p>Sense missatges</p></div>
+      </div>
+    </div>
+  </div>
+
+  <nav class="bnav">
+    <button class="nav-btn active" id="nav-cards"    onclick="switchTab('cards')">   <div class="nav-wrap"><span class="nav-icon">🃏</span></div><span>Cartes</span></button>
+    <button class="nav-btn"        id="nav-actions"  onclick="switchTab('actions')"> <div class="nav-wrap"><span class="nav-icon">⚡</span><span class="badge" id="action-badge" style="display:none">0</span></div><span>Accions</span></button>
+    <button class="nav-btn"        id="nav-ranking"  onclick="switchTab('ranking')"> <div class="nav-wrap"><span class="nav-icon">🏆</span></div><span>Ranking</span></button>
+    <button class="nav-btn"        id="nav-history"  onclick="switchTab('history')">  <div class="nav-wrap"><span class="nav-icon">📜</span></div><span>Historial</span></button>
+    <button class="nav-btn"        id="nav-messages" onclick="switchTab('messages')"><div class="nav-wrap"><span class="nav-icon">💬</span><span class="badge" id="msg-badge" style="display:none">!</span></div><span>Avisos</span></button>
+  </nav>
+</div>
+
+<!-- ══ GAME: MASTER ════════════════════════════════════ -->
+<div id="screen-game-master" class="screen" style="padding:0">
+  <div style="flex:1;overflow-y:auto;padding:13px 13px 82px">
+
+    <!-- TAB RONDA -->
+    <div id="mtab-round">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:11px">
+        <div class="sec-title" style="margin:0">👑 Panell Master</div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <span class="muted" style="font-family:var(--fu);font-size:.72rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase" id="master-round">Ronda 1/6</span>
+          <button class="btn btn-ghost" onclick="showSettings()">⚙️</button>
+        </div>
+      </div>
+
+      <div class="team-scores" id="team-scores"></div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <span class="muted" style="font-family:var(--fu);font-size:.72rem;letter-spacing:.06em" id="pool-info">🎴 Totes les cartes</span>
+        <button class="btn btn-ghost" style="font-size:.68rem" onclick="openCardPoolManager()">🎴 Cartes</button>
+      </div>
+
+      <!-- Pending: Yes/No -->
+      <div id="pending-yn-banner" class="pending-banner pending-yn" style="display:none">
+        <div style="font-family:var(--fu);font-weight:800;font-size:.85rem;letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px">❓ Pregunta Sí/No</div>
+        <div class="muted" style="font-family:var(--fu);font-size:.78rem;letter-spacing:.04em;margin-bottom:10px" id="pending-yn-text"></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-yn-yes btn-sm" onclick="answerYesNo(true)">✅ SÍ</button>
+          <button class="btn btn-yn-no  btn-sm" onclick="answerYesNo(false)">❌ NO</button>
+        </div>
+      </div>
+
+      <!-- Pending: Sensory -->
+      <div id="pending-sensory-banner" class="pending-banner pending-sensory" style="display:none">
+        <div style="font-family:var(--fu);font-weight:800;font-size:.85rem;letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px">🌾 Pista Sensorial Sol·licitada</div>
+        <div class="muted" style="font-family:var(--fu);font-size:.78rem;letter-spacing:.04em;margin-bottom:10px" id="pending-sensory-text"></div>
+        <button class="btn btn-success btn-sm" onclick="openSensoryClue()">✍️ Escriure Pista</button>
+      </div>
+
+      <!-- Pending: Info card -->
+      <div id="pending-info-banner" class="pending-banner pending-yn" style="display:none">
+        <div style="font-family:var(--fu);font-weight:800;font-size:.85rem;letter-spacing:.08em;text-transform:uppercase;margin-bottom:2px" id="pending-info-title">Info sol·licitada</div>
+        <div class="muted" style="font-family:var(--fu);font-size:.75rem;letter-spacing:.04em;margin-bottom:8px" id="pending-info-hint"></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="text" id="pending-info-input" placeholder="Ex: 8.5%" style="flex:1;min-width:0">
+          <button class="btn btn-success btn-sm" style="width:auto;flex-shrink:0" onclick="sendInfoAnswer()">✓ Enviar</button>
+        </div>
+      </div>
+
+      <!-- Beer select -->
+      <div class="card mb-11">
+        <div class="sec-title">🍺 Seleccionar Cervesa</div>
+        <div class="search-wrap" style="margin-bottom:8px">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="master-search" placeholder="Filtrar…" oninput="filterMasterBeers()" style="padding-left:34px">
+        </div>
+        <div class="beer-grid" id="beer-grid"></div>
+        <button class="btn btn-primary" id="btn-set-beer" onclick="setCurrentBeer()" disabled style="margin-top:9px">🚀 Iniciar ronda amb aquesta cervesa</button>
+        <div id="round-active-hint" class="muted" style="display:none;font-family:var(--fu);font-size:.74rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;text-align:center;margin-top:6px">✅ Ronda en curs — espera les propostes</div>
+      </div>
+
+      <!-- reveal-panel removed -->
+
+      <!-- Guesses -->
+      <div class="card mb-11">
+        <div class="sec-title">📨 Propostes Rebudes</div>
+        <div id="master-guesses">
+          <div class="empty-state"><span class="empty-icon">⏳</span><p>Esperant propostes…</p></div>
+        </div>
+        <button id="btn-reveal-result" class="btn btn-primary mt-12" style="display:none" onclick="revealResult()">
+          📢 Revelar Resultat a Tots
+        </button>
+        <div id="result-revealed-hint" class="muted" style="display:none;font-family:var(--fu);font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;text-align:center;margin-top:8px">✅ Resultat ja revelat</div>
+      </div>
+
+      <div class="g2 mb-11">
+        <button id="btn-next-round" class="btn btn-info" onclick="nextRound()">⏭️ Pròxima Ronda</button>
+        <button class="btn btn-secondary" onclick="openSendMessage()">📩 Missatge</button>
+      </div>
+    </div>
+
+    <!-- TAB RANKING + EQUIPS -->
+    <div id="mtab-ranking" style="display:none">
+      <div id="teams-detail" class="mb-4"></div>
+    </div>
+    <div id="mtab-teams" style="display:none"></div>
+
+    <!-- TAB LOG -->
+    <div id="mtab-log" style="display:none">
+      <div class="sec-title" style="margin-top:6px">📋 Log de Partida</div>
+      <div id="master-log"></div>
+    </div>
+
+    <!-- TAB MISSATGES -->
+    <div id="mtab-messages" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px">
+        <div class="sec-title" style="margin:0">💬 Missatges</div>
+        <button class="btn btn-secondary btn-sm" onclick="openSendMessage()">+ Nou</button>
+      </div>
+      <div id="master-msgs">
+        <div class="empty-state"><span class="empty-icon">💬</span><p>Sense missatges</p></div>
+      </div>
+    </div>
+  </div>
+
+  <nav class="bnav">
+    <button class="nav-btn active" id="mnav-round"    onclick="switchMasterTab('round')"   ><span class="nav-icon">🎮</span><span>Ronda</span></button>
+    <button class="nav-btn"        id="mnav-ranking"  onclick="switchMasterTab('ranking')" ><span class="nav-icon">🏆</span><span>Equips</span></button>
+    <button class="nav-btn"        id="mnav-log"      onclick="switchMasterTab('log')"     ><span class="nav-icon">📋</span><span>Log</span></button>
+    <button class="nav-btn"        id="mnav-messages" onclick="switchMasterTab('messages')"><div class="nav-wrap"><span class="nav-icon">💬</span><span class="badge" id="master-msg-badge" style="display:none">!</span></div><span>Missatge</span></button>
+  </nav>
+</div>
+
+<!-- ══ FINISHED ════════════════════════════════════════ -->
+<div id="screen-finished" class="screen">
+  <div style="padding:32px 0 16px;text-align:center">
+    <div class="title">🏆 Fi!</div>
+    <div class="subtitle">Resultats Finals</div>
+  </div>
+  <div style="flex:1;max-width:400px;margin:0 auto;width:100%">
+    <div class="card mb-12">
+      <div class="sec-title">🥇 Equips</div>
+      <div id="final-team-ranking"></div>
+    </div>
+    <div class="card mb-16">
+      <div class="sec-title">👤 Jugadors</div>
+      <div id="final-player-ranking"></div>
+    </div>
+    <button class="btn btn-primary" onclick="game.clearSession();location.reload()">🔄 Nova Partida</button>
+  </div>
+</div>
+
+<!-- ══ MODAL ════════════════════════════════════════════ -->
+<div id="modal" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-title" id="modal-title"></div>
+    <div id="modal-body"></div>
+    <button id="modal-close" class="btn btn-secondary mt-12" onclick="closeModal()">Tancar</button>
+  </div>
+</div>
+
+<button id="theme-toggle" onclick="toggleTheme()" title="Canviar tema">☀</button>
+<div id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<script src="data/cards.js"></script>
+<script src="js/game.js"></script>
+<script src="js/ui.js"></script>
+
+<script>
+/* ── Welcome screen: beer bubbles rising ── */
+(function(){
+  const cv = document.getElementById('beer-canvas');
+  if(!cv) return;
+  const ctx = cv.getContext('2d');
+
+  function rz(){
+    cv.width  = cv.offsetWidth  * devicePixelRatio;
+    cv.height = cv.offsetHeight * devicePixelRatio;
+    ctx.scale(devicePixelRatio, devicePixelRatio);
+  }
+  rz(); window.addEventListener('resize', rz);
+
+  // Red/crimson tones matching brand palette
+  const COLORS = ['#C41230','#E5172F','#8A0B21','#FF3050','#CC2040','#AA1025'];
+
+  function makeBubble(anyY){
+    const w = cv.offsetWidth || 400;
+    const h = cv.offsetHeight || 700;
+    return {
+      x:     Math.random() * w,
+      y:     anyY ? Math.random() * h : h + 12,
+      r:     2 + Math.random() * 8,
+      speed: 0.8 + Math.random() * 2.2,   // faster than before
+      sway:  (Math.random() - 0.5) * 0.5,
+      phase: Math.random() * Math.PI * 2,
+      color: COLORS[Math.floor(Math.random() * COLORS.length)],
+      alpha: 0.18 + Math.random() * 0.45,
+    };
+  }
+
+  const NUM = 65;
+  const bubbles = Array.from({length: NUM}, () => makeBubble(true));
+  let t = 0;
+
+  function frame(){
+    const w = cv.offsetWidth, h = cv.offsetHeight;
+    ctx.clearRect(0, 0, w, h);
+
+    // Subtle bottom gradient tint
+    const grad = ctx.createLinearGradient(0, h, 0, 0);
+    grad.addColorStop(0, 'rgba(30,4,8,.45)');
+    grad.addColorStop(1, 'rgba(8,2,3,.0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, w, h);
+
+    t += 0.018;
+
+    bubbles.forEach(b => {
+      b.y -= b.speed;
+      b.x += Math.sin(t + b.phase) * b.sway;
+
+      // Ring style bubble
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+      ctx.strokeStyle = b.color;
+      ctx.globalAlpha = b.alpha * (0.65 + 0.35 * Math.sin(t * 2.2 + b.phase));
+      ctx.lineWidth = 1.3;
+      ctx.stroke();
+
+      // Inner glint (white-ish highlight)
+      ctx.beginPath();
+      ctx.arc(b.x - b.r * 0.3, b.y - b.r * 0.3, b.r * 0.22, 0, Math.PI * 2);
+      ctx.fillStyle = '#FFE0E8';
+      ctx.globalAlpha = b.alpha * 0.45;
+      ctx.fill();
+
+      ctx.globalAlpha = 1;
+
+      // Respawn when off top
+      if(b.y + b.r < 0) Object.assign(b, makeBubble(false));
+    });
+
+    requestAnimationFrame(frame);
+  }
+  frame();
+})();
+</script>
+</body>
+</html>
