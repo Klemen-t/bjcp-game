@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
 //  UI.JS  —  Interface & interaction logic
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION = 'v2026.25 · 23/03/2026';
+const APP_VERSION = 'v2026.26 · 24/03/2026';
 
 // ═══ THEME TOGGLE ════════════════════════════════════════════
 function toggleTheme() {
@@ -257,10 +257,16 @@ function initExplorerPills() {
 
   document.querySelectorAll('.sf-pill[data-esrm]').forEach(p => {
     p.addEventListener('click', () => {
-      const [mn,mx] = p.dataset.esrm.split(',').map(Number);
-      EF.srmMin=mn; EF.srmMax=mx;
+      const isOn = p.classList.contains('on');
       document.querySelectorAll('.sf-pill[data-esrm]').forEach(x=>x.classList.remove('on'));
-      p.classList.add('on'); explorerUpdateFilters();
+      if (isOn) {
+        EF.srmMin=1; EF.srmMax=40; // desmarcar
+      } else {
+        const [mn,mx] = p.dataset.esrm.split(',').map(Number);
+        EF.srmMin=mn; EF.srmMax=mx;
+        p.classList.add('on');
+      }
+      explorerUpdateFilters();
     });
   });
   document.querySelectorAll('.sf-pill[data-eferm]').forEach(p => {
@@ -289,18 +295,30 @@ function initExplorerPills() {
   });
   document.querySelectorAll('.sf-pill[data-eabv]').forEach(p => {
     p.addEventListener('click', () => {
-      const [mn,mx] = p.dataset.eabv.split(',').map(Number);
-      EF.abvMin=mn; EF.abvMax=mx;
+      const isOn = p.classList.contains('on');
       document.querySelectorAll('.sf-pill[data-eabv]').forEach(x=>x.classList.remove('on'));
-      p.classList.add('on'); explorerUpdateFilters();
+      if (isOn) {
+        EF.abvMin=0; EF.abvMax=15; // desmarcar
+      } else {
+        const [mn,mx] = p.dataset.eabv.split(',').map(Number);
+        EF.abvMin=mn; EF.abvMax=mx;
+        p.classList.add('on');
+      }
+      explorerUpdateFilters();
     });
   });
   document.querySelectorAll('.sf-pill[data-eibu]').forEach(p => {
     p.addEventListener('click', () => {
-      const [mn,mx] = p.dataset.eibu.split(',').map(Number);
-      EF.ibuMin=mn; EF.ibuMax=mx;
+      const isOn = p.classList.contains('on');
       document.querySelectorAll('.sf-pill[data-eibu]').forEach(x=>x.classList.remove('on'));
-      p.classList.add('on'); explorerUpdateFilters();
+      if (isOn) {
+        EF.ibuMin=0; EF.ibuMax=100; // desmarcar
+      } else {
+        const [mn,mx] = p.dataset.eibu.split(',').map(Number);
+        EF.ibuMin=mn; EF.ibuMax=mx;
+        p.classList.add('on');
+      }
+      explorerUpdateFilters();
     });
   });
 }
@@ -1248,7 +1266,9 @@ function listenGameState() {
       document.querySelector('.chip')?.classList.add('active');
       const wrap = el('team-guesses-wrap');
       if (wrap) wrap.style.display = 'none';
-      showToast('🔄 Nova ronda — cartes reiniciades!');
+      // Reset sensory filters too
+      explorerResetFilters();
+      showToast('🔄 Nova ronda — cartes i filtres reiniciats!');
       renderCurrentCardView();
     }
     activeCardIds = s.activeCardIds || null;
@@ -1678,8 +1698,10 @@ function renderBeerCards() {
     rv:  getRevealStatus(c, _gI, _tI)
   }));
   withMeta.sort((a, b) => {
-    const am = a.rv==='match' ? 1 : 0, bm = b.rv==='match' ? 1 : 0;
-    if (bm !== am) return bm - am;          // range-match always first
+    // Priority: match(verd)=2, neutral=1, nomatch(tacat)=0
+    const rank = rv => rv==='match' ? 2 : rv==='nomatch' ? 0 : 1;
+    const ar = rank(a.rv), br = rank(b.rv);
+    if (br !== ar) return br - ar;           // range-match always first, nomatch last
     if (EF.active) return b.pct - a.pct;    // then by sensory filter %
     return (a.c.categoryNumber - b.c.categoryNumber) || a.c.name.localeCompare(b.c.name, 'ca');
   });
