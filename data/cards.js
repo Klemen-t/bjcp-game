@@ -97,7 +97,7 @@ const BJCP_CARDS = [
     "abvMax": 12.0,
     "srmMin": 9.0,
     "srmMax": 18.0,
-    "commercialExamples": "Anchor Old Foghorn, Bell's Third Coast Old Ale, East End Gratitude, Hair of the Dog Doggie Claws, Sierra Nevada Bigfoot",
+    "commercialExamples": "Anchor Old Foghorn, Bell's Third Coast Old Ale, East End Gratitude, Hair of the Dog Doggie Claws, Sierra Nevada Bigfoot, La Pirata Trenka, Menno Oliver The Gaze",
     "tags": "very-high-strength, amber-color, top-fermented, northamerica, craft-style, strong-ale-family, bitter, hoppy"
   },
   {
@@ -137,7 +137,7 @@ const BJCP_CARDS = [
     "abvMax": 7.5,
     "srmMin": 6.0,
     "srmMax": 14.0,
-    "commercialExamples": "Bell's Two-Hearted Ale, Cigar City Jai Alai, Fat Heads Head Hunter IPA, Firestone Walker Union Jack, Maine Lunch, Russian River Blind Pig IPA",
+    "commercialExamples": "Optimist Mandalar, Crim The Goats, Green Trip Rec Brew, Everyday IPA La Pirata, Yakima San Miguel, Lagunitas IPA, Imparable Basqueland, IPA Montseny, Esgarrapats Guineu, Alice the dog La Calavera, Punk IPA Brewdog, Viakrucis La Pirata",
     "tags": "high-strength, pale-color, top-fermented, north america, craft-style, ipa-family, bitter, hoppy"
   },
   {
@@ -477,7 +477,7 @@ const BJCP_CARDS = [
     "abvMax": 9.5,
     "srmMin": 4.5,
     "srmMax": 7.0,
-    "commercialExamples": "Chimay Tripel, La Rulles Tripel, La Trappe Tripel, St. Bernardus Tripel, Val-Dieu Triple, Westmalle Tripel",
+    "commercialExamples": "Chimay Tripel, La Rulles Tripel, La Trappe Tripel, St. Bernardus Tripel, Val-Dieu Triple, Westmalle Tripel, Tripel Karmeliet",
     "tags": "high-strength, pale-color, top-fermented, westerneurope, traditional-style, bitter"
   },
   {
@@ -857,7 +857,7 @@ const BJCP_CARDS = [
     "abvMax": 10.0,
     "srmMin": 6.0,
     "srmMax": 14.0,
-    "commercialExamples": "Columbus Brewing Bohdi, Fat Head's Hop Juju, Port Brewing Hop-15, Russian River Pliny the Elder, Stone Ruination Double IPA 2.0, Wicked Weed Freak of Nature",
+    "commercialExamples": "Set DosKiwis, Liquid Fear La Pirata, Dr. Raptor Uiltje, The Shire Hoppit, Circus Quer, Ay Carmela! La Pirata, 30 Minutos Refu",
     "tags": "very-high-strength, pale-color, top-fermented, northamerica, craft-style, ipa-family, bitter, hoppy"
   },
   {
@@ -1077,7 +1077,7 @@ const BJCP_CARDS = [
     "abvMax": null,
     "srmMin": null,
     "srmMax": null,
-    "commercialExamples": "21st Amendment Hell or High Watermelon, Anderson Valley Blood Orange Gose, Avery Liliko'i Kepolo, Ballast Point Grapefruit Sculpin, Bell's Cherry Stout, Founders Rübæus",
+    "commercialExamples": "Cherrry Chouffe, Kwak Rouge, Pink Kiler Silly, Rince Cochon Haacht, Fruitesse Liefmans, Delirium Red, Peche Mel Bush",
     "tags": "specialty-beer, fruit"
   },
   {
@@ -1217,7 +1217,7 @@ const BJCP_CARDS = [
     "abvMax": 8.5,
     "srmMin": 4.0,
     "srmMax": 8.0,
-    "commercialExamples": "Montegioco Open Mind, Birrificio del Forte Il Tralcio, Luppolajo Mons Rubus, Firestone Walker Feral Vinifera, pFriem Family Brewers Druif, 4 Árvores Abbondanza",
+    "commercialExamples": "Montegioco Open Mind, Birrificio del Forte Il Tralcio, Luppolajo Mons Rubus, Firestone Walker Feral Vinifera, pFriem Family Brewers Druif, 4 Árvores Abbondanza, Rosé The Goats, Couvée Riccardo Alvinne",
     "tags": "specialty-beer, fruit"
   },
   {
@@ -1257,7 +1257,7 @@ const BJCP_CARDS = [
     "abvMax": 9.0,
     "srmMin": 3.0,
     "srmMax": 7.0,
-    "commercialExamples": "Belching Beaver Hazers Gonna Haze, Hill Farmstead Susan, Other Half Green Diamonds Double IPA, Pinthouse Electric Jellyfish, Tree House Julius, Trillium Congress Street, WeldWerks Juicy Bits",
+    "commercialExamples": "Ideal DosKiwis, Our House DosKiwis, Long Story Short Soma, Suk Grenyut, Tropical Kom, J.Hops Engorile, Chill Peak Soma, Soup Garage, NEIPA Montseny, Zumo Basqueland, Gorg blau Hoppit",
     "tags": "high-strength, pale-color, top-fermented, northamerica, craft-style, ipa-family, bitter, hoppy"
   },
   {
@@ -1717,7 +1717,7 @@ const BJCP_CARDS = [
     "abvMax": 5.6,
     "srmMin": 17.0,
     "srmMax": 28.0,
-    "commercialExamples": "Ayinger Altbairisch Dunkel, Ettaler Kloster-Dunkel, Eittinger Urtyp Dunkel, Hacker-Pschorr Münchner Dunkel, Hofbräuhaus Dunkel, Weltenburger Kloster Barock-Dunkel",
+    "commercialExamples": "Ayinger Altbairisch Dunkel, Ettaler Kloster-Dunkel, Eittinger Urtyp Dunkel, Hacker-Pschorr Münchner Dunkel, Hofbräuhaus Dunkel, Weltenburger Kloster Barock-Dunkel, Bock Damm",
     "tags": "standard-strength, dark-color, bottom-fermented, lagered, central-europe, traditional-style, malty, dark-lagerfamily"
   },
   {
@@ -1857,7 +1857,7 @@ const BJCP_CARDS = [
     "abvMax": 9.5,
     "srmMin": 5.0,
     "srmMax": 22.0,
-    "commercialExamples": "Ellezelloise Saison 2000, Lefebvre Saison 1900, Saison Dupont, Saison de Pipaix, Saison Voisin, Boulevard Tank 7",
+    "commercialExamples": "Ellezelloise Saison 2000, Lefebvre Saison 1900, Saison Dupont, Saison de Pipaix, Saison Voisin, Boulevard Tank 7, Kerosene La Calavera, ",
     "tags": "standard-strength, pale-color, top-fermented, westerneurope, traditional-style, bitter"
   },
   {
@@ -1966,18 +1966,18 @@ const BJCP_CARDS = [
     "number": "21B",
     "category": "Ipa",
     "categoryNumber": 21,
-    "overallImpression": "Una variant d'IPA americana molt pàl·lida i avançada amb un acabat sec, carbonatació molt alta i un nivell d'amargor moderat. Pot suggerir un vi blanc escumós o xampany. El caràcter del llúpol és modern i emfatitza les dimensions del sabor i l'aroma.",
+    "overallImpression": "Una variant d'IPA americana molt pàl·lida i avançada amb un acabat sec, carbonatació molt alta i un nivell d'amargor moderat. Pot suggerir un vi blanc escumós o xampany. El caràcter del llúpol és modern i emfatitza les dimensions del sabor i l'aroma. Aquest estil és l'únic amb subestils com Belgian IPA, Black IPA, Brown IPA, Brut IPA, Red IPA, Rye IPA i White IPA",
     "aroma": "Aroma de llúpol moderadament alt a intens, molt brillant i llúpol endavant en l'equilibri. Les varietats modernes de llúpol nord-americà i del Nou Món ofereixen un ampli ventall de característiques possibles, com ara raïm tropical, fruita d'os, cítric o blanc, però no herba, vegetal o herbal. La malta és subtil, neutra i de fons, però mai caramel·litzada o massa dolça. Una nota d'alcohol lleugera i neta és opcional. Caràcter de fermentació molt net; no ha de ser llevat.",
     "appearance": "Color molt pàl·lid, que va des de palla molt pàl·lida fins a daurat molt clar. Transparent, però un toc de terbolesa és acceptable. La carbonatació alta a molt alta dóna una escuma blanca massiva, gromullosa, ondulada, amb bombolles atapeïdes i persistents.",
     "flavor": "Sabor a llúpol alt a molt alt, mateixos descriptors que l'aroma. Caràcter malt neutre baix a molt baix, subtil en l'equilibri. Sense sabors forts de malta, sense caramel. L'amargor percebut és de baix a molt baix a causa de l'acabat sec amb l'os i la carbonatació molt alta. Perfil de fermentació de neutre a lleugerament afruitat. Sense diacetil. Final sec a molt sec amb un regust fresc i llúpol i un amargor net.",
-    "mouthfeel": "Cos lleuger a molt lleuger amb una carbonatació espimosa (alta a molt alta), que recorda un vi blanc escumós. Sense astringència amarga, dura i derivada del llúpol. La calor de l'alcohol pot estar present, però mai hauria de ser calent.",
+    "mouthfeel": "Cos lleuger a molt lleuger amb una carbonatació espumosa (alta a molt alta), que recorda un vi blanc escumós. Sense astringència amarga, dura i derivada del llúpol. La calor de l'alcohol pot estar present, però mai hauria de ser calent.",
     "ibuMin": 20.0,
     "ibuMax": 30.0,
     "abvMin": 6.0,
     "abvMax": 7.5,
     "srmMin": 2.0,
     "srmMax": 4.0,
-    "commercialExamples": "Drake's Brightside Extra Brut IPA, Fair State Brewing Co-Op The Brut Squad, Ommegang Brut IPA",
+    "commercialExamples": "Chouffe IPA, Duvel Triple Hop Cashmere, Photoautomat DosKiwis, Odisea La Pirata, Jack the RIPA Guineu, Tu Ray Lo Vilot, WIPA Guineu",
     "tags": "high-strength, pale-color, top-fermented, north america, craft-style, ipa-family, specialty-family, bitter, hoppy"
   },
   {
