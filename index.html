@@ -1402,5 +1402,26 @@ select option{background:var(--k3)}
   frame();
 })();
 </script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then(reg => {
+          console.log('Aplicació lesta per funcionar offline!');
+          
+          // Opcional: Avisar si hi ha una actualització nova
+          reg.onupdatefound = () => {
+            const installingWorker = reg.installing;
+            installingWorker.onstatechange = () => {
+              if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                console.log('Nova versió disponible! Reinicia l’app.');
+              }
+            };
+          };
+        })
+        .catch(err => console.error('Error en el registre:', err));
+    });
+  }
+</script>
 </body>
 </html>
