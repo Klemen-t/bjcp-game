@@ -229,10 +229,22 @@ class BJCPGame {
     await this.gameRef.update({ status: 'playing', currentRound: 1, cardsLocked: true });
   }
 
-  async setCurrentBeer(beerData) {
-    const clean = Object.fromEntries(Object.entries(beerData).filter(([,v]) => v !== undefined && v !== null));
+  // teamBeers: optional { teamId: beerObject } for per-team mode
+  async setCurrentBeer(beerData, teamBeers = null) {
+    const clean = beerData
+      ? Object.fromEntries(Object.entries(beerData).filter(([,v]) => v !== undefined && v !== null))
+      : {};
+    const cleanTeamBeers = teamBeers
+      ? Object.fromEntries(
+          Object.entries(teamBeers).map(([tid, b]) => [
+            tid,
+            Object.fromEntries(Object.entries(b).filter(([,v]) => v !== undefined && v !== null))
+          ])
+        )
+      : null;
     await this.gameRef.child('currentBeer').set({
       ...clean,
+      teamBeers: cleanTeamBeers,
       revealedInfo: {}, startedAt: Date.now(),
       revealed: false, roundPointsGiven: false,
       winnerTeam: null, winnerPlayer: null, guesses: {},
@@ -333,11 +345,16 @@ class BJCPGame {
     return Object.keys(teamInfo).length > 0;
   }
 
+  // Helper: get the correct beer for a specific team (falls back to global)
+  _getBeerForTeam(state, teamId) {
+    return state?.currentBeer?.teamBeers?.[teamId] || state?.currentBeer || null;
+  }
+
   async judgeGuess(guessKey, teamId, playerName, guessId, cardTypeToGrant = null) {
     const snap  = await this.gameRef.once('value');
     const state = snap.val();
-    const beer  = state.currentBeer;
-    const correct = (guessId === beer.id);
+    const beer  = this._getBeerForTeam(state, teamId);
+    const correct = (guessId === beer?.id);
 
     // Puntuació simplificada: encert = +1, error = 0
     const usedHelp = this._teamUsedHelp(state, teamId);
@@ -396,11 +413,19 @@ class BJCPGame {
       Object.entries(beer.teamInfo || {}).forEach(([tid, info]) => {
         teamInfoSummary[tid] = Object.keys(info);
       });
+      // Save per-team beers if in per-team mode
+      const teamBeersHistory = {};
+      if (beer.teamBeers) {
+        Object.entries(beer.teamBeers).forEach(([tid, tb]) => {
+          teamBeersHistory[tid] = { id: tb.id, name: tb.name, number: tb.number, category: tb.category };
+        });
+      }
       await this.gameRef.child(`roundHistory/${round}`).set({
         round,
         beerName: beer.name || '?',
         beerNumber: beer.number || '?',
         beerCategory: beer.category || '?',
+        teamBeers: Object.keys(teamBeersHistory).length ? teamBeersHistory : null,
         revealedAt: Date.now(),
         results,
         revealedInfo: revInfo,

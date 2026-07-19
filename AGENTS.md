@@ -1,5 +1,5 @@
 # AGENTS.md — BJCP Beer Style Game
-## Börn Loka Ales · v2026.26
+## Börn Loka Ales · v2026.28
 
 Instruccions per a qualsevol agent (Claude o altre LLM) que treballi en aquest projecte.
 
@@ -32,7 +32,8 @@ bjcp-game/
 ## Regles invariants (mai les trenquis)
 
 ### Seguretat
-- **Mai escriure la contrasenya del Master** en cap fitxer. Ni en comentaris, ni en README, ni en logs. Només existeix el hash SHA-256 a `js/ui.js` (variable `MASTER_PW_HASH`).
+- **Mai escriure la contrasenya del Master** en cap fitxer. Ni en comentaris, ni en README, ni en logs.
+- La constant `MASTER_PW_HASH` a `js/ui.js` (línia ~909) existeix com a **placeholder buit** (`'placeholder'`). La validació real es fa a la funció `_checkMasterPassword()` que compara el hash SHA-256 de l'entrada directament (línia ~993). El hash actual correspon a `sha256('merderada')`. **No modificar ni mostrar** aquest valor.
 - La clau d'API Firebase és pública i restringida per HTTP referrer. No cal amagar-la.
 
 ### Versions
@@ -81,6 +82,7 @@ games/{CODE}/
 - Encert = **+1 punt** (independentment de si s'han usat ajudes)
 - Error = **0 punts**
 - El master pot ajustar punts manualment (+/−) des de la pestanya Equips
+- **Nota**: la puntuació antiga (+3/+1/−1/0) que apareixia al README era de v2026.24 i anterior. El codi a `judgeGuess()` usa la versió simplificada des de v2026.25.
 
 ### Cartes d'acció
 | ID | Nom | Efecte |
@@ -188,6 +190,7 @@ Quan `s.roundReset !== lastRoundReset`:
 - **Mòbil primer** — disseny optimitzat per a mòbil. Touch targets mínims 36px.
 - **No jQuery, no frameworks** — JS pur + Firebase SDK compat v9.
 - **No `var(--amber)`, `var(--text)`, `var(--muted)`, `var(--border)`** — variables obsoletes d'una versió anterior. Usar `var(--r)`, `var(--t)`, `var(--m)`, `var(--k4)`.
+- **Bug conegut**: hi ha ~10 usos residuals de `var(--amber)` i `var(--amber-l)` a `js/ui.js` (funcions `setMasterMode`, `loadExistingGames`, `renderTeamsDetail`, `renderMasterLog`, `renderMessages`) que no estan definides al CSS. El navegador les ignora silenciosament (fallback transparent/inherit). Quan es toquin aquestes funcions, cal migrar a `var(--r)` (vermell) o `var(--rl)` (vermell clar) segons el context.
 - **Backticks en template literals** — el codi usa template literals extensament. Mai escapar backticks (`\``) dins de template literals, és un error de sintaxi.
 
 ---
@@ -212,6 +215,8 @@ Quan `s.roundReset !== lastRoundReset`:
 
 | Versió | Data | Canvis principals |
 |--------|------|-------------------|
+| v2026.28 | 19/07/2026 | Mode cervesa per equip: Master pot assignar estils diferents a cada equip per ronda |
+| v2026.27 | 19/07/2026 | Fix: botó ↩️ Desfer proposta sempre visible (no només al filtre Possible) |
 | v2026.26 | 24/03/2026 | Pills toggle, reset filtres per ronda, ordenació millorada |
 | v2026.25 | 23/03/2026 | Historial rondes (participants), puntuació 1pt/0pt, lie+yes_no fix |
 | v2026.24 | 23/03/2026 | Light mode complet, toggle tema, fixes missatges |

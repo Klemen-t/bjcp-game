@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
 //  UI.JS  —  Interface & interaction logic
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION = 'v2026.26 · 24/03/2026';
+const APP_VERSION = 'v2026.28 · 19/07/2026';
 
 // ═══ THEME TOGGLE ════════════════════════════════════════════
 function toggleTheme() {
@@ -32,6 +32,16 @@ let teamViewInited   = false;
 let masterViewInited = false;
 let unreadMsgs       = 0;
 let activeCardIds    = null;  // null = all; array = restricted pool
+
+// ── Per-team beer mode ─────────────────────────────────────────
+let _beerMode          = 'global';   // 'global' | 'perteam'
+let _teamBeerTarget    = null;       // teamId currently being assigned
+let _teamBeerSelections = {};        // { teamId: cardObject }
+
+// Returns the beer relevant for a given team (team-specific or global fallback)
+function getBeerForTeam(s, teamId) {
+  return s?.currentBeer?.teamBeers?.[teamId] || s?.currentBeer || null;
+}
 
 
 // ═══════════════════════════════════════════════════════════════
@@ -1415,6 +1425,9 @@ function showResultOverlay(s) {
   const overlay = el('result-overlay');
   if (!overlay) return;
 
+  // Use per-team beer if assigned, otherwise global
+  const myBeer = getBeerForTeam(s, game.teamId);
+
   const judged    = guesses.filter(g => g.judged);
   const myGuess   = judged.find(g => g.playerName === game.playerName && g.teamId === game.teamId);
   const iWon      = myGuess?.correct === true;
@@ -1432,23 +1445,20 @@ function showResultOverlay(s) {
     persIcon  = '❌';
     persTitle = 'No has encertat';
     const myCard = BJCP_CARDS.find(c => c.id === myGuess.guessId);
-    const correctCard = BJCP_CARDS.find(c => c.id === beer?.id);
-    persDetail = `Has triat: ${myCard?.name || myGuess.guess || '?'}<br>Cervesa correcta: <strong>${correctCard?.name || beer?.name || '?'}</strong>`;
+    persDetail = `Has triat: ${myCard?.name || myGuess.guess || '?'}<br>Cervesa correcta: <strong>${myBeer?.name || '?'}</strong>`;
     persClass = 'res-pers-lose';
   } else {
     persIcon  = '⏸️';
     persTitle = 'No has fet proposta';
-    persDetail = `Cervesa: ${beer?.name || '?'}`;
+    persDetail = `La cervesa era: ${myBeer?.name || '?'}`;
     persClass = 'res-pers-lose';
   }
 
   // ── Team half ─────────────────────────────────────────────────
-  // Compare team pts before and after this round using all judged guesses
   const myTeamGuesses  = judged.filter(g => g.teamId === game.teamId);
   const rivTeamGuesses = judged.filter(g => g.teamId !== game.teamId);
   const myTeamPts   = myTeamGuesses.reduce((s,g) => s + (g.points||0), 0);
   const rivTeamPts  = rivTeamGuesses.reduce((s,g) => s + (g.points||0), 0);
-  const myTeamWon   = myTeamGuesses.some(g => g.correct);
   const rivalWon    = rivTeamGuesses.some(g => g.correct);
 
   let teamIcon, teamTitle, teamDetail, teamClass;
@@ -1466,15 +1476,22 @@ function showResultOverlay(s) {
     teamTitle = `L'equip rival ha guanyat`;
   }
 
-  // Detail: pts breakdown
+  // Detail: pts breakdown + rivals' beer in per-team mode
   const myWinners  = myTeamGuesses.filter(g=>g.correct).map(g=>`${g.playerName} (+${g.points}pt)`).join(', ');
-  const rivWinners = rivTeamGuesses.filter(g=>g.correct).map(g=>`${g.playerName} (${g.teamId})`).join(', ');
   teamDetail = '';
-  if (myTeamPts !== 0)  teamDetail += `El teu equip: <strong>${myTeamPts >= 0 ? '+' : ''}${myTeamPts}pt</strong>`;
-  if (myWinners)        teamDetail += `<br>${myWinners}`;
-  if (rivalWon)         teamDetail += `<br><span style="opacity:.7">Rivals: ${rivWinners}</span>`;
+  if (myTeamPts !== 0) teamDetail += `El teu equip: <strong>${myTeamPts >= 0 ? '+' : ''}${myTeamPts}pt</strong>`;
+  if (myWinners)       teamDetail += `<br>${myWinners}`;
+  // Show rival teams' beers and results
+  const rivalTeams = [...new Set(rivTeamGuesses.map(g => g.teamId))];
+  rivalTeams.forEach(rtid => {
+    const rBeer = getBeerForTeam(s, rtid);
+    const rGuesses = rivTeamGuesses.filter(g => g.teamId === rtid);
+    const rWon = rGuesses.some(g => g.correct);
+    const rBeerName = rBeer?.name || beer?.name || '?';
+    teamDetail += `<br><span style="opacity:.75">${rtid}: ${rWon ? '✅' : '❌'} ${rBeerName}</span>`;
+  });
 
-  // Apply to DOM — use setHTML for fields that may contain markup
+  // Apply to DOM
   overlay.style.display = 'flex';
   overlay.className = `result-overlay ${persClass} ${teamClass}`;
   setHTML('res-personal-icon',   persIcon);
@@ -1484,7 +1501,7 @@ function showResultOverlay(s) {
   setHTML('res-team-icon',   teamIcon);
   setEl ('res-team-title',   teamTitle);
   setHTML('res-team-detail', teamDetail);
-  setEl ('res-beer', `🍺 ${beer?.name||'—'}`);
+  setEl ('res-beer', `🍺 ${myBeer?.name||'—'}`);
   clearTimeout(overlay._t);
 }
 
@@ -1970,7 +1987,9 @@ function renderTeamGuesses(s) {
     </div>`;
   }).join('');
 
-  if (wrap && cardFilter === 'possible') wrap.style.display = 'block';
+  // Always show if the current player has a pending (not yet judged) guess,
+  // so the ↩️ Desfer button is always reachable regardless of active filter.
+  if (wrap) wrap.style.display = (myPending || cardFilter === 'possible') ? 'block' : 'none';
 }
 
 // ═══ MASTER VIEW ══════════════════════════════════════════════════
@@ -1996,11 +2015,21 @@ function renderMasterBeerGrid() {
   const g = el('beer-grid'); if (!g) return;
   const cards = getVisibleCards(); // respects activeCardIds filter
   g.innerHTML = cards.length
-    ? cards.map(c =>
-        `<div class="beer-item ${selectedBeer===c.id?'selected':''}" id="mbs-${c.id}" onclick="selectBeer('${c.id}')">
-          <div class="bsn">${c.name}</div>
+    ? cards.map(c => {
+        const isGlobalSel = _beerMode === 'global' && selectedBeer === c.id;
+        const isTeamSel   = _beerMode === 'perteam' && _teamBeerTarget && _teamBeerSelections[_teamBeerTarget]?.id === c.id;
+        const isSel = isGlobalSel || isTeamSel;
+        // Show which teams have this beer assigned (per-team mode)
+        const teamBadges = _beerMode === 'perteam'
+          ? Object.entries(_teamBeerSelections)
+              .filter(([, b]) => b?.id === c.id)
+              .map(([tid]) => `<span style="background:rgba(196,18,48,.2);border:1px solid var(--r);font-size:.55rem;font-weight:700;letter-spacing:.06em;padding:1px 6px;margin-left:4px;color:var(--rl)">${tid}</span>`).join('')
+          : '';
+        return `<div class="beer-item ${isSel ? 'selected' : ''}" id="mbs-${c.id}" onclick="selectBeer('${c.id}')">
+          <div class="bsn">${c.name}${teamBadges}</div>
           <div class="bsnum">${c.number} · ${c.category}</div>
-        </div>`).join('')
+        </div>`;
+      }).join('')
     : `<p class="muted" style="padding:14px;text-align:center;font-size:.8rem">Cap carta en joc. Configura el pool amb el botó "🎴 Cartes".</p>`;
 }
 
@@ -2013,19 +2042,108 @@ function filterMasterBeers() {
 }
 
 function selectBeer(id) {
-  selectedBeer=id;
-  document.querySelectorAll('.beer-item').forEach(e=>e.classList.remove('selected'));
-  el('mbs-'+id)?.classList.add('selected');
-  el('btn-set-beer').disabled=false;
+  if (_beerMode === 'perteam') {
+    if (!_teamBeerTarget) return showToast('⚠️ Selecciona primer un equip');
+    const card = BJCP_CARDS.find(c => c.id === id);
+    _teamBeerSelections[_teamBeerTarget] = card;
+    renderTeamBeerTargets();
+    renderMasterBeerGrid();
+    _updateSetBeerBtn();
+  } else {
+    selectedBeer = id;
+    document.querySelectorAll('.beer-item').forEach(e => e.classList.remove('selected'));
+    el('mbs-' + id)?.classList.add('selected');
+    el('btn-set-beer').disabled = false;
+  }
+}
+
+function setBeerMode(mode) {
+  _beerMode = mode;
+  // Reset per-team selections when switching
+  if (mode === 'global') {
+    _teamBeerTarget = null;
+    _teamBeerSelections = {};
+  }
+  el('mbm-global')?.classList.toggle('btn-primary', mode === 'global');
+  el('mbm-global')?.classList.toggle('btn-secondary', mode !== 'global');
+  el('mbm-perteam')?.classList.toggle('btn-primary', mode === 'perteam');
+  el('mbm-perteam')?.classList.toggle('btn-secondary', mode !== 'perteam');
+  const wrap = el('team-beer-targets');
+  if (wrap) wrap.style.display = mode === 'perteam' ? 'block' : 'none';
+  renderTeamBeerTargets();
+  renderMasterBeerGrid();
+  _updateSetBeerBtn();
+}
+
+function setMasterBeerTarget(teamId) {
+  _teamBeerTarget = teamId;
+  renderTeamBeerTargets();
+  renderMasterBeerGrid();
+}
+
+function renderTeamBeerTargets() {
+  const wrap = el('team-beer-targets-inner'); if (!wrap) return;
+  const teams = Object.keys(gameState?.teams || {});
+  if (!teams.length) { wrap.innerHTML = '<p class="muted" style="font-size:.75rem">Cap equip connectat</p>'; return; }
+  wrap.innerHTML = teams.map(tid => {
+    const sel = _teamBeerSelections[tid];
+    const isActive = _teamBeerTarget === tid;
+    return `<div onclick="setMasterBeerTarget('${tid}')" style="
+      display:flex;justify-content:space-between;align-items:center;
+      padding:8px 11px;margin-bottom:5px;cursor:pointer;
+      border:1px solid ${isActive ? 'var(--r)' : 'var(--k4)'};
+      background:${isActive ? 'rgba(196,18,48,.1)' : 'rgba(255,255,255,.02)'};
+      border-left:2px solid ${isActive ? 'var(--rl)' : 'transparent'};
+    ">
+      <span style="font-family:var(--fu);font-size:.8rem;font-weight:700;letter-spacing:.05em">
+        ${isActive ? '🎯' : '🍻'} ${tid}
+      </span>
+      <span style="font-family:var(--fu);font-size:.72rem;color:${sel ? 'var(--rl)' : 'var(--m)'}">
+        ${sel ? sel.name : '— sense assignar'}
+      </span>
+    </div>`;
+  }).join('');
+}
+
+function _updateSetBeerBtn() {
+  const btn = el('btn-set-beer'); if (!btn) return;
+  if (_beerMode === 'global') {
+    btn.disabled = !selectedBeer;
+    btn.textContent = '🚀 Iniciar ronda amb aquesta cervesa';
+  } else {
+    const teams = Object.keys(gameState?.teams || {});
+    const allAssigned = teams.length > 0 && teams.every(t => _teamBeerSelections[t]);
+    btn.disabled = !allAssigned;
+    if (allAssigned) {
+      btn.textContent = '🎯 Iniciar ronda (mode per equip)';
+    } else {
+      const missing = teams.filter(t => !_teamBeerSelections[t]).length;
+      btn.textContent = `⚠️ Assigna ${missing} equip${missing !== 1 ? 's' : ''} més`;
+    }
+  }
 }
 
 async function setCurrentBeer() {
-  if (!selectedBeer) return;
-  const card=BJCP_CARDS.find(c=>c.id===selectedBeer); if (!card) return;
-  try {
-    await game.setCurrentBeer(card);
-    showToast('🍺 '+card.name+' seleccionada!');
-  } catch(e) { showToast('❌ '+e.message); }
+  if (_beerMode === 'perteam') {
+    const teams = Object.keys(gameState?.teams || {});
+    const allAssigned = teams.length > 0 && teams.every(t => _teamBeerSelections[t]);
+    if (!allAssigned) return showToast('⚠️ Assigna una cervesa a tots els equips');
+    try {
+      const firstBeer = Object.values(_teamBeerSelections)[0];
+      await game.setCurrentBeer(firstBeer, _teamBeerSelections);
+      const summary = Object.entries(_teamBeerSelections).map(([t,b]) => `${t}: ${b.name}`).join(' · ');
+      showToast('🎯 ' + summary);
+      _teamBeerSelections = {}; _teamBeerTarget = null;
+      setBeerMode('global');
+    } catch(e) { showToast('❌ ' + e.message); }
+  } else {
+    if (!selectedBeer) return;
+    const card = BJCP_CARDS.find(c => c.id === selectedBeer); if (!card) return;
+    try {
+      await game.setCurrentBeer(card);
+      showToast('🍺 ' + card.name + ' seleccionada!');
+    } catch(e) { showToast('❌ ' + e.message); }
+  }
 }
 
 function renderRevealButtons(card) {
@@ -2069,6 +2187,9 @@ function updateMasterView(s) {
   }
   const poolInfo = s.activeCardIds ? `🎴 ${s.activeCardIds.length} cartes actives` : `🎴 Totes (${BJCP_CARDS.length}) les cartes`;
   setEl('pool-info', poolInfo);
+  // Refresh team beer target panel & btn state
+  renderTeamBeerTargets();
+  _updateSetBeerBtn();
 }
 
 function renderTeamScores(s) {
@@ -2107,8 +2228,10 @@ function renderPendingItems(s) {
   const infoTypes = ['ibu','abv','srm','category'];
   if (pa && infoTypes.includes(pa.type) && !pa.resolved) {
     const labels = { ibu:'🌿 IBU', abv:'🍺 Alcohol (ABV)', srm:'🎨 Color (SRM)', category:'📂 Categoria' };
-    const beer   = BJCP_CARDS.find(c => c.id === s.currentBeer?.id);
-    const hint   = pa.mustLie ? '🤥 Dona una resposta FALSA (Carta Mentida activa)' : `Valor real: ${getRealValue(pa.type, beer)}`;
+    // Use team-specific beer so the hint matches what that team needs to identify
+    const teamBeer = getBeerForTeam(s, pa.teamId);
+    const beerCard = BJCP_CARDS.find(c => c.id === teamBeer?.id);
+    const hint   = pa.mustLie ? '🤥 Dona una resposta FALSA (Carta Mentida activa)' : `Valor real: ${getRealValue(pa.type, beerCard)}`;
     if (infoEl) {
       infoEl.style.display='block';
       setEl('pending-info-title', `${labels[pa.type]||pa.type} — ${pa.playerName} (${pa.teamId})`);
@@ -2178,11 +2301,15 @@ function renderMasterGuesses(s) {
   const revealed  = beer?.revealed;
 
   g.innerHTML=entries.map(([key,gs]) => {
-    const correct=gs.guessId===beer?.id;
-    const icon=gs.judged?(gs.correct?'✅':'❌'):'⏳';
+    const teamBeer = getBeerForTeam(s, gs.teamId);
+    const correct  = gs.guessId === teamBeer?.id;
+    const icon     = gs.judged ? (gs.correct ? '✅' : '❌') : '⏳';
+    // Show which beer this team had to guess (only in per-team mode)
+    const beerLabel = s.currentBeer?.teamBeers?.[gs.teamId]
+      ? `<span style="font-size:.6rem;color:var(--m);font-family:var(--fu)"> — 🎺 ${teamBeer.name}</span>` : '';
     return `<div class="guess-row">
       <div style="flex:1">
-        <div class="guess-who">${gs.teamId} · ${gs.playerName}</div>
+        <div class="guess-who">${gs.teamId} · ${gs.playerName}${beerLabel}</div>
         <div class="guess-what">${icon} ${gs.guess}</div>
       </div>
       ${!gs.judged?`<button class="btn btn-success btn-sm"
@@ -2206,8 +2333,13 @@ async function revealResult() {
 }
 
 function openJudge(key, teamId, playerName, guessId) {
-  const correct   = guessId===gameState?.currentBeer?.id;
-  const guessName = BJCP_CARDS.find(c=>c.id===guessId)?.name||guessId;
+  const teamBeer  = getBeerForTeam(gameState, teamId);
+  const correct   = guessId === teamBeer?.id;
+  const guessName = BJCP_CARDS.find(c => c.id === guessId)?.name || guessId;
+  // Show which beer this team had to find (only if per-team mode)
+  const correctBeerName = teamBeer?.name || '?';
+  const teamBeerLabel = gameState?.currentBeer?.teamBeers?.[teamId]
+    ? `<div class="muted" style="font-size:.7rem;margin-top:4px">🎺 Cervesa d'${teamId}: <strong>${correctBeerName}</strong></div>` : '';
 
   // Card grant (optional) only for correct guesses
   const cardSection = correct ? `
@@ -2222,6 +2354,8 @@ function openJudge(key, teamId, playerName, guessId) {
       <div class="muted" style="font-size:.7rem;margin-bottom:3px">Proposta de ${teamId}</div>
       <div style="font-weight:700">${guessName}</div>
       <div style="font-size:1.6rem;margin-top:6px">${correct?'✅ CORRECTA (+1 punt)':'❌ INCORRECTA (0 punts)'}</div>
+      ${!correct ? `<div class="muted" style="font-size:.75rem;margin-top:6px">Correcta: <strong>${correctBeerName}</strong></div>` : ''}
+      ${teamBeerLabel}
     </div>
     ${cardSection}
     <button class="btn btn-primary" onclick="confirmJudge('${key}','${teamId}','${playerName}','${guessId}')">
@@ -2244,9 +2378,10 @@ async function confirmJudge(key, teamId, playerName, guessId) {
 async function nextRound() {
   try {
     await game.nextRound();
-    selectedBeer=null;
-    // reveal-panel removed
-    document.querySelectorAll('.beer-item').forEach(e=>e.classList.remove('selected'));
+    selectedBeer = null;
+    _teamBeerSelections = {}; _teamBeerTarget = null;
+    setBeerMode('global');
+    document.querySelectorAll('.beer-item').forEach(e => e.classList.remove('selected'));
     // Show "Iniciar ronda" again for the new round
     el('btn-set-beer').style.display = 'block';
     el('btn-set-beer').disabled = true;
@@ -2514,18 +2649,23 @@ function renderTeamHistory(s) {
   const rounds = Object.values(history).sort((a,b) => a.round - b.round);
   const infoLabels = { ibu:'IBU', abv:'ABV', srm:'Color', category:'Categoria', sensory:'Pista', yes_no:'Sí/No' };
   g.innerHTML = rounds.map(r => {
-    const myResults = (r.results || {})[game.teamId] || [];
-    const rivals    = Object.entries(r.results || {}).filter(([tid]) => tid !== game.teamId);
+    const myResults  = (r.results || {})[game.teamId] || [];
+    const rivals     = Object.entries(r.results || {}).filter(([tid]) => tid !== game.teamId);
     const myInfoKeys = r.teamInfoUsed?.[game.teamId] || [];
     const globalInfo = Object.keys(r.revealedInfo || {});
     const allInfo    = [...new Set([...globalInfo, ...myInfoKeys])];
     const myWon      = myResults.some(p => p.correct);
+    // Per-team beer: use my team's specific beer if available, otherwise global
+    const myBeerName = r.teamBeers?.[game.teamId]?.name || r.beerName;
+    const myBeerNum  = r.teamBeers?.[game.teamId]?.number || r.beerNumber;
+    const myBeerCat  = r.teamBeers?.[game.teamId]?.category || r.beerCategory;
+    const isPerTeam  = !!r.teamBeers;
     return `<div class="card mb-8" style="border-left:2px solid ${myWon ? 'var(--greenl)' : 'var(--m2)'}">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
         <div>
-          <div style="font-family:var(--fu);font-size:.62rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--r)">Ronda ${r.round}</div>
-          <div style="font-family:var(--fu);font-size:.95rem;font-weight:700;color:var(--sl)">${r.beerName}</div>
-          <div style="font-family:var(--fu);font-size:.62rem;color:var(--m)">${r.beerNumber} · ${r.beerCategory}</div>
+          <div style="font-family:var(--fu);font-size:.62rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--r)">Ronda ${r.round}${isPerTeam ? ' · 🎯 per equip' : ''}</div>
+          <div style="font-family:var(--fu);font-size:.95rem;font-weight:700;color:var(--sl)">${myBeerName}</div>
+          <div style="font-family:var(--fu);font-size:.62rem;color:var(--m)">${myBeerNum} · ${myBeerCat}</div>
         </div>
         <div style="font-size:1.5rem;line-height:1">${myWon ? '✅' : '❌'}</div>
       </div>
@@ -2536,9 +2676,10 @@ function renderTeamHistory(s) {
         </div>`).join('')}</div>` : ''}
       ${rivals.map(([tid, res]) => {
         const won = res.some(p => p.correct);
+        const rivBeerName = r.teamBeers?.[tid]?.name || r.beerName;
         const correct = res.filter(p => p.correct).map(p => p.guess).join(', ');
         return `<div style="font-family:var(--fu);font-size:.7rem;color:var(--m);padding:2px 0">
-          ${won ? '✅' : '❌'} <strong>${tid}</strong>${won ? `: ${correct}` : ''}
+          ${won ? '✅' : '❌'} <strong>${tid}</strong>${isPerTeam ? ` — 🍺 ${rivBeerName}` : ''}${won ? `: ${correct}` : ''}
         </div>`;
       }).join('')}
       ${allInfo.length ? `<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:3px">
