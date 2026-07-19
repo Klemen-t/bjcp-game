@@ -2467,6 +2467,23 @@
         <!-- Beer select -->
         <div class="card mb-11">
           <div class="sec-title">🍺 Seleccionar Cervesa</div>
+
+          <!-- Mode toggle: Global vs Per equip -->
+          <div style="display:flex;gap:6px;margin-bottom:10px">
+            <button id="mbm-global" class="btn btn-primary btn-sm" style="flex:1;font-size:.72rem"
+              onclick="setBeerMode('global')">🌐 Global</button>
+            <button id="mbm-perteam" class="btn btn-secondary btn-sm" style="flex:1;font-size:.72rem"
+              onclick="setBeerMode('perteam')">🎯 Per equip</button>
+          </div>
+
+          <!-- Team assignment panel (only visible in per-team mode) -->
+          <div id="team-beer-targets" style="display:none;margin-bottom:10px;border:1px solid var(--k4);padding:9px 10px;background:rgba(255,255,255,.02)">
+            <div style="font-family:var(--fu);font-size:.65rem;font-weight:700;letter-spacing:.08em;color:var(--m);text-transform:uppercase;margin-bottom:7px">
+              1. Clica un equip · 2. Tria la seva cervesa
+            </div>
+            <div id="team-beer-targets-inner"></div>
+          </div>
+
           <div class="search-wrap" style="margin-bottom:8px">
             <span class="search-icon">🔍</span>
             <input type="text" id="master-search" placeholder="Filtrar…" oninput="filterMasterBeers()"
