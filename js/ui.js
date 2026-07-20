@@ -1518,6 +1518,34 @@ function showResultOverlay(s) {
   clearTimeout(overlay._t);
 }
 
+function closeVictoryAnimation() {
+  document.getElementById('result-overlay').style.display = 'none';
+  
+  if (!gameState || !game.teamId) return;
+  const myBeer = getBeerForTeam(gameState, game.teamId);
+  
+  if (myBeer && myBeer.isCatalogBeer) {
+    showModal(`🍺 Fitxa de la Cervesa`, `
+      <div style="display:flex;gap:15px;margin-bottom:15px;text-align:left">
+        ${myBeer.image ? `<img src="${myBeer.image}" style="width:100px;height:140px;object-fit:cover;border-radius:4px">` : `<div style="width:100px;height:140px;background:var(--k3);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:2rem">🍺</div>`}
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:1.3rem;color:var(--sl);margin-bottom:4px;line-height:1.1">${myBeer.name}</div>
+          <div style="font-family:var(--fu);font-size:1rem;color:var(--m);margin-bottom:8px">${myBeer.brewery}${myBeer.country ? ` · ${myBeer.country}` : ''}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px">
+            <span class="info-pill">${myBeer.styleName || myBeer.styleId || '?'}</span>
+            ${myBeer.styleId2 ? `<span class="info-pill" style="opacity:0.75;border:1px dashed var(--m)">🥈 ${myBeer.styleName2 || myBeer.styleId2}</span>` : ''}
+            ${myBeer.abv ? `<span class="info-pill">${myBeer.abv}% ABV</span>` : ''}
+            ${myBeer.ibu ? `<span class="info-pill">${myBeer.ibu} IBU</span>` : ''}
+            ${myBeer.srm ? `<span class="info-pill">Color: ${myBeer.srm}</span>` : ''}
+          </div>
+        </div>
+      </div>
+      ${myBeer.ingredients ? `<div style="margin-bottom:10px;text-align:left"><div style="font-weight:700;font-size:.8rem;color:var(--sl);margin-bottom:2px">Ingredients clau</div><div style="font-size:.9rem;color:var(--t)">${myBeer.ingredients}</div></div>` : ''}
+      ${myBeer.description ? `<div style="margin-bottom:10px;text-align:left"><div style="font-weight:700;font-size:.8rem;color:var(--sl);margin-bottom:2px">Descripció comercial</div><div style="font-size:.9rem;color:var(--t)">${myBeer.description}</div></div>` : ''}
+    `);
+  }
+}
+
 // ── Render action cards with full descriptions ──────────────────
 function renderActionCards(cards) {
   const container = el('team-action-cards');

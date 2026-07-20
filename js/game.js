@@ -386,7 +386,13 @@ class BJCPGame {
     const snap  = await this.gameRef.once('value');
     const state = snap.val();
     const beer  = this._getBeerForTeam(state, teamId);
-    const correct = (guessId === beer?.id);
+    
+    let correct = false;
+    if (beer?.isCatalogBeer) {
+      correct = (guessId === beer.styleId || (beer.styleId2 && guessId === beer.styleId2));
+    } else {
+      correct = (guessId === beer?.id);
+    }
 
     // Puntuació simplificada: encert = +1, error = 0
     const usedHelp = this._teamUsedHelp(state, teamId);
