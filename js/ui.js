@@ -2986,7 +2986,8 @@ function openBeerForm(id = null) {
       </div>
       <div><label style="display:block;font-size:.8rem;color:var(--m);margin-bottom:3px">Ingredients Clau</label><textarea id="bc-ingredients" style="width:100%;height:60px;padding:10px;background:var(--k3);border:1px solid var(--k4);color:var(--t);border-radius:4px">${v(beer.ingredients)}</textarea></div>
       <div><label style="display:block;font-size:.8rem;color:var(--m);margin-bottom:3px">Descripció Comercial</label><textarea id="bc-desc" style="width:100%;height:60px;padding:10px;background:var(--k3);border:1px solid var(--k4);color:var(--t);border-radius:4px">${v(beer.description)}</textarea></div>
-      <div><label style="display:block;font-size:.8rem;color:var(--m);margin-bottom:3px">Imatge de l'etiqueta ${isEdit?'(deixa en blanc per no canviar)':'(opcional)'}</label><input type="file" id="bc-image" accept="image/*" style="width:100%;padding:8px;background:var(--k3);border:1px solid var(--k4);color:var(--t);border-radius:4px"></div>
+      <div><label style="display:block;font-size:.8rem;color:var(--m);margin-bottom:3px">Enllaç a una imatge (URL opcional)</label><input type="url" id="bc-image-url" value="${v(beer.image && beer.image.startsWith('http') ? beer.image : '')}" style="width:100%;padding:10px;background:var(--k3);border:1px solid var(--k4);color:var(--t);border-radius:4px" placeholder="https://..."></div>
+      <div><label style="display:block;font-size:.8rem;color:var(--m);margin-bottom:3px">O puja una imatge del teu dispositiu ${isEdit?'(deixa en blanc per no canviar)':'(opcional)'}</label><input type="file" id="bc-image" accept="image/*" style="width:100%;padding:8px;background:var(--k3);border:1px solid var(--k4);color:var(--t);border-radius:4px"></div>
       
       <button type="submit" id="bc-submit" class="btn btn-primary" style="margin-top:10px">💾 Guardar Cervesa</button>
     </form>
@@ -3001,13 +3002,20 @@ async function submitNewBeer(e, editId) {
   
   try {
     const fileInput = el('bc-image');
+    const urlInput = el('bc-image-url');
     let base64Image = null;
     let oldBeer = editId ? _cachedCatalog?.[editId] : null;
     
     if (fileInput && fileInput.files && fileInput.files[0]) {
       base64Image = await compressImage(fileInput.files[0]);
+    } else if (urlInput && urlInput.value.trim() !== '') {
+      base64Image = urlInput.value.trim();
     } else if (oldBeer && oldBeer.image) {
-      base64Image = oldBeer.image; // keep old image if no new one provided
+      if (oldBeer.image.startsWith('http') && (!urlInput || urlInput.value.trim() === '')) {
+         base64Image = null; // L'usuari ha esborrat la URL intencionadament
+      } else {
+         base64Image = oldBeer.image; // Mantenir imatge anterior (Base64)
+      }
     }
     
     const styleId = el('bc-style').value;
