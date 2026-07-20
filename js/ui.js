@@ -1328,7 +1328,7 @@ function switchMasterTab(tab) {
   
   // if standalone mode, force only catalog visible
   if (!game.gameCode) {
-    document.querySelectorAll('#screen-master-dashboard .bottom-nav .nav-btn').forEach(b => {
+    document.querySelectorAll('#screen-game-master .bottom-nav .nav-btn').forEach(b => {
       if (b.id !== 'mnav-catalog') b.style.display = 'none';
     });
   }
@@ -2006,9 +2006,15 @@ function renderTeamGuesses(s) {
 }
 
 // ═══ MASTER VIEW ══════════════════════════════════════════════════
-function initMasterView() {
+async function initMasterView() {
   if (masterViewInited) return;
   masterViewInited = true;
+  
+  if (!_cachedCatalog) {
+    try { _cachedCatalog = await game.getMasterCatalog(); }
+    catch(e) { _cachedCatalog = {}; }
+  }
+  
   // If a beer is already active when master loads, hide "Iniciar ronda"
   if (gameState?.currentBeer && !gameState.currentBeer.revealed) {
     const sb = el('btn-set-beer'); if (sb) sb.style.display = 'none';
@@ -2039,61 +2045,82 @@ function renderMasterBeerGrid() {
   const activeBeer = gameState?.currentBeer;
   const isRoundActive = activeBeer && !activeBeer.revealed;
 
-  g.innerHTML = cards.length
-    ? cards.map(c => {
-        let isSel = false;
-        let teamBadges = '';
+  const catalogBeers = Object.values(_cachedCatalog || {}).sort((a,b) => b.createdAt - a.createdAt);
 
-        if (isRoundActive) {
-          if (activeBeer.teamBeers) {
-            const teamsWithThisBeer = Object.entries(activeBeer.teamBeers)
-              .filter(([, b]) => b?.id === c.id)
-              .map(([tid]) => tid);
-            if (teamsWithThisBeer.length > 0) {
-              isSel = true;
-              teamBadges = teamsWithThisBeer
-                .map(tid => `<span style="background:rgba(196,18,48,.2);border:1px solid var(--r);font-size:.55rem;font-weight:700;letter-spacing:.06em;padding:1px 6px;margin-left:4px;color:var(--rl)">${tid}</span>`).join('');
-            }
-          } else {
-            isSel = (activeBeer.id === c.id);
-          }
-        } else {
-          const isGlobalSel = _beerMode === 'global' && selectedBeer === c.id;
-          const isTeamSel   = _beerMode === 'perteam' && _teamBeerTarget && _teamBeerSelections[_teamBeerTarget]?.id === c.id;
-          isSel = isGlobalSel || isTeamSel;
-          
-          if (_beerMode === 'perteam') {
-            teamBadges = Object.entries(_teamBeerSelections)
-              .filter(([, b]) => b?.id === c.id)
-              .map(([tid]) => `<span style="background:rgba(196,18,48,.2);border:1px solid var(--r);font-size:.55rem;font-weight:700;letter-spacing:.06em;padding:1px 6px;margin-left:4px;color:var(--rl)">${tid}</span>`).join('');
-          }
+  const renderItem = (c, isCatalog) => {
+    let isSel = false;
+    let teamBadges = '';
+
+    if (isRoundActive) {
+      if (activeBeer.teamBeers) {
+        const teamsWithThisBeer = Object.entries(activeBeer.teamBeers)
+          .filter(([, b]) => b?.id === c.id)
+          .map(([tid]) => tid);
+        if (teamsWithThisBeer.length > 0) {
+          isSel = true;
+          teamBadges = teamsWithThisBeer
+            .map(tid => `<span style="background:rgba(196,18,48,.2);border:1px solid var(--r);font-size:.55rem;font-weight:700;letter-spacing:.06em;padding:1px 6px;margin-left:4px;color:var(--rl)">${tid}</span>`).join('');
         }
+      } else {
+        isSel = (activeBeer.id === c.id);
+      }
+    } else {
+      const isGlobalSel = _beerMode === 'global' && selectedBeer === c.id;
+      const isTeamSel   = _beerMode === 'perteam' && _teamBeerTarget && _teamBeerSelections[_teamBeerTarget]?.id === c.id;
+      isSel = isGlobalSel || isTeamSel;
+      
+      if (_beerMode === 'perteam') {
+        teamBadges = Object.entries(_teamBeerSelections)
+          .filter(([, b]) => b?.id === c.id)
+          .map(([tid]) => `<span style="background:rgba(196,18,48,.2);border:1px solid var(--r);font-size:.55rem;font-weight:700;letter-spacing:.06em;padding:1px 6px;margin-left:4px;color:var(--rl)">${tid}</span>`).join('');
+      }
+    }
 
-        return `<div class="beer-item ${isSel ? 'selected' : ''}" id="mbs-${c.id}" onclick="selectBeer('${c.id}')">
-          <div class="bsn">${c.name}${teamBadges}</div>
-          <div class="bsnum">${c.number} · ${c.category}</div>
-        </div>`;
-      }).join('')
-    : `<p class="muted" style="padding:14px;text-align:center;font-size:.8rem">Cap carta en joc. Configura el pool amb el botó "🎴 Cartes".</p>`;
+    const n1 = isCatalog ? `🍺 ${c.name}` : c.name;
+    const n2 = isCatalog ? `${c.brewery} · ${c.styleName||c.styleId}` : `${c.number} · ${c.category}`;
+    return `<div class="beer-item ${isSel ? 'selected' : ''}" id="mbs-${c.id}" onclick="selectBeer('${c.id}', ${isCatalog})">
+      <div class="bsn">${n1}${teamBadges}</div>
+      <div class="bsnum">${n2}</div>
+    </div>`;
+  };
+
+  g.innerHTML = `
+    <div style="font-weight:bold;margin:0 0 10px;color:var(--t);font-size:1.1rem">Estils BJCP</div>
+    ${cards.length ? cards.map(c => renderItem(c, false)).join('') : '<p class="muted">Cap carta en joc</p>'}
+    
+    <div style="font-weight:bold;margin:25px 0 10px;color:var(--t);font-size:1.1rem;border-top:1px solid rgba(255,255,255,0.1);padding-top:15px">Catàleg de Cerveses</div>
+    ${catalogBeers.length ? catalogBeers.map(c => renderItem(c, true)).join('') : '<p class="muted" style="margin-bottom:15px">No hi ha cerveses al catàleg</p>'}
+  `;
 }
 
 function filterMasterBeers() {
-  const q=el('master-search')?.value.toLowerCase()||'';
+  const q = el('master-search')?.value.toLowerCase() || '';
+  
   getVisibleCards().forEach(c => {
-    const e=el('mbs-'+c.id);
-    if (e) e.style.display=(c.name.toLowerCase().includes(q)||c.category.toLowerCase().includes(q))?'':'none';
+    const e = el('mbs-'+c.id);
+    if (e) e.style.display = (c.name.toLowerCase().includes(q) || c.category.toLowerCase().includes(q)) ? '' : 'none';
+  });
+
+  const catalogBeers = Object.values(_cachedCatalog || {});
+  catalogBeers.forEach(c => {
+    const e = el('mbs-'+c.id);
+    const textToMatch = (c.name + ' ' + c.brewery + ' ' + (c.styleName||'')).toLowerCase();
+    if (e) e.style.display = textToMatch.includes(q) ? '' : 'none';
   });
 }
 
-function selectBeer(id) {
+function selectBeer(id, isCatalog = false) {
   if (gameState?.currentBeer && !gameState.currentBeer.revealed) {
     showToast('⚠️ La ronda ja està en curs');
     return;
   }
 
+  let card = isCatalog ? _cachedCatalog?.[id] : BJCP_CARDS.find(c => c.id === id);
+  if (!card) return;
+  if (isCatalog) card = { ...card, isCatalogBeer: true };
+
   if (_beerMode === 'perteam') {
     if (!_teamBeerTarget) return showToast('⚠️ Selecciona primer un equip');
-    const card = BJCP_CARDS.find(c => c.id === id);
     _teamBeerSelections[_teamBeerTarget] = card;
     renderTeamBeerTargets();
     renderMasterBeerGrid();
@@ -2204,7 +2231,11 @@ async function setCurrentBeer() {
     } catch(e) { showToast('❌ ' + e.message); }
   } else {
     if (!selectedBeer) return;
-    const card = BJCP_CARDS.find(c => c.id === selectedBeer); if (!card) return;
+    let card = BJCP_CARDS.find(c => c.id === selectedBeer); 
+    if (!card && _cachedCatalog?.[selectedBeer]) {
+      card = { ..._cachedCatalog[selectedBeer], isCatalogBeer: true };
+    }
+    if (!card) return;
     try {
       await game.setCurrentBeer(card);
       showToast('🍺 ' + card.name + ' seleccionada!');
@@ -2280,11 +2311,21 @@ function renderPendingItems(s) {
   const sensEl  = el('pending-sensory-banner');
   const infoEl  = el('pending-info-banner');
 
+  const getCustomHintHtml = (teamId) => {
+    const b = getBeerForTeam(s, teamId);
+    if (!b || !b.isCatalogBeer) return '';
+    return `<div style="font-size:0.8rem;color:var(--m);margin-top:8px;background:var(--k3);padding:8px;border-radius:4px;border:1px solid var(--k4);text-align:left;line-height:1.4">
+      <strong style="color:var(--t)">🍺 ${b.name} (${b.brewery})</strong><br>
+      ${b.ingredients ? `<em>Ingredients:</em> ${b.ingredients}<br>` : ''}
+      ${b.description ? `<em>Descripció:</em> ${b.description}` : ''}
+    </div>`;
+  };
+
   // Yes/No question
   if (pq && !pq.answered) {
     if (ynEl) { 
       ynEl.style.display='block'; 
-      setEl('pending-yn-text', `"${pq.playerName}" (${pq.teamId}) pregunta: "${pq.question}"`); 
+      setEl('pending-yn-text', `"${pq.playerName}" (${pq.teamId}) pregunta:<br><strong style="font-size:1.1rem;color:var(--t);display:block;margin:5px 0">"${pq.question}"</strong>${getCustomHintHtml(pq.teamId)}`); 
       
       const lieWarning = el('pending-yn-lie');
       if (pq.lieTeam) {
@@ -2302,19 +2343,26 @@ function renderPendingItems(s) {
 
   // Sensory clue
   if (pa && pa.type==='sensory' && !pa.resolved) {
-    if (sensEl) { sensEl.style.display='block'; setEl('pending-sensory-text', `"${pa.playerName}" (${pa.teamId}) demana Pista Sensorial`); }
+    if (sensEl) { sensEl.style.display='block'; setEl('pending-sensory-text', `"${pa.playerName}" (${pa.teamId}) demana Pista Sensorial${getCustomHintHtml(pa.teamId)}`); }
   } else { if (sensEl) sensEl.style.display='none'; }
 
   // Info card (ibu/abv/srm/category) — master types the actual value
   const infoTypes = ['ibu','abv','srm','category'];
   if (pa && infoTypes.includes(pa.type) && !pa.resolved) {
     const labels = { ibu:'🌿 IBU', abv:'🍺 Alcohol (ABV)', srm:'🎨 Color (SRM)', category:'📂 Categoria' };
-    // Use team-specific beer so the hint matches what that team needs to identify
+    
     const teamBeer = getBeerForTeam(s, pa.teamId);
-    const beerCard = BJCP_CARDS.find(c => c.id === teamBeer?.id);
+    let bjcpCard = teamBeer;
+    if (teamBeer?.isCatalogBeer) {
+      bjcpCard = BJCP_CARDS.find(c => c.id === teamBeer.styleId);
+    } else {
+      bjcpCard = BJCP_CARDS.find(c => c.id === teamBeer?.id);
+    }
+
     const hint = pa.lieTeam 
-      ? `<span style="color:white;background:var(--r);padding:6px 10px;border-radius:4px;display:inline-block;margin-top:5px;">⚠️ ALERTA: L'equip "${pa.lieTeam}" ha tirat una mentida! Has d'inventar una dada FALSA per enganyar a aquest equip! (Valor real: ${getRealValue(pa.type, beerCard)})</span>` 
-      : `Valor real: ${getRealValue(pa.type, beerCard)}`;
+      ? `<span style="color:white;background:var(--r);padding:6px 10px;border-radius:4px;display:inline-block;margin-top:5px;">⚠️ ALERTA: L'equip "${pa.lieTeam}" ha tirat una mentida! Has d'inventar una dada FALSA! (Reals: ${getRealValue(pa.type, bjcpCard, teamBeer)})</span>` 
+      : `<span style="font-size:0.9rem">${getRealValue(pa.type, bjcpCard, teamBeer)}</span>`;
+    
     if (infoEl) {
       infoEl.style.display='block';
       setEl('pending-info-title', `${labels[pa.type]||pa.type} — ${pa.playerName} (${pa.teamId})`);
@@ -2330,13 +2378,25 @@ function renderPendingItems(s) {
   } else { if (infoEl) infoEl.style.display='none'; }
 }
 
-function getRealValue(type, beer) {
-  if (!beer) return 'N/A';
-  if (type==='ibu')      return beer.ibuMin!=null ? `${beer.ibuMin}–${beer.ibuMax} IBU` : 'N/A';
-  if (type==='abv')      return beer.abvMin!=null ? `${beer.abvMin}–${beer.abvMax}%` : 'N/A';
-  if (type==='srm')      return beer.srmMin!=null ? `SRM ${beer.srmMin}–${beer.srmMax}` : 'N/A';
-  if (type==='category') return `Categoria ${beer.categoryNumber}`;
-  return 'N/A';
+function getRealValue(type, bjcpCard, customBeer) {
+  if (!bjcpCard) return 'N/A';
+
+  let customStr = '';
+  if (customBeer && customBeer.isCatalogBeer) {
+    if (type === 'ibu' && customBeer.ibu) customStr = `<strong>${customBeer.ibu} IBU</strong> (Cervesa) — `;
+    if (type === 'abv' && customBeer.abv) customStr = `<strong>${customBeer.abv}%</strong> (Cervesa) — `;
+    if (type === 'srm' && customBeer.srm) customStr = `<strong>SRM ${customBeer.srm}</strong> (Cervesa) — `;
+  }
+
+  const baseVal = (() => {
+    if (type==='ibu')      return bjcpCard.ibuMin!=null ? `Rang estil: ${bjcpCard.ibuMin}–${bjcpCard.ibuMax} IBU` : 'Sense dades estil';
+    if (type==='abv')      return bjcpCard.abvMin!=null ? `Rang estil: ${bjcpCard.abvMin}–${bjcpCard.abvMax}%` : 'Sense dades estil';
+    if (type==='srm')      return bjcpCard.srmMin!=null ? `Rang estil: SRM ${bjcpCard.srmMin}–${bjcpCard.srmMax}` : 'Sense dades estil';
+    if (type==='category') return `Categoria ${bjcpCard.categoryNumber} (${bjcpCard.category})`;
+    return 'N/A';
+  })();
+  
+  return customStr + baseVal;
 }
 
 async function sendInfoAnswer() {
@@ -2865,11 +2925,11 @@ async function openCatalogStandalone() {
   const ok = await _checkMasterPassword(pw);
   if (!ok) return showToast('❌ Contrassenya incorrecta');
   
-  showScreen('screen-master-dashboard');
-  el('md-game-code').textContent = 'Catàleg';
+  showScreen('screen-game-master');
+  if (el('md-game-code')) el('md-game-code').textContent = 'Catàleg';
   
   // Add an exit button to the header if not present
-  const header = el('screen-master-dashboard').querySelector('.title')?.parentElement?.parentElement;
+  const header = el('screen-game-master').querySelector('.title')?.parentElement?.parentElement || el('screen-game-master').querySelector('div');
   if (header && !document.getElementById('btn-exit-standalone')) {
     const btn = document.createElement('button');
     btn.id = 'btn-exit-standalone';
