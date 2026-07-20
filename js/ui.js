@@ -2506,7 +2506,14 @@ async function revealResult() {
 
 function openJudge(key, teamId, playerName, guessId) {
   const teamBeer  = getBeerForTeam(gameState, teamId);
-  const correct   = guessId === teamBeer?.id;
+  
+  let correct = false;
+  if (teamBeer?.isCatalogBeer) {
+    correct = (guessId === teamBeer.styleId || (teamBeer.styleId2 && guessId === teamBeer.styleId2));
+  } else {
+    correct = (guessId === teamBeer?.id);
+  }
+  
   const guessName = BJCP_CARDS.find(c => c.id === guessId)?.name || guessId;
   // Show which beer this team had to find (only if per-team mode)
   const correctBeerName = teamBeer?.name || '?';
