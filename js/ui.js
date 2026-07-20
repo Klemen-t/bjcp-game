@@ -2865,7 +2865,7 @@ async function renderCatalogList() {
       return;
     }
     g.innerHTML = beers.map(b => `
-      <div class="card mb-10" style="display:flex;gap:12px;align-items:flex-start">
+      <div class="card mb-10" style="display:flex;gap:12px;align-items:flex-start;cursor:pointer" onclick="openBeerDetail('${b.id}')">
         ${b.image ? `<img src="${b.image}" style="width:60px;height:80px;object-fit:cover;border-radius:4px">` : `<div style="width:60px;height:80px;background:var(--k3);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:1.5rem">🍺</div>`}
         <div style="flex:1;min-width:0">
           <div style="font-weight:700;font-size:1.1rem;color:var(--sl);line-height:1.2;margin-bottom:2px">${b.name}</div>
@@ -2875,7 +2875,7 @@ async function renderCatalogList() {
             ${b.abv ? `<span class="info-pill">${b.abv}% ABV</span>` : ''}
             ${b.ibu ? `<span class="info-pill">${b.ibu} IBU</span>` : ''}
           </div>
-          ${b.ingredients ? `<div style="font-size:.75rem;color:var(--t);margin-bottom:2px"><strong>Ingredients:</strong> ${b.ingredients}</div>` : ''}
+          ${b.ingredients ? `<div style="font-size:.75rem;color:var(--t);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><strong>Ingredients:</strong> ${b.ingredients}</div>` : ''}
         </div>
       </div>
     `).join('');
@@ -2884,30 +2884,80 @@ async function renderCatalogList() {
   }
 }
 
-function openBeerForm() {
-  const styleOptions = BJCP_CARDS.map(c => `<option value="${c.id}">${c.number}. ${c.name}</option>`).join('');
+function openBeerDetail(id) {
+  const beer = _cachedCatalog?.[id];
+  if (!beer) return;
+  const dFormat = (ts) => { const d=new Date(ts); return d.toLocaleDateString()+' '+d.toLocaleTimeString(); };
   
-  showModal('📚 Nova Cervesa Comercial', `
-    <form id="new-beer-form" onsubmit="submitNewBeer(event)" style="display:flex;flex-direction:column;gap:12px">
-      <div><label style="display:block;font-size:.8rem;color:var(--m);margin-bottom:3px">Fabricant (Cervesera)*</label><input type="text" id="bc-brewery" required style="width:100%;padding:10px;background:var(--k3);border:1px solid var(--k4);color:var(--t);border-radius:4px"></div>
-      <div><label style="display:block;font-size:.8rem;color:var(--m);margin-bottom:3px">Nom de la cervesa*</label><input type="text" id="bc-name" required style="width:100%;padding:10px;background:var(--k3);border:1px solid var(--k4);color:var(--t);border-radius:4px"></div>
-      <div><label style="display:block;font-size:.8rem;color:var(--m);margin-bottom:3px">País d'origen</label><input type="text" id="bc-country" style="width:100%;padding:10px;background:var(--k3);border:1px solid var(--k4);color:var(--t);border-radius:4px"></div>
+  showModal(`🍺 Detall de Cervesa`, `
+    <div style="display:flex;gap:15px;margin-bottom:15px">
+      ${beer.image ? `<img src="${beer.image}" style="width:100px;height:140px;object-fit:cover;border-radius:4px">` : `<div style="width:100px;height:140px;background:var(--k3);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:2rem">🍺</div>`}
+      <div style="flex:1">
+        <div style="font-weight:700;font-size:1.3rem;color:var(--sl);margin-bottom:4px">${beer.name}</div>
+        <div style="font-family:var(--fu);font-size:1rem;color:var(--m);margin-bottom:8px">${beer.brewery}${beer.country ? ` · ${beer.country}` : ''}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px">
+          <span class="info-pill">${beer.styleName || beer.styleId || '?'}</span>
+          ${beer.abv ? `<span class="info-pill">${beer.abv}% ABV</span>` : ''}
+          ${beer.ibu ? `<span class="info-pill">${beer.ibu} IBU</span>` : ''}
+          ${beer.srm ? `<span class="info-pill">Color: ${beer.srm}</span>` : ''}
+        </div>
+      </div>
+    </div>
+    ${beer.ingredients ? `<div style="margin-bottom:10px"><div style="font-weight:700;font-size:.8rem;color:var(--sl);margin-bottom:2px">Ingredients clau</div><div style="font-size:.9rem;color:var(--t)">${beer.ingredients}</div></div>` : ''}
+    ${beer.description ? `<div style="margin-bottom:10px"><div style="font-weight:700;font-size:.8rem;color:var(--sl);margin-bottom:2px">Descripció comercial</div><div style="font-size:.9rem;color:var(--t)">${beer.description}</div></div>` : ''}
+    <div style="font-size:.7rem;color:var(--m);margin-top:15px;border-top:1px solid rgba(255,255,255,.05);padding-top:10px">
+      Creada: ${dFormat(beer.createdAt)}<br>
+      ${beer.updatedAt ? `Modificada: ${dFormat(beer.updatedAt)}` : ''}
+    </div>
+    <div style="display:flex;gap:10px;margin-top:20px">
+      <button class="btn btn-primary" onclick="openBeerForm('${id}')" style="flex:1">✏️ Editar</button>
+      <button class="btn btn-secondary" onclick="deleteBeerPrompt('${id}')" style="flex:1;background:rgba(180,40,40,.2);border-color:rgba(180,40,40,.4);color:#e07070">🗑️ Eliminar</button>
+    </div>
+  `);
+}
+
+function deleteBeerPrompt(id) {
+  if (confirm("Segur que vols eliminar aquesta cervesa del catàleg? Aquesta acció no es pot desfer.")) {
+    game.deleteMasterBeer(id).then(() => {
+      closeModal();
+      showToast('🗑️ Cervesa eliminada');
+      renderCatalogList();
+    }).catch(e => showToast('❌ Error: ' + e.message));
+  }
+}
+
+function openBeerForm(id = null) {
+  let beer = {};
+  let isEdit = false;
+  if (id && _cachedCatalog?.[id]) {
+    beer = _cachedCatalog[id];
+    isEdit = true;
+  }
+  
+  const styleOptions = BJCP_CARDS.map(c => `<option value="${c.id}" ${beer.styleId === c.id ? 'selected' : ''}>${c.number}. ${c.name}</option>`).join('');
+  const v = (str) => str ? str.replace(/"/g, '&quot;') : '';
+
+  showModal(isEdit ? '✏️ Editar Cervesa' : '📚 Nova Cervesa Comercial', `
+    <form id="new-beer-form" onsubmit="submitNewBeer(event, '${id || ''}')" style="display:flex;flex-direction:column;gap:12px">
+      <div><label style="display:block;font-size:.8rem;color:var(--m);margin-bottom:3px">Fabricant (Cervesera)*</label><input type="text" id="bc-brewery" required value="${v(beer.brewery)}" style="width:100%;padding:10px;background:var(--k3);border:1px solid var(--k4);color:var(--t);border-radius:4px"></div>
+      <div><label style="display:block;font-size:.8rem;color:var(--m);margin-bottom:3px">Nom de la cervesa*</label><input type="text" id="bc-name" required value="${v(beer.name)}" style="width:100%;padding:10px;background:var(--k3);border:1px solid var(--k4);color:var(--t);border-radius:4px"></div>
+      <div><label style="display:block;font-size:.8rem;color:var(--m);margin-bottom:3px">País d'origen</label><input type="text" id="bc-country" value="${v(beer.country)}" style="width:100%;padding:10px;background:var(--k3);border:1px solid var(--k4);color:var(--t);border-radius:4px"></div>
       <div><label style="display:block;font-size:.8rem;color:var(--m);margin-bottom:3px">Estil BJCP*</label><select id="bc-style" required style="width:100%;padding:10px;background:var(--k3);border:1px solid var(--k4);color:var(--t);border-radius:4px"><option value="">-- Selecciona Estil --</option>${styleOptions}</select></div>
       <div style="display:flex;gap:8px">
-        <div style="flex:1"><label style="display:block;font-size:.8rem;color:var(--m);margin-bottom:3px">ABV (%)</label><input type="text" id="bc-abv" style="width:100%;padding:10px;background:var(--k3);border:1px solid var(--k4);color:var(--t);border-radius:4px" placeholder="Ex: 5.5"></div>
-        <div style="flex:1"><label style="display:block;font-size:.8rem;color:var(--m);margin-bottom:3px">IBU</label><input type="text" id="bc-ibu" style="width:100%;padding:10px;background:var(--k3);border:1px solid var(--k4);color:var(--t);border-radius:4px" placeholder="Ex: 40"></div>
-        <div style="flex:1"><label style="display:block;font-size:.8rem;color:var(--m);margin-bottom:3px">Color (SRM)</label><input type="text" id="bc-srm" style="width:100%;padding:10px;background:var(--k3);border:1px solid var(--k4);color:var(--t);border-radius:4px" placeholder="Ex: 12"></div>
+        <div style="flex:1"><label style="display:block;font-size:.8rem;color:var(--m);margin-bottom:3px">ABV (%)</label><input type="text" id="bc-abv" value="${v(beer.abv)}" style="width:100%;padding:10px;background:var(--k3);border:1px solid var(--k4);color:var(--t);border-radius:4px" placeholder="Ex: 5.5"></div>
+        <div style="flex:1"><label style="display:block;font-size:.8rem;color:var(--m);margin-bottom:3px">IBU</label><input type="text" id="bc-ibu" value="${v(beer.ibu)}" style="width:100%;padding:10px;background:var(--k3);border:1px solid var(--k4);color:var(--t);border-radius:4px" placeholder="Ex: 40"></div>
+        <div style="flex:1"><label style="display:block;font-size:.8rem;color:var(--m);margin-bottom:3px">Color (SRM)</label><input type="text" id="bc-srm" value="${v(beer.srm)}" style="width:100%;padding:10px;background:var(--k3);border:1px solid var(--k4);color:var(--t);border-radius:4px" placeholder="Ex: 12"></div>
       </div>
-      <div><label style="display:block;font-size:.8rem;color:var(--m);margin-bottom:3px">Ingredients Clau</label><textarea id="bc-ingredients" style="width:100%;height:60px;padding:10px;background:var(--k3);border:1px solid var(--k4);color:var(--t);border-radius:4px"></textarea></div>
-      <div><label style="display:block;font-size:.8rem;color:var(--m);margin-bottom:3px">Descripció Comercial</label><textarea id="bc-desc" style="width:100%;height:60px;padding:10px;background:var(--k3);border:1px solid var(--k4);color:var(--t);border-radius:4px"></textarea></div>
-      <div><label style="display:block;font-size:.8rem;color:var(--m);margin-bottom:3px">Imatge de l'etiqueta (opcional)</label><input type="file" id="bc-image" accept="image/*" style="width:100%;padding:8px;background:var(--k3);border:1px solid var(--k4);color:var(--t);border-radius:4px"></div>
+      <div><label style="display:block;font-size:.8rem;color:var(--m);margin-bottom:3px">Ingredients Clau</label><textarea id="bc-ingredients" style="width:100%;height:60px;padding:10px;background:var(--k3);border:1px solid var(--k4);color:var(--t);border-radius:4px">${v(beer.ingredients)}</textarea></div>
+      <div><label style="display:block;font-size:.8rem;color:var(--m);margin-bottom:3px">Descripció Comercial</label><textarea id="bc-desc" style="width:100%;height:60px;padding:10px;background:var(--k3);border:1px solid var(--k4);color:var(--t);border-radius:4px">${v(beer.description)}</textarea></div>
+      <div><label style="display:block;font-size:.8rem;color:var(--m);margin-bottom:3px">Imatge de l'etiqueta ${isEdit?'(deixa en blanc per no canviar)':'(opcional)'}</label><input type="file" id="bc-image" accept="image/*" style="width:100%;padding:8px;background:var(--k3);border:1px solid var(--k4);color:var(--t);border-radius:4px"></div>
       
       <button type="submit" id="bc-submit" class="btn btn-primary" style="margin-top:10px">💾 Guardar Cervesa</button>
     </form>
   `);
 }
 
-async function submitNewBeer(e) {
+async function submitNewBeer(e, editId) {
   e.preventDefault();
   const submitBtn = el('bc-submit');
   submitBtn.disabled = true;
@@ -2916,8 +2966,12 @@ async function submitNewBeer(e) {
   try {
     const fileInput = el('bc-image');
     let base64Image = null;
+    let oldBeer = editId ? _cachedCatalog?.[editId] : null;
+    
     if (fileInput && fileInput.files && fileInput.files[0]) {
       base64Image = await compressImage(fileInput.files[0]);
+    } else if (oldBeer && oldBeer.image) {
+      base64Image = oldBeer.image; // keep old image if no new one provided
     }
     
     const styleId = el('bc-style').value;
@@ -2936,6 +2990,12 @@ async function submitNewBeer(e) {
       description: el('bc-desc').value.trim(),
       image: base64Image
     };
+    
+    if (oldBeer) {
+      beerData.id = oldBeer.id;
+      beerData.createdAt = oldBeer.createdAt;
+      beerData.updatedAt = Date.now();
+    }
     
     await game.saveMasterBeer(beerData);
     closeModal();

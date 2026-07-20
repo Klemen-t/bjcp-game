@@ -240,6 +240,11 @@ class BJCPGame {
     return id;
   }
 
+  async deleteMasterBeer(id) {
+    await this.initFirebase();
+    await this.db.ref(`master_catalog/${id}`).remove();
+  }
+
   // ── Master: game flow ─────────────────────────────────────────
   async startGame() {
     const state = (await this.gameRef.once('value')).val();
