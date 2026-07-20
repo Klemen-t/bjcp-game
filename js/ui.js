@@ -2903,6 +2903,7 @@ async function renderCatalogList() {
           <div style="font-family:var(--fu);font-size:.85rem;color:var(--m);margin-bottom:4px">${b.brewery}${b.country ? ` · ${b.country}` : ''}</div>
           <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px">
             <span class="info-pill">${b.styleName || b.styleId || '?'}</span>
+            ${b.styleId2 ? `<span class="info-pill" style="opacity:0.75;border:1px dashed var(--m)">🥈 ${b.styleName2 || b.styleId2}</span>` : ''}
             ${b.abv ? `<span class="info-pill">${b.abv}% ABV</span>` : ''}
             ${b.ibu ? `<span class="info-pill">${b.ibu} IBU</span>` : ''}
           </div>
@@ -2928,6 +2929,7 @@ function openBeerDetail(id) {
         <div style="font-family:var(--fu);font-size:1rem;color:var(--m);margin-bottom:8px">${beer.brewery}${beer.country ? ` · ${beer.country}` : ''}</div>
         <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px">
           <span class="info-pill">${beer.styleName || beer.styleId || '?'}</span>
+          ${beer.styleId2 ? `<span class="info-pill" style="opacity:0.75;border:1px dashed var(--m)">🥈 Secundari: ${beer.styleName2 || beer.styleId2}</span>` : ''}
           ${beer.abv ? `<span class="info-pill">${beer.abv}% ABV</span>` : ''}
           ${beer.ibu ? `<span class="info-pill">${beer.ibu} IBU</span>` : ''}
           ${beer.srm ? `<span class="info-pill">Color: ${beer.srm}</span>` : ''}
@@ -2965,7 +2967,9 @@ function openBeerForm(id = null) {
     isEdit = true;
   }
   
-  const styleOptions = BJCP_CARDS.map(c => `<option value="${c.id}" ${beer.styleId === c.id ? 'selected' : ''}>${c.number}. ${c.name}</option>`).join('');
+  const sortedStyles = [...BJCP_CARDS].sort((a,b) => (a.number||'').localeCompare(b.number||'', undefined, {numeric: true}));
+  const styleOptions = sortedStyles.map(c => `<option value="${c.id}" ${beer.styleId === c.id ? 'selected' : ''}>${c.number}. ${c.name}</option>`).join('');
+  const styleOptions2 = sortedStyles.map(c => `<option value="${c.id}" ${beer.styleId2 === c.id ? 'selected' : ''}>${c.number}. ${c.name}</option>`).join('');
   const v = (str) => str ? str.replace(/"/g, '&quot;') : '';
 
   showModal(isEdit ? '✏️ Editar Cervesa' : '📚 Nova Cervesa Comercial', `
@@ -2974,6 +2978,7 @@ function openBeerForm(id = null) {
       <div><label style="display:block;font-size:.8rem;color:var(--m);margin-bottom:3px">Nom de la cervesa*</label><input type="text" id="bc-name" required value="${v(beer.name)}" style="width:100%;padding:10px;background:var(--k3);border:1px solid var(--k4);color:var(--t);border-radius:4px"></div>
       <div><label style="display:block;font-size:.8rem;color:var(--m);margin-bottom:3px">País d'origen</label><input type="text" id="bc-country" value="${v(beer.country)}" style="width:100%;padding:10px;background:var(--k3);border:1px solid var(--k4);color:var(--t);border-radius:4px"></div>
       <div><label style="display:block;font-size:.8rem;color:var(--m);margin-bottom:3px">Estil BJCP*</label><select id="bc-style" required style="width:100%;padding:10px;background:var(--k3);border:1px solid var(--k4);color:var(--t);border-radius:4px"><option value="">-- Selecciona Estil --</option>${styleOptions}</select></div>
+      <div><label style="display:block;font-size:.8rem;color:var(--m);margin-bottom:3px">Estil BJCP Secundari (Opcional)</label><select id="bc-style2" style="width:100%;padding:10px;background:var(--k3);border:1px dashed var(--k4);color:var(--t);border-radius:4px"><option value="">-- Cap --</option>${styleOptions2}</select></div>
       <div style="display:flex;gap:8px">
         <div style="flex:1"><label style="display:block;font-size:.8rem;color:var(--m);margin-bottom:3px">ABV (%)</label><input type="text" id="bc-abv" value="${v(beer.abv)}" style="width:100%;padding:10px;background:var(--k3);border:1px solid var(--k4);color:var(--t);border-radius:4px" placeholder="Ex: 5.5"></div>
         <div style="flex:1"><label style="display:block;font-size:.8rem;color:var(--m);margin-bottom:3px">IBU</label><input type="text" id="bc-ibu" value="${v(beer.ibu)}" style="width:100%;padding:10px;background:var(--k3);border:1px solid var(--k4);color:var(--t);border-radius:4px" placeholder="Ex: 40"></div>
@@ -3008,12 +3013,17 @@ async function submitNewBeer(e, editId) {
     const styleId = el('bc-style').value;
     const styleObj = BJCP_CARDS.find(c => c.id === styleId);
     
+    const styleId2 = el('bc-style2').value;
+    const styleObj2 = styleId2 ? BJCP_CARDS.find(c => c.id === styleId2) : null;
+    
     const beerData = {
       brewery: el('bc-brewery').value.trim(),
       name: el('bc-name').value.trim(),
       country: el('bc-country').value.trim(),
       styleId: styleId,
       styleName: styleObj ? styleObj.name : '',
+      styleId2: styleId2 || null,
+      styleName2: styleObj2 ? styleObj2.name : null,
       abv: el('bc-abv').value.trim(),
       ibu: el('bc-ibu').value.trim(),
       srm: el('bc-srm').value.trim(),
