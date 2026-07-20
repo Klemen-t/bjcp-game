@@ -1,5 +1,5 @@
 # AGENTS.md — BJCP Beer Style Game
-## Börn Loka Ales · v2026.34
+## Börn Loka Ales · v2026.40
 
 Instruccions per a qualsevol agent (Claude o altre LLM) que treballi en aquest projecte.
 
@@ -21,7 +21,7 @@ bjcp-game/
 ├── data/
 │   └── cards.js      # 116 estils BJCP (+ exemples locals Börn Loka) — FONT DE VERITAT
 ├── js/
-│   ├── game.js       # Classe BJCPGame: Firebase, sessions, lògica de joc, cartes d'acció
+│   ├── game.js       # Classe BJCPGame: Firebase, sessions, lògica de joc, cartes d'acció, Master Catalog
 │   └── ui.js         # Tot la UI: vistes, filtres sensorials, mapa, historial, temes
 ├── README.md         # Documentació per a humans
 └── AGENTS.md         # Aquest fitxer
@@ -37,7 +37,7 @@ bjcp-game/
 - La clau d'API Firebase és pública i restringida per HTTP referrer. No cal amagar-la.
 
 ### Versions
-- **Sempre incrementar `APP_VERSION`** a `js/ui.js` quan es fa qualsevol canvi. Format: `'vANY.NUM · DD/MM/YYYY'`. Exemple: `'v2026.26 · 24/03/2026'`.
+- **Sempre incrementar `APP_VERSION`** a `js/ui.js` quan es fa qualsevol canvi. Format: `'vANY.NUM · DD/MM/YYYY'`. Exemple: `'v2026.40 · 20/07/2026'`.
 - La versió es mostra a la portada del joc (element `#app-version`).
 
 ### Cards
@@ -58,24 +58,9 @@ bjcp-game/
 ```
 games/{CODE}/
   status: 'lobby' | 'playing' | 'finished'
-  currentRound: number
-  totalRounds: number
-  cardsLocked: boolean
-  activeLieTeam: string|null      # equip que té "Carta Mentida" activa
-  cancelShieldTeam: string|null   # equip que té "Anular Ajuda" activa
-  activeCardIds: string[]|null    # null = totes; array = pool restringit
-  currentBeer: { id, name, number, category, ... revealedInfo, teamInfo, guesses, ... }
-  roundHistory: { 1: {...}, 2: {...} }  # historial per als participants
-  teams/{teamId}/
-    points: number
-    players/{playerName}/
-      cardStates: { [cardId]: 'possible'|'discarded'|null }
-      actionCards: [{id, type}]
-      pendingCards: [{id, type}]   # lliurades al principi de la pròxima ronda
-      usedCards: [{id, type, usedAt}]
-  messages/{ts}/
-    from, fromRole, toTeam, toPlayer, text, ts
-    isCardGrant?, isInfoReveal?, isSystemAlert?, forMasterOnly?
+  ...
+master_catalog/{id}/
+  brewery, name, country, styleId, styleName, abv, ibu, srm, ingredients, description, image (base64)
 ```
 
 ### Puntuació actual
@@ -215,6 +200,7 @@ Quan `s.roundReset !== lastRoundReset`:
 
 | Versió | Data | Canvis principals |
 |--------|------|-------------------|
+| v2026.40 | 20/07/2026 | S'afegeix un Catàleg de Cerveses (pestanya "Dades") per al Master. Emmagatzematge global de cerveses comercials a Firebase amb compressió d'imatges a Base64 integrada |
 | v2026.34 | 20/07/2026 | Canvi de paradigma per la Carta Mentida: Ara el Master rep alertes visuals per mentir manualment en lloc de dependre de l'automatisme |
 | v2026.33 | 20/07/2026 | S'amaga l'actualització del rànquing als jugadors fins que el Master revela els resultats |
 | v2026.32 | 20/07/2026 | Fix: Reset adequat de `cardStates` i `roundReset` en començar una partida (Ronda 1) perquè els jugadors no conservin estils de partides anteriors |

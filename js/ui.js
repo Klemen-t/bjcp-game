@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
 //  UI.JS  —  Interface & interaction logic
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION = 'v2026.34 · 20/07/2026';
+const APP_VERSION = 'v2026.40 · 20/07/2026';
 
 // ═══ THEME TOGGLE ════════════════════════════════════════════
 function toggleTheme() {
@@ -1318,12 +1318,13 @@ function switchTab(tab) {
   if (tab==='messages') { unreadMsgs=0; updMsgBadge(); }
 }
 function switchMasterTab(tab) {
-  ['round','ranking','teams','messages','log'].forEach(t => {
+  ['round','ranking','teams','messages','log','catalog'].forEach(t => {
     el('mtab-'+t) && (el('mtab-'+t).style.display = t===tab?'block':'none');
     el('mnav-'+t)?.classList.toggle('active', t===tab);
   });
   if (tab==='messages') { unreadMsgs=0; updMsgBadge(); }
   if (tab==='log') renderMasterLog(gameState);
+  if (tab==='catalog') renderCatalogList();
 }
 
 // ═══ TEAM VIEW ════════════════════════════════════════════════════
@@ -2847,3 +2848,141 @@ document.addEventListener('DOMContentLoaded', async () => {
   const restored = await tryRestoreSession();
   if (!restored) showScreen('screen-welcome');
 });
+
+// ═══ MASTER CATALOG ══════════════════════════════════════════════
+let _cachedCatalog = null;
+
+async function renderCatalogList() {
+  const g = el('master-catalog-list');
+  if (!g) return;
+  g.innerHTML = '<div style="text-align:center;padding:20px" class="muted">Carregant...</div>';
+  try {
+    const catalog = await game.getMasterCatalog();
+    _cachedCatalog = catalog;
+    const beers = Object.values(catalog).sort((a,b) => b.createdAt - a.createdAt);
+    if (!beers.length) {
+      g.innerHTML = '<div class="empty-state"><span class="empty-icon">🍺</span><p>No hi ha cerveses guardades</p></div>';
+      return;
+    }
+    g.innerHTML = beers.map(b => `
+      <div class="card mb-10" style="display:flex;gap:12px;align-items:flex-start">
+        ${b.image ? `<img src="${b.image}" style="width:60px;height:80px;object-fit:cover;border-radius:4px">` : `<div style="width:60px;height:80px;background:var(--k3);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:1.5rem">🍺</div>`}
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;font-size:1.1rem;color:var(--sl);line-height:1.2;margin-bottom:2px">${b.name}</div>
+          <div style="font-family:var(--fu);font-size:.85rem;color:var(--m);margin-bottom:4px">${b.brewery}${b.country ? ` · ${b.country}` : ''}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px">
+            <span class="info-pill">${b.styleName || b.styleId || '?'}</span>
+            ${b.abv ? `<span class="info-pill">${b.abv}% ABV</span>` : ''}
+            ${b.ibu ? `<span class="info-pill">${b.ibu} IBU</span>` : ''}
+          </div>
+          ${b.ingredients ? `<div style="font-size:.75rem;color:var(--t);margin-bottom:2px"><strong>Ingredients:</strong> ${b.ingredients}</div>` : ''}
+        </div>
+      </div>
+    `).join('');
+  } catch(e) {
+    g.innerHTML = `<div class="empty-state" style="color:var(--r)">❌ Error carregant el catàleg</div>`;
+  }
+}
+
+function openBeerForm() {
+  const styleOptions = BJCP_CARDS.map(c => `<option value="${c.id}">${c.categoryNumber}${c.letter}. ${c.name}</option>`).join('');
+  
+  showModal('📚 Nova Cervesa Comercial', `
+    <form id="new-beer-form" onsubmit="submitNewBeer(event)" style="display:flex;flex-direction:column;gap:12px">
+      <div><label style="display:block;font-size:.8rem;color:var(--m);margin-bottom:3px">Fabricant (Cervesera)*</label><input type="text" id="bc-brewery" required style="width:100%;padding:10px;background:var(--k3);border:1px solid var(--k4);color:var(--t);border-radius:4px"></div>
+      <div><label style="display:block;font-size:.8rem;color:var(--m);margin-bottom:3px">Nom de la cervesa*</label><input type="text" id="bc-name" required style="width:100%;padding:10px;background:var(--k3);border:1px solid var(--k4);color:var(--t);border-radius:4px"></div>
+      <div><label style="display:block;font-size:.8rem;color:var(--m);margin-bottom:3px">País d'origen</label><input type="text" id="bc-country" style="width:100%;padding:10px;background:var(--k3);border:1px solid var(--k4);color:var(--t);border-radius:4px"></div>
+      <div><label style="display:block;font-size:.8rem;color:var(--m);margin-bottom:3px">Estil BJCP*</label><select id="bc-style" required style="width:100%;padding:10px;background:var(--k3);border:1px solid var(--k4);color:var(--t);border-radius:4px"><option value="">-- Selecciona Estil --</option>${styleOptions}</select></div>
+      <div style="display:flex;gap:8px">
+        <div style="flex:1"><label style="display:block;font-size:.8rem;color:var(--m);margin-bottom:3px">ABV (%)</label><input type="text" id="bc-abv" style="width:100%;padding:10px;background:var(--k3);border:1px solid var(--k4);color:var(--t);border-radius:4px" placeholder="Ex: 5.5"></div>
+        <div style="flex:1"><label style="display:block;font-size:.8rem;color:var(--m);margin-bottom:3px">IBU</label><input type="text" id="bc-ibu" style="width:100%;padding:10px;background:var(--k3);border:1px solid var(--k4);color:var(--t);border-radius:4px" placeholder="Ex: 40"></div>
+        <div style="flex:1"><label style="display:block;font-size:.8rem;color:var(--m);margin-bottom:3px">Color (SRM)</label><input type="text" id="bc-srm" style="width:100%;padding:10px;background:var(--k3);border:1px solid var(--k4);color:var(--t);border-radius:4px" placeholder="Ex: 12"></div>
+      </div>
+      <div><label style="display:block;font-size:.8rem;color:var(--m);margin-bottom:3px">Ingredients Clau</label><textarea id="bc-ingredients" style="width:100%;height:60px;padding:10px;background:var(--k3);border:1px solid var(--k4);color:var(--t);border-radius:4px"></textarea></div>
+      <div><label style="display:block;font-size:.8rem;color:var(--m);margin-bottom:3px">Descripció Comercial</label><textarea id="bc-desc" style="width:100%;height:60px;padding:10px;background:var(--k3);border:1px solid var(--k4);color:var(--t);border-radius:4px"></textarea></div>
+      <div><label style="display:block;font-size:.8rem;color:var(--m);margin-bottom:3px">Imatge de l'etiqueta (opcional)</label><input type="file" id="bc-image" accept="image/*" style="width:100%;padding:8px;background:var(--k3);border:1px solid var(--k4);color:var(--t);border-radius:4px"></div>
+      
+      <button type="submit" id="bc-submit" class="btn btn-primary" style="margin-top:10px">💾 Guardar Cervesa</button>
+    </form>
+  `);
+}
+
+async function submitNewBeer(e) {
+  e.preventDefault();
+  const submitBtn = el('bc-submit');
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Guardant...';
+  
+  try {
+    const fileInput = el('bc-image');
+    let base64Image = null;
+    if (fileInput && fileInput.files && fileInput.files[0]) {
+      base64Image = await compressImage(fileInput.files[0]);
+    }
+    
+    const styleId = el('bc-style').value;
+    const styleObj = BJCP_CARDS.find(c => c.id === styleId);
+    
+    const beerData = {
+      brewery: el('bc-brewery').value.trim(),
+      name: el('bc-name').value.trim(),
+      country: el('bc-country').value.trim(),
+      styleId: styleId,
+      styleName: styleObj ? styleObj.name : '',
+      abv: el('bc-abv').value.trim(),
+      ibu: el('bc-ibu').value.trim(),
+      srm: el('bc-srm').value.trim(),
+      ingredients: el('bc-ingredients').value.trim(),
+      description: el('bc-desc').value.trim(),
+      image: base64Image
+    };
+    
+    await game.saveMasterBeer(beerData);
+    closeModal();
+    showToast('✅ Cervesa desada correctament!');
+    renderCatalogList();
+  } catch (err) {
+    showToast('❌ Error: ' + err.message);
+    submitBtn.disabled = false;
+    submitBtn.textContent = '💾 Guardar Cervesa';
+  }
+}
+
+function compressImage(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = event => {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = () => {
+        const MAX_WIDTH = 400;
+        const MAX_HEIGHT = 400;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        resolve(canvas.toDataURL('image/webp', 0.8));
+      };
+      img.onerror = error => reject(error);
+    };
+    reader.onerror = error => reject(error);
+  });
+}

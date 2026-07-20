@@ -224,6 +224,22 @@ class BJCPGame {
     return snap.val();
   }
 
+  // ── Master Catalog ─────────────────────────────────────────────
+  async getMasterCatalog() {
+    await this.initFirebase();
+    const snap = await this.db.ref('master_catalog').once('value');
+    return snap.val() || {};
+  }
+
+  async saveMasterBeer(beerData) {
+    await this.initFirebase();
+    const id = beerData.id || `b_${Date.now()}_${Math.random().toString(36).substr(2,5)}`;
+    beerData.id = id;
+    if (!beerData.createdAt) beerData.createdAt = Date.now();
+    await this.db.ref(`master_catalog/${id}`).set(beerData);
+    return id;
+  }
+
   // ── Master: game flow ─────────────────────────────────────────
   async startGame() {
     const state = (await this.gameRef.once('value')).val();

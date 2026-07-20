@@ -1,5 +1,5 @@
 # 🍺 BJCP Beer Style Game — Börn Loka Ales
-**v2026.26 · 24/03/2026** *(última versió documentada)*
+**v2026.40 · 20/07/2026** *(última versió documentada)*
 
 Joc de cartes multijugador en temps real per identificar estils de cervesa BJCP. Dissenyat per a sessions de cata en grup, optimitzat per a mòbil.
 
@@ -193,6 +193,7 @@ Quan hi ha **filtres sensorials actius**, cada estil mostra un anell de color:
 | **🎮 Ronda** | Selecció de cervesa, gestió de propostes, jutjar i revelar |
 | **🏆 Equips** | Ranking en temps real, ajust manual de punts (+/−) |
 | **📋 Log** | Historial de propostes, info revelada, activitat de cartes |
+| **📚 Dades** | Catàleg privat per introduir cerveses comercials reals amb foto i notes |
 | **💬 Missatge** | Enviar avisos a equips o jugadors individuals |
 
 ---

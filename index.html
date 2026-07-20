@@ -2545,6 +2545,19 @@
           </div>
         </div>
       </div>
+
+      <!-- TAB DADES / CATÀLEG -->
+      <div id="mtab-catalog" style="display:none; padding-bottom: 20px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;margin-top:6px">
+          <div class="sec-title" style="margin:0">📚 Catàleg Cerveses</div>
+          <button class="btn btn-primary btn-sm" onclick="openBeerForm()" style="width:auto">+ Nova</button>
+        </div>
+        <div id="master-catalog-list">
+          <div class="empty-state"><span class="empty-icon">🍺</span>
+            <p>No hi ha cerveses guardades</p>
+          </div>
+        </div>
+      </div>
     </div>
 
     <nav class="bnav">
@@ -2554,6 +2567,8 @@
           class="nav-icon">🏆</span><span>Equips</span></button>
       <button class="nav-btn" id="mnav-log" onclick="switchMasterTab('log')"><span
           class="nav-icon">📋</span><span>Log</span></button>
+      <button class="nav-btn" id="mnav-catalog" onclick="switchMasterTab('catalog')"><span
+          class="nav-icon">📚</span><span>Dades</span></button>
       <button class="nav-btn" id="mnav-messages" onclick="switchMasterTab('messages')">
         <div class="nav-wrap"><span class="nav-icon">💬</span><span class="badge" id="master-msg-badge"
             style="display:none">!</span></div><span>Missatge</span>
