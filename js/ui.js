@@ -2885,7 +2885,7 @@ async function renderCatalogList() {
 }
 
 function openBeerForm() {
-  const styleOptions = BJCP_CARDS.map(c => `<option value="${c.id}">${c.categoryNumber}${c.letter}. ${c.name}</option>`).join('');
+  const styleOptions = BJCP_CARDS.map(c => `<option value="${c.id}">${c.number}. ${c.name}</option>`).join('');
   
   showModal('📚 Nova Cervesa Comercial', `
     <form id="new-beer-form" onsubmit="submitNewBeer(event)" style="display:flex;flex-direction:column;gap:12px">
