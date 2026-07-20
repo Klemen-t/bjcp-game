@@ -1325,6 +1325,13 @@ function switchMasterTab(tab) {
   if (tab==='messages') { unreadMsgs=0; updMsgBadge(); }
   if (tab==='log') renderMasterLog(gameState);
   if (tab==='catalog') renderCatalogList();
+  
+  // if standalone mode, force only catalog visible
+  if (!game.gameCode) {
+    document.querySelectorAll('#screen-master-dashboard .bottom-nav .nav-btn').forEach(b => {
+      if (b.id !== 'mnav-catalog') b.style.display = 'none';
+    });
+  }
 }
 
 // ═══ TEAM VIEW ════════════════════════════════════════════════════
@@ -2851,6 +2858,30 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // ═══ MASTER CATALOG ══════════════════════════════════════════════
 let _cachedCatalog = null;
+
+async function openCatalogStandalone() {
+  const pw = el('master-password').value;
+  if (!pw) return showToast('⚠️ Introdueix la contrassenya del Master per accedir al catàleg');
+  const ok = await _checkMasterPassword(pw);
+  if (!ok) return showToast('❌ Contrassenya incorrecta');
+  
+  showScreen('screen-master-dashboard');
+  el('md-game-code').textContent = 'Catàleg';
+  
+  // Add an exit button to the header if not present
+  const header = el('screen-master-dashboard').querySelector('.title')?.parentElement?.parentElement;
+  if (header && !document.getElementById('btn-exit-standalone')) {
+    const btn = document.createElement('button');
+    btn.id = 'btn-exit-standalone';
+    btn.className = 'btn btn-ghost';
+    btn.style.cssText = 'margin-left:auto;font-size:0.75rem;padding:4px 8px';
+    btn.textContent = '🚪 Sortir';
+    btn.onclick = () => location.reload();
+    header.appendChild(btn);
+  }
+  
+  switchMasterTab('catalog');
+}
 
 async function renderCatalogList() {
   const g = el('master-catalog-list');
