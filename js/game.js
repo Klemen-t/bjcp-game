@@ -226,7 +226,18 @@ class BJCPGame {
 
   // ── Master: game flow ─────────────────────────────────────────
   async startGame() {
-    await this.gameRef.update({ status: 'playing', currentRound: 1, cardsLocked: true });
+    const state = (await this.gameRef.once('value')).val();
+    const updates = { 
+      status: 'playing', currentRound: 1, cardsLocked: true,
+      roundReset: Date.now(), cancelShieldTeam: null
+    };
+    const teams = state.teams || {};
+    Object.entries(teams).forEach(([tid, t]) => {
+      Object.keys(t.players || {}).forEach(pName => {
+        updates[`teams/${tid}/players/${pName}/cardStates`] = null;
+      });
+    });
+    await this.gameRef.update(updates);
   }
 
   // teamBeers: optional { teamId: beerObject } for per-team mode
@@ -365,14 +376,6 @@ class BJCPGame {
     updates[`currentBeer/guesses/${guessKey}/correct`] = correct;
     updates[`currentBeer/guesses/${guessKey}/points`]  = pts;
 
-    // Award points to player and team (every correct guesser gets their points)
-    const teamPts   = (state.teams[teamId]?.points||0) + pts;
-    const pp        = state.teams[teamId]?.players?.[playerName] || {};
-    updates[`teams/${teamId}/points`] = Math.max(0, teamPts); // team never goes below 0
-    updates[`teams/${teamId}/players/${playerName}/points`] = Math.max(0, (pp.points||0) + pts);
-    if (correct) {
-      updates[`teams/${teamId}/players/${playerName}/correctGuesses`] = (pp.correctGuesses||0) + 1;
-    }
 
     // Track first winner for animation (only if not already set)
     if (correct && !beer.winnerTeam) {
@@ -394,7 +397,40 @@ class BJCPGame {
     const state = (await this.gameRef.once('value')).val();
     const beer  = state.currentBeer;
     const round = state.currentRound || 1;
-    await this.gameRef.child('currentBeer').update({ revealed: true, resultsVisible: true });
+    
+    if (!beer) return;
+
+    const updates = {};
+    updates['currentBeer/revealed'] = true;
+    updates['currentBeer/resultsVisible'] = true;
+
+    if (!beer.roundPointsGiven) {
+      updates['currentBeer/roundPointsGiven'] = true;
+      const guesses = beer.guesses || {};
+      
+      // Calculate total points to award per team and per player
+      // using state data to read current points safely
+      Object.values(guesses).forEach(g => {
+        if (g.judged && g.correct) {
+          const tid = g.teamId;
+          const pName = g.playerName;
+          const pts = g.points || 0;
+          
+          // Must accumulate in updates object since multiple guesses might belong to the same team/player
+          const teamCurrent = updates[`teams/${tid}/points`] ?? (state.teams[tid]?.points || 0);
+          updates[`teams/${tid}/points`] = teamCurrent + pts;
+          
+          const pCurrent = updates[`teams/${tid}/players/${pName}/points`] ?? (state.teams[tid]?.players?.[pName]?.points || 0);
+          updates[`teams/${tid}/players/${pName}/points`] = pCurrent + pts;
+          
+          const pCorrect = updates[`teams/${tid}/players/${pName}/correctGuesses`] ?? (state.teams[tid]?.players?.[pName]?.correctGuesses || 0);
+          updates[`teams/${tid}/players/${pName}/correctGuesses`] = pCorrect + 1;
+        }
+      });
+    }
+
+    await this.gameRef.update(updates);
+
     // Save round to history for team log
     if (beer) {
       const guesses = beer.guesses || {};
@@ -492,7 +528,7 @@ class BJCPGame {
     // Carta Mentida: triggers on rival's next ELIGIBLE card
     // NOT triggered by: cancel, lie, steal (per game rules)
     const lieEligible = !['cancel','lie','steal'].includes(cardType);
-    const mustLie = lieTeam && lieTeam !== teamId && lieEligible;
+    const lieEligibleTeam = (lieTeam && lieTeam !== teamId && lieEligible) ? lieTeam : null;
 
     await this.consumeCard(teamId, playerName, cardInstanceId);
 
@@ -507,36 +543,33 @@ class BJCPGame {
           playerName,
           requestedAt: Date.now(),
           resolved: false,
-          mustLie: mustLie === true
+          lieTeam: lieEligibleTeam
         });
         const labels = { ibu: 'IBU', abv: 'Alcohol', srm: 'Color SRM' };
         return { ok: true, message: `Sol·licitud ${labels[cardType]} enviada al Master!` };
       }
 
       case 'category': {
-        // Auto-resolves — no master needed
+        // Auto-resolves — no master needed. System lies automatically for category since Master isn't involved.
         const beer = state.currentBeer;
         const catNum = beer?.categoryNumber ?? beer?.categorynumber ?? '?';
         const catName = beer?.category ?? '?';
-        const val = mustLie ? this._lieValue('category', beer) : `${catNum} — ${catName}`;
+        const val = lieEligibleTeam ? this._lieValue('category', beer) : `${catNum} — ${catName}`;
         await this.revealInfo('category', val, teamId);
         const ts = Date.now();
         await this.gameRef.child(`messages/${ts}`).set({
           from: 'Sistema', fromRole: 'system', toTeam: teamId, toPlayer: null,
-          text: `📂 Categoria: ${val}${mustLie ? ' 🤥' : ''}`,
+          text: `📂 Categoria: ${val}${lieEligibleTeam ? ' 🤥' : ''}`,
           ts, isInfoReveal: true
         });
-        if (mustLie) {
+        if (lieEligibleTeam) {
           // notify lie team
-          const savedLie = state.activeLieTeam;
           await this.gameRef.child('activeLieTeam').set(null);
-          if (savedLie) {
-            await this.gameRef.child(`messages/${ts+1}`).set({
-              from: 'Sistema', fromRole: 'system', toTeam: savedLie, toPlayer: null,
-              text: `🤡 Mentida enviada! Han rebut: "Categoria: ${val}" (FALS!)`,
-              ts: ts+1, isSystemAlert: true
-            });
-          }
+          await this.gameRef.child(`messages/${ts+1}`).set({
+            from: 'Sistema', fromRole: 'system', toTeam: lieEligibleTeam, toPlayer: null,
+            text: `🤡 Mentida enviada! Han rebut: "Categoria: ${val}" (FALS!)`,
+            ts: ts+1, isSystemAlert: true
+          });
         }
         return { ok: true, message: `📂 Categoria revelada: ${val}` };
       }
@@ -570,14 +603,14 @@ class BJCPGame {
         await this.gameRef.child('currentBeer/pendingQuestion').set({
           teamId, playerName, question: extraData.question || '',
           cardInstanceId, askedAt: Date.now(), answered: false,
-          mustLie: mustLie === true  // master sees this → inverts answer
+          lieTeam: lieEligibleTeam  // Master sees this warning and MUST lie manually
         });
-        if (mustLie) {
+        if (lieEligibleTeam) {
           await this.gameRef.child('activeLieTeam').set(null);
           const lTs = Date.now();
           await this.gameRef.child(`messages/${lTs}`).set({
-            from: 'Sistema', fromRole: 'system', toTeam: lieTeam, toPlayer: null,
-            text: `🤡 Mentida activa! El Master ha rebut la pregunta Sí/No de l'equip rival. La resposta es mostrarà INVERTIDA.`,
+            from: 'Sistema', fromRole: 'system', toTeam: lieEligibleTeam, toPlayer: null,
+            text: `🤡 Mentida activa! El Master rep l'avís per mentir manualment en la pregunta Sí/No de l'equip rival.`,
             ts: lTs, isSystemAlert: true
           });
         }
@@ -718,21 +751,20 @@ class BJCPGame {
     const pa    = state.currentBeer?.pendingAction;
     if (!pa) throw new Error('No hi ha cap sol·licitud pendent');
     if (pa.resolved) throw new Error('Ja resolta');
-    const mustLie = !!pa.mustLie;
-    const rawVal  = mustLie ? this._lieValue(pa.type, state.currentBeer) : value.trim();
+    const rawVal  = value.trim();
     // Sanitize: replace any undefined/null with fallback
     const finalVal = (rawVal && rawVal !== 'undefined' && rawVal !== 'null') ? rawVal : null;
     if (!finalVal) throw new Error('Valor invàlid o no disponible per a aquest estil');
     // Mark as resolved, clear lie card (single use)
-    const savedLieTeam = state.activeLieTeam; // save before clearing
+    const savedLieTeam = pa.lieTeam; // read from pendingAction instead of state
     const infoUpdates = {};
     infoUpdates['currentBeer/pendingAction/resolved'] = true;
     infoUpdates['currentBeer/pendingAction/answer']   = finalVal;
-    if (mustLie) infoUpdates['activeLieTeam'] = null; // consume the lie card
+    if (savedLieTeam) infoUpdates['activeLieTeam'] = null; // consume the lie card
     await this.gameRef.update(infoUpdates);
     await this.revealInfo(pa.type, finalVal, pa.teamId);
     // Notify lie-team what false value was sent (private, only they see it)
-    if (mustLie && savedLieTeam) {
+    if (savedLieTeam) {
       const lieLabels = { ibu: 'IBU', abv: 'Alcohol', srm: 'Color SRM', category: 'Categoria' };
       const lieTs = Date.now() + 2;
       await this.gameRef.child(`messages/${lieTs}`).set({
@@ -755,25 +787,28 @@ class BJCPGame {
     const state = (await this.gameRef.once('value')).val();
     const pq = state?.currentBeer?.pendingQuestion;
     if (!pq) return;
-    // If lie card is active, invert the answer shown to the asking team
-    const lieTeam = state.activeLieTeam;
-    const mustLie = !!(lieTeam && lieTeam !== pq.teamId);
-    const shownAnswer = mustLie ? !answer : answer;
-    if (mustLie) await this.gameRef.child('activeLieTeam').set(null); // consume lie
+
+    // The answer is manually provided by the master, no automatic inversion!
+    const shownAnswer = answer;
+    
+    if (pq.lieTeam) await this.gameRef.child('activeLieTeam').set(null); // consume lie if it was still there
+    
     await this.gameRef.child('currentBeer/pendingQuestion/answered').set(true);
     await this.gameRef.child('currentBeer/pendingQuestion/answer').set(shownAnswer);
+    
     const ts = Date.now();
-    // Show (possibly inverted) answer to asking team
+    // Show answer to asking team
     await this.gameRef.child(`messages/${ts}`).set({
       from: 'Master', fromRole: 'master', toTeam: pq.teamId, toPlayer: null,
       text: `❓ Resposta del Master a "${pq.question}": ${shownAnswer ? '✅ SÍ' : '❌ NO'}`,
       ts, isSystemAlert: true
     });
+    
     // Notify lie team privately
-    if (mustLie && lieTeam) {
+    if (pq.lieTeam) {
       await this.gameRef.child(`messages/${ts+1}`).set({
-        from: 'Sistema', fromRole: 'system', toTeam: lieTeam, toPlayer: null,
-        text: `🤡 Mentida executada! El Master va respondre ${answer ? 'SÍ' : 'NO'} però l'equip rival ha vist ${shownAnswer ? 'SÍ' : 'NO'}.`,
+        from: 'Sistema', fromRole: 'system', toTeam: pq.lieTeam, toPlayer: null,
+        text: `🤡 Mentida executada! El Master ha respost manualment "${shownAnswer ? 'SÍ' : 'NO'}" per despistar.`,
         ts: ts+1, isSystemAlert: true
       });
     }

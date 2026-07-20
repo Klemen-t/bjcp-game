@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
 //  UI.JS  —  Interface & interaction logic
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION = 'v2026.28 · 19/07/2026';
+const APP_VERSION = 'v2026.34 · 20/07/2026';
 
 // ═══ THEME TOGGLE ════════════════════════════════════════════
 function toggleTheme() {
@@ -355,7 +355,7 @@ let _mapHits = [];
 // Map viewport: x and y in 0-100 poster space, with zoom/pan
 const _mapVP = { x0:0, x1:100, y0:0, y1:100 };
 
-const _CARD_COORDS = {"American Barleywine":[6,8],"English Barley Wine":[8,12],"Wheatwine":[10,8],"Wee Heavy":[5,22],"British Strong Ale":[11,22],"Old Ale":[18,16],"American Strong Ale":[16,8],"Scottish Light":[4,28],"Scottish Heavy":[4,32],"Scottish Export":[6,36],"Double IPA":[10,28],"American IPA":[14,34],"English IPA":[16,40],"Hazy IPA":[10,38],"Specialty IPA":[12,44],"American Pale Ale":[28,20],"British Golden Ale":[26,28],"Ordinary Bitter":[20,36],"Best Bitter":[22,42],"Strong Bitter":[16,46],"Australian Sparkling Ale":[30,34],"Blonde Ale":[38,16],"Cream Ale":[34,26],"American Wheat Beer":[44,12],"Dark Mild":[36,32],"Irish Red Ale":[32,40],"American Amber Ale":[44,22],"American Brown Ale":[42,28],"British Brown Ale":[40,34],"Historical Beer: London Brown Ale":[38,40],"English Porter":[20,50],"American Porter":[22,56],"Historical Beer: Pre-Prohibition Porter":[18,56],"Irish Stout":[8,54],"Irish Extra Stout":[8,58],"Foreign Extra Stout":[12,60],"American Stout":[22,62],"Imperial Stout":[8,68],"Sweet Stout":[18,68],"Oatmeal Stout":[10,76],"Tropical Stout":[14,72],"Baltic Porter":[6,80],"Historical Beer: Kentucky Common":[28,68],"California Common":[26,72],"Rauchbier":[30,82],"Classic Style Smoked Beer":[24,80],"Specialty Smoked Beer":[20,80],"Wood-Aged Beer":[16,84],"Specialty Wood-Aged Beer":[14,84],"Lambic":[60,22],"Gueuze":[68,18],"Fruit Lambic":[76,18],"Straight Sour Beer":[60,28],"Mixed-Fermentation Sour Beer":[62,32],"Brett Beer":[58,34],"Wild Specialty Beer":[64,28],"Witbier":[54,22],"Oud Bruin":[70,26],"Flanders Red Ale":[76,28],"Saison":[78,22],"Bière de Garde":[82,26],"Belgian Single":[80,34],"Belgian Pale Ale":[84,34],"Belgian Blond Ale":[82,40],"Belgian Dark Strong Ale":[82,50],"Belgian Golden Strong Ale":[88,44],"Belgian Tripel":[88,52],"Belgian Dubbel":[78,46],"Kolsch":[66,52],"Altbier":[60,52],"Historical Beer: Roggenbier":[66,58],"Weissbier":[80,58],"Dunkles Weissbier":[74,62],"Weizenbock":[70,66],"Berliner Weisse":[84,66],"Gose":[88,62],"Historical Beer: Lichtenhainer":[82,72],"Historical Beer: Piwo Grodziskie":[76,72],"Historical Beer: Sahti":[68,72],"German Pils":[42,80],"Czech Pale Lager":[48,82],"Czech Premium Pale Lager":[50,86],"Czech Amber Lager":[54,82],"Czech Dark Lager":[58,86],"American Lager":[26,78],"American Light Lager":[18,84],"Historical Beer: Pre-Prohibition Lager":[22,76],"German Leichtbier":[38,86],"International Pale Lager":[58,78],"International Amber Lager":[62,78],"International Dark Lager":[64,84],"Munich Helles":[76,82],"Festbier":[80,78],"German Helles Exportbier":[72,76],"Historical Beer: Kellerbier":[70,78],"Marzen":[80,84],"Vienna Lager":[74,88],"Munich Dunkel":[82,90],"Schwarzbier":[84,86],"Helles Bock":[76,72],"Dunkles Bock":[84,76],"Doppelbock":[90,80],"Eisbock":[92,84],"Fruit Beer":[48,42],"Specialty Fruit Beer":[50,46],"Fruit and Spice Beer":[52,42],"Spice, Herb, or Vegetable Beer":[52,48],"Specialty Spice Beer":[54,46],"Autumn Seasonal Beer":[48,52],"Winter Seasonal Beer":[44,52],"Grape Ale":[54,34],"Experimental Beer":[46,56],"Mixed-Style Beer":[48,58],"Commercial Specialty Beer":[50,60],"Alternative Grain Beer":[44,60],"Alternative Sugar Beer":[46,64]};
+const _CARD_COORDS = {"American Barleywine":[6,8],"English Barley Wine":[8,12],"Wheatwine":[10,8],"Wee Heavy":[5,22],"British Strong Ale":[11,22],"Old Ale":[18,16],"American Strong Ale":[16,8],"Scottish Light":[4,28],"Scottish Heavy":[4,32],"Scottish Export":[6,36],"Double IPA":[10,28],"American IPA":[14,34],"English IPA":[16,40],"Hazy IPA":[10,38],"Specialty IPA":[12,44],"American Pale Ale":[28,20],"British Golden Ale":[26,28],"Ordinary Bitter":[20,36],"Best Bitter":[22,42],"Strong Bitter":[16,46],"Australian Sparkling Ale":[30,34],"Blonde Ale":[38,16],"Cream Ale":[34,26],"American Wheat Beer":[44,12],"Dark Mild":[36,32],"Irish Red Ale":[32,40],"American Amber Ale":[44,22],"American Brown Ale":[42,28],"British Brown Ale":[40,34],"Historical Beer: London Brown Ale":[38,40],"English Porter":[20,50],"American Porter":[22,56],"Historical Beer: Pre-Prohibition Porter":[18,56],"Irish Stout":[8,54],"Irish Extra Stout":[8,58],"Foreign Extra Stout":[12,60],"American Stout":[22,62],"Imperial Stout":[8,68],"Sweet Stout":[18,68],"Oatmeal Stout":[10,76],"Tropical Stout":[14,72],"Baltic Porter":[6,80],"Historical Beer: Kentucky Common":[28,68],"California Common":[26,72],"Rauchbier":[30,82],"Classic Style Smoked Beer":[24,80],"Specialty Smoked Beer":[20,80],"Wood-Aged Beer":[16,84],"Specialty Wood-Aged Beer":[14,84],"Lambic":[60,22],"Gueuze":[68,18],"Fruit Lambic":[76,18],"Straight Sour Beer":[60,28],"Mixed-Fermentation Sour Beer":[62,32],"Brett Beer":[58,34],"Wild Specialty Beer":[64,28],"Witbier":[54,22],"Oud Bruin":[70,26],"Flanders Red Ale":[76,28],"Saison":[78,22],"Bière de Garde":[82,26],"Belgian Single":[80,34],"Belgian Pale Ale":[84,34],"Belgian Blond Ale":[82,40],"Belgian Dark Strong Ale":[82,50],"Belgian Golden Strong Ale":[88,44],"Belgian Tripel":[88,52],"Belgian Dubbel":[78,46],"Kolsch":[66,52],"Altbier":[60,52],"Historical Beer: Roggenbier":[66,58],"Weissbier":[80,58],"Dunkles Weissbier":[74,62],"Weizenbock":[70,66],"Berliner Weisse":[84,66],"Gose":[88,62],"Historical Beer: Lichtenhainer":[82,72],"Historical Beer: Piwo Grodziskie":[76,72],"Historical Beer: Sahti":[68,72],"German Pils":[42,80],"Czech Pale Lager":[48,82],"Czech Premium Pale Lager":[50,86],"Czech Amber Lager":[54,82],"Czech Dark Lager":[58,86],"American Lager":[26,78],"American Light Lager":[18,84],"Historical Beer: Pre-Prohibition Lager":[22,76],"German Leichtbier":[38,86],"International Pale Lager":[58,78],"International Amber Lager":[62,78],"International Dark Lager":[64,84],"Munich Helles":[76,82],"Festbier":[80,78],"German Helles Exportbier":[72,76],"Historical Beer: Kellerbier":[70,78],"Marzen":[80,84],"Vienna Lager":[74,88],"Munich Dunkel":[82,90],"Schwarzbier":[84,86],"Helles Bock":[76,72],"Dunkles Bock":[84,76],"Doppelbock":[90,80],"Eisbock":[92,84],"Fruit Beer":[48,42],"Specialty Fruit Beer":[50,46],"Fruit and Spice Beer":[52,42],"Spice, Herb, or Vegetable Beer":[52,48],"Specialty Spice Beer":[54,46],"Autumn Seasonal Beer":[48,52],"Winter Seasonal Beer":[44,52],"Grape Ale":[54,34],"Experimental Beer":[46,56],"Mixed-Style Beer":[48,58],"Commercial Specialty Beer":[50,60],"Alternative Grain Beer":[44,60],"Alternative Sugar Beer":[46,64],"Hidromel Tradicional":[95,10]};
 
 // BJCP num + category lookup
 const _CARD_META = {"Altbier":["7B","Amber Bitter European Beer"],"Alternative Grain Beer":["31A","Alternative Fermentables Beer"],"Alternative Sugar Beer":["31B","Alternative Fermentables Beer"],"American Amber Ale":["19A","Amber And Brown American Beer"],"American Barleywine":["22C","Strong American Ale"],"American Brown Ale":["19C","Amber And Brown American Beer"],"American IPA":["21A","IPA"],"American Lager":["1B","Standard American Beer"],"American Light Lager":["1A","Standard American Beer"],"American Pale Ale":["18B","Pale American Ale"],"American Porter":["20A","American Porter And Stout"],"American Stout":["20B","American Porter And Stout"],"American Strong Ale":["22B","Strong American Ale"],"American Wheat Beer":["1D","Standard American Beer"],"Australian Sparkling Ale":["12B","Pale Commonwealth Beer"],"Autumn Seasonal Beer":["30B","Spiced Beer"],"Baltic Porter":["9C","Strong European Beer"],"Belgian Blond Ale":["25A","Strong Belgian Ale"],"Belgian Dark Strong Ale":["26D","Monastic Ale"],"Belgian Dubbel":["26B","Monastic Ale"],"Belgian Golden Strong Ale":["25C","Strong Belgian Ale"],"Belgian Pale Ale":["24B","Belgian Ale"],"Belgian Single":["26A","Monastic Ale"],"Belgian Tripel":["26C","Monastic Ale"],"Berliner Weisse":["23A","European Sour Ale"],"Best Bitter":["11B","British Bitter"],"Bière de Garde":["24C","Belgian Ale"],"Blonde Ale":["18A","Pale American Ale"],"Brett Beer":["28A","American Wild Ale"],"British Brown Ale":["13B","Brown British Beer"],"British Golden Ale":["12A","Pale Commonwealth Beer"],"British Strong Ale":["17A","Strong British Ale"],"California Common":["19B","Amber And Brown American Beer"],"Classic Style Smoked Beer":["32A","Smoked Beer"],"Commercial Specialty Beer":["34A","Specialty Beer"],"Cream Ale":["1C","Standard American Beer"],"Czech Amber Lager":["3C","Czech Lager"],"Czech Dark Lager":["3D","Czech Lager"],"Czech Pale Lager":["3A","Czech Lager"],"Czech Premium Pale Lager":["3B","Czech Lager"],"Dark Mild":["13A","Brown British Beer"],"Doppelbock":["9A","Strong European Beer"],"Double IPA":["22A","Strong American Ale"],"Dunkles Bock":["6C","Amber Malty European Lager"],"Dunkles Weissbier":["10B","German Wheat Beer"],"Eisbock":["9B","Strong European Beer"],"English Barley Wine":["17D","Strong British Ale"],"English IPA":["12C","Pale Commonwealth Beer"],"English Porter":["13C","Brown British Beer"],"Experimental Beer":["34C","Specialty Beer"],"Festbier":["4B","Pale Malty European Lager"],"Flanders Red Ale":["23B","European Sour Ale"],"Foreign Extra Stout":["16D","Dark British Beer"],"Fruit Beer":["29A","Fruit Beer"],"Fruit Lambic":["23F","European Sour Ale"],"Fruit and Spice Beer":["29B","Fruit Beer"],"German Helles Exportbier":["5C","Pale Bitter European Beer"],"German Leichtbier":["5A","Pale Bitter European Beer"],"German Pils":["5D","Pale Bitter European Beer"],"Gose":["23G","European Sour Ale"],"Grape Ale":["29D","Fruit Beer"],"Gueuze":["23E","European Sour Ale"],"Hazy IPA":["21C","IPA"],"Helles Bock":["4C","Pale Malty European Lager"],"Historical Beer: Kellerbier":["27A","Historical Beer"],"Historical Beer: Kentucky Common":["27B","Historical Beer"],"Historical Beer: Lichtenhainer":["27C","Historical Beer"],"Historical Beer: London Brown Ale":["27D","Historical Beer"],"Historical Beer: Piwo Grodziskie":["27E","Historical Beer"],"Historical Beer: Pre-Prohibition Lager":["27F","Historical Beer"],"Historical Beer: Pre-Prohibition Porter":["27G","Historical Beer"],"Historical Beer: Roggenbier":["27H","Historical Beer"],"Historical Beer: Sahti":["27I","Historical Beer"],"Imperial Stout":["20C","American Porter And Stout"],"International Amber Lager":["2B","International Lager"],"International Dark Lager":["2C","International Lager"],"International Pale Lager":["2A","International Lager"],"Irish Extra Stout":["15C","Irish Beer"],"Irish Red Ale":["15A","Irish Beer"],"Irish Stout":["15B","Irish Beer"],"Kolsch":["5B","Pale Bitter European Beer"],"Lambic":["23D","European Sour Ale"],"Marzen":["6A","Amber Malty European Lager"],"Mixed-Fermentation Sour Beer":["28B","American Wild Ale"],"Mixed-Style Beer":["34B","Specialty Beer"],"Munich Dunkel":["8A","Dark European Lager"],"Munich Helles":["4A","Pale Malty European Lager"],"Oatmeal Stout":["16B","Dark British Beer"],"Old Ale":["17B","Strong British Ale"],"Ordinary Bitter":["11A","British Bitter"],"Oud Bruin":["23C","European Sour Ale"],"Rauchbier":["6B","Amber Malty European Lager"],"Saison":["25B","Strong Belgian Ale"],"Schwarzbier":["8B","Dark European Lager"],"Scottish Export":["14C","Scottish Ale"],"Scottish Heavy":["14B","Scottish Ale"],"Scottish Light":["14A","Scottish Ale"],"Specialty Fruit Beer":["29C","Fruit Beer"],"Specialty IPA":["21B","IPA"],"Specialty Smoked Beer":["32B","Smoked Beer"],"Specialty Spice Beer":["30D","Spiced Beer"],"Specialty Wood-Aged Beer":["33B","Wood Beer"],"Spice, Herb, or Vegetable Beer":["30A","Spiced Beer"],"Straight Sour Beer":["28D","American Wild Ale"],"Strong Bitter":["11C","British Bitter"],"Sweet Stout":["16A","Dark British Beer"],"Tropical Stout":["16C","Dark British Beer"],"Vienna Lager":["7A","Amber Bitter European Beer"],"Wee Heavy":["17C","Strong British Ale"],"Weissbier":["10A","German Wheat Beer"],"Weizenbock":["10C","German Wheat Beer"],"Wheatwine":["22D","Strong American Ale"],"Wild Specialty Beer":["28C","American Wild Ale"],"Winter Seasonal Beer":["30C","Spiced Beer"],"Witbier":["24A","Belgian Ale"],"Wood-Aged Beer":["33A","Wood Beer"]};
@@ -923,7 +923,7 @@ function setMasterMode(mode) {
   el('master-rejoin-section').style.display = isRejoin ? 'block' : 'none';
   el('master-create-section').style.display = isRejoin ? 'none'  : 'block';
   // Toggle button styles
-  const amber = 'var(--amber)', dark = '#1a0f00', muted = 'var(--muted)';
+  const amber = 'var(--r)', dark = '#1a0f00', muted = 'var(--muted)';
   const btnC = el('btn-mode-create'), btnR = el('btn-mode-rejoin');
   if (btnC) { btnC.style.background = isRejoin ? 'transparent' : amber; btnC.style.color = isRejoin ? muted : dark; }
   if (btnR) { btnR.style.background = isRejoin ? amber : 'transparent'; btnR.style.color = isRejoin ? dark : muted; }
@@ -958,9 +958,9 @@ async function loadExistingGames() {
         <button onclick="pickExistingGame('${code}')"
           style="flex:1;text-align:left;background:var(--k3);border:1px solid var(--k4);
                  border-radius:9px;padding:10px 12px;cursor:pointer;transition:.15s"
-          onmouseover="this.style.borderColor='var(--amber)'" onmouseout="this.style.borderColor='rgba(255,255,255,.1)'">
+          onmouseover="this.style.borderColor='var(--r)'" onmouseout="this.style.borderColor='rgba(255,255,255,.1)'">
           <div style="display:flex;justify-content:space-between;align-items:center">
-            <span style="font-family:'Cormorant Garamond',serif;font-size:1.3rem;font-weight:700;color:var(--amber);letter-spacing:3px">${code}</span>
+            <span style="font-family:'Cormorant Garamond',serif;font-size:1.3rem;font-weight:700;color:var(--r);letter-spacing:3px">${code}</span>
             <span class="muted" style="font-size:.68rem">${date}</span>
           </div>
           <div style="font-size:.72rem;color:var(--m);margin-top:2px">${teams} · ${status}</div>
@@ -989,7 +989,7 @@ function pickExistingGame(code) {
   if (inp) inp.value = code;
   // Highlight selected
   el('existing-games-list').querySelectorAll('button').forEach(b => {
-    b.style.borderColor = b.textContent.includes(code) ? 'var(--amber)' : 'rgba(255,255,255,.1)';
+    b.style.borderColor = b.textContent.includes(code) ? 'var(--r)' : 'rgba(255,255,255,.1)';
     b.style.background  = b.textContent.includes(code) ? 'rgba(200,130,26,.15)' : 'var(--k3)';
   });
   showToast('Seleccionat: ' + code);
@@ -1131,7 +1131,7 @@ function showSettings() {
   showModal('⚙️ Configuració', `
     <div class="settings-code-box">
       <div class="muted" style="font-size:.62rem;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px">Codi de partida</div>
-      <div style="font-family:'Cormorant Garamond',serif;font-size:2.5rem;font-weight:700;color:var(--amber-l);letter-spacing:12px">${code}</div>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:2.5rem;font-weight:700;color:var(--rl);letter-spacing:12px">${code}</div>
       <button class="btn btn-secondary btn-sm mt-8" onclick="cpCode('${code}')">📋 Copiar codi</button>
     </div>
     <div class="settings-row"><span class="muted">Master</span><strong>${game.playerName||'—'}</strong></div>
@@ -1458,17 +1458,22 @@ function showResultOverlay(s) {
   const myTeamGuesses  = judged.filter(g => g.teamId === game.teamId);
   const rivTeamGuesses = judged.filter(g => g.teamId !== game.teamId);
   const myTeamPts   = myTeamGuesses.reduce((s,g) => s + (g.points||0), 0);
-  const rivTeamPts  = rivTeamGuesses.reduce((s,g) => s + (g.points||0), 0);
-  const rivalWon    = rivTeamGuesses.some(g => g.correct);
+  
+  const rivalTeamsList = [...new Set(rivTeamGuesses.map(g => g.teamId))];
+  let maxRivPts = 0;
+  rivalTeamsList.forEach(rtid => {
+    const rPts = rivTeamGuesses.filter(g => g.teamId === rtid).reduce((s,g) => s + (g.points||0), 0);
+    if (rPts > maxRivPts) maxRivPts = rPts;
+  });
 
   let teamIcon, teamTitle, teamDetail, teamClass;
-  if (myTeamPts > rivTeamPts) {
+  if (myTeamPts > maxRivPts) {
     teamIcon  = '🏆'; teamClass = 'res-team-win';
     teamTitle = `Victòria d'equip!`;
-  } else if (myTeamPts === rivTeamPts && myTeamPts > 0) {
+  } else if (myTeamPts === maxRivPts && myTeamPts > 0) {
     teamIcon  = '🤝'; teamClass = 'res-team-tie';
     teamTitle = `Empat!`;
-  } else if (myTeamPts === rivTeamPts && myTeamPts === 0) {
+  } else if (myTeamPts === maxRivPts && myTeamPts === 0) {
     teamIcon  = '😶'; teamClass = 'res-team-tie';
     teamTitle = `Ningú ha puntuat`;
   } else {
@@ -1523,7 +1528,7 @@ function renderActionCards(cards) {
       </div>
       <div style="font-size:.78rem;color:var(--m);line-height:1.5">${def.desc}</div>
       <div style="margin-top:10px;text-align:center">
-        <span style="font-size:.7rem;color:var(--amber-l);font-weight:700;text-transform:uppercase;letter-spacing:.5px">Toca per usar ▶</span>
+        <span style="font-size:.7rem;color:var(--rl);font-weight:700;text-transform:uppercase;letter-spacing:.5px">Toca per usar ▶</span>
       </div>
     </div>`;
   }).join('');
@@ -1572,7 +1577,7 @@ async function confirmUseCard(cardInstanceId, cardType) {
       showModal('🃏 Carta Bloquejada!', `
         <div style="text-align:center;padding:12px 0">
           <div style="font-size:3rem;margin-bottom:10px">🃏</div>
-          <div style="font-family:'Cormorant Garamond',serif;font-size:1.2rem;font-weight:700;color:var(--amber-l);margin-bottom:10px">L'equip rival ha anulat la teva carta!</div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:1.2rem;font-weight:700;color:var(--rl);margin-bottom:10px">L'equip rival ha anulat la teva carta!</div>
           <p class="muted" style="font-size:.82rem;line-height:1.6">Tenien activada la Carta Anular Ajuda en secret.<br>La teva carta s'ha consumit sense efecte.</p>
         </div>`);
     } else {
@@ -1923,7 +1928,7 @@ function proposeCard(cardId, cardName) {
     <div style="text-align:center;padding:10px 0">
       <div style="font-size:2rem;margin-bottom:8px">🍺</div>
       <div class="muted" style="font-size:.75rem;margin-bottom:6px">Proposes que la cervesa és:</div>
-      <div style="font-family:'Cormorant Garamond',serif;font-size:1.3rem;font-weight:700;color:var(--amber-l);margin-bottom:16px">${cardName}</div>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:1.3rem;font-weight:700;color:var(--rl);margin-bottom:16px">${cardName}</div>
       <div style="display:flex;gap:8px">
         <button class="btn btn-secondary btn-sm" style="flex:1" onclick="closeModal()">Cancel·lar</button>
         <button class="btn btn-success btn-sm" style="flex:1" onclick="closeModal();submitGuessById('${cardId}','${cardName.replace(/'/g,"\'")}')">✅ Sí, proposo!</button>
@@ -2000,7 +2005,15 @@ function initMasterView() {
   if (gameState?.currentBeer && !gameState.currentBeer.revealed) {
     const sb = el('btn-set-beer'); if (sb) sb.style.display = 'none';
     const hint = el('round-active-hint'); if (hint) hint.style.display = 'block';
-    // reveal-panel removed
+    
+    // Force UI to show the mode of the active round so the master can see assignments
+    _beerMode = gameState.currentBeer.teamBeers ? 'perteam' : 'global';
+    el('mbm-global')?.classList.toggle('btn-primary', _beerMode === 'global');
+    el('mbm-global')?.classList.toggle('btn-secondary', _beerMode !== 'global');
+    el('mbm-perteam')?.classList.toggle('btn-primary', _beerMode === 'perteam');
+    el('mbm-perteam')?.classList.toggle('btn-secondary', _beerMode !== 'perteam');
+    const wrap = el('team-beer-targets');
+    if (wrap) wrap.style.display = _beerMode === 'perteam' ? 'block' : 'none';
   }
   renderMasterBeerGrid();
   game.gameRef.on('value', snap => {
@@ -2014,17 +2027,40 @@ function initMasterView() {
 function renderMasterBeerGrid() {
   const g = el('beer-grid'); if (!g) return;
   const cards = getVisibleCards(); // respects activeCardIds filter
+  
+  const activeBeer = gameState?.currentBeer;
+  const isRoundActive = activeBeer && !activeBeer.revealed;
+
   g.innerHTML = cards.length
     ? cards.map(c => {
-        const isGlobalSel = _beerMode === 'global' && selectedBeer === c.id;
-        const isTeamSel   = _beerMode === 'perteam' && _teamBeerTarget && _teamBeerSelections[_teamBeerTarget]?.id === c.id;
-        const isSel = isGlobalSel || isTeamSel;
-        // Show which teams have this beer assigned (per-team mode)
-        const teamBadges = _beerMode === 'perteam'
-          ? Object.entries(_teamBeerSelections)
+        let isSel = false;
+        let teamBadges = '';
+
+        if (isRoundActive) {
+          if (activeBeer.teamBeers) {
+            const teamsWithThisBeer = Object.entries(activeBeer.teamBeers)
               .filter(([, b]) => b?.id === c.id)
-              .map(([tid]) => `<span style="background:rgba(196,18,48,.2);border:1px solid var(--r);font-size:.55rem;font-weight:700;letter-spacing:.06em;padding:1px 6px;margin-left:4px;color:var(--rl)">${tid}</span>`).join('')
-          : '';
+              .map(([tid]) => tid);
+            if (teamsWithThisBeer.length > 0) {
+              isSel = true;
+              teamBadges = teamsWithThisBeer
+                .map(tid => `<span style="background:rgba(196,18,48,.2);border:1px solid var(--r);font-size:.55rem;font-weight:700;letter-spacing:.06em;padding:1px 6px;margin-left:4px;color:var(--rl)">${tid}</span>`).join('');
+            }
+          } else {
+            isSel = (activeBeer.id === c.id);
+          }
+        } else {
+          const isGlobalSel = _beerMode === 'global' && selectedBeer === c.id;
+          const isTeamSel   = _beerMode === 'perteam' && _teamBeerTarget && _teamBeerSelections[_teamBeerTarget]?.id === c.id;
+          isSel = isGlobalSel || isTeamSel;
+          
+          if (_beerMode === 'perteam') {
+            teamBadges = Object.entries(_teamBeerSelections)
+              .filter(([, b]) => b?.id === c.id)
+              .map(([tid]) => `<span style="background:rgba(196,18,48,.2);border:1px solid var(--r);font-size:.55rem;font-weight:700;letter-spacing:.06em;padding:1px 6px;margin-left:4px;color:var(--rl)">${tid}</span>`).join('');
+          }
+        }
+
         return `<div class="beer-item ${isSel ? 'selected' : ''}" id="mbs-${c.id}" onclick="selectBeer('${c.id}')">
           <div class="bsn">${c.name}${teamBadges}</div>
           <div class="bsnum">${c.number} · ${c.category}</div>
@@ -2042,6 +2078,11 @@ function filterMasterBeers() {
 }
 
 function selectBeer(id) {
+  if (gameState?.currentBeer && !gameState.currentBeer.revealed) {
+    showToast('⚠️ La ronda ja està en curs');
+    return;
+  }
+
   if (_beerMode === 'perteam') {
     if (!_teamBeerTarget) return showToast('⚠️ Selecciona primer un equip');
     const card = BJCP_CARDS.find(c => c.id === id);
@@ -2058,6 +2099,10 @@ function selectBeer(id) {
 }
 
 function setBeerMode(mode) {
+  if (gameState?.currentBeer && !gameState.currentBeer.revealed) {
+    if (mode !== _beerMode) showToast('⚠️ La ronda ja està en curs');
+    return;
+  }
   _beerMode = mode;
   // Reset per-team selections when switching
   if (mode === 'global') {
@@ -2076,6 +2121,10 @@ function setBeerMode(mode) {
 }
 
 function setMasterBeerTarget(teamId) {
+  if (gameState?.currentBeer && !gameState.currentBeer.revealed) {
+    showToast('⚠️ La ronda ja està en curs');
+    return;
+  }
   _teamBeerTarget = teamId;
   renderTeamBeerTargets();
   renderMasterBeerGrid();
@@ -2085,15 +2134,24 @@ function renderTeamBeerTargets() {
   const wrap = el('team-beer-targets-inner'); if (!wrap) return;
   const teams = Object.keys(gameState?.teams || {});
   if (!teams.length) { wrap.innerHTML = '<p class="muted" style="font-size:.75rem">Cap equip connectat</p>'; return; }
+  
+  const activeBeer = gameState?.currentBeer;
+  const isRoundActive = activeBeer && !activeBeer.revealed;
+
   wrap.innerHTML = teams.map(tid => {
-    const sel = _teamBeerSelections[tid];
-    const isActive = _teamBeerTarget === tid;
+    let sel = null;
+    if (isRoundActive && activeBeer.teamBeers) {
+      sel = activeBeer.teamBeers[tid];
+    } else {
+      sel = _teamBeerSelections[tid];
+    }
+    const isActive = !isRoundActive && _teamBeerTarget === tid;
     return `<div onclick="setMasterBeerTarget('${tid}')" style="
       display:flex;justify-content:space-between;align-items:center;
-      padding:8px 11px;margin-bottom:5px;cursor:pointer;
+      padding:8px 11px;margin-bottom:5px;cursor:${isRoundActive ? 'default' : 'pointer'};
       border:1px solid ${isActive ? 'var(--r)' : 'var(--k4)'};
       background:${isActive ? 'rgba(196,18,48,.1)' : 'rgba(255,255,255,.02)'};
-      border-left:2px solid ${isActive ? 'var(--rl)' : 'transparent'};
+      border-left:2px solid ${isActive ? 'var(--rl)' : (isRoundActive && sel ? 'var(--rl)' : 'transparent')};
     ">
       <span style="font-family:var(--fu);font-size:.8rem;font-weight:700;letter-spacing:.05em">
         ${isActive ? '🎯' : '🍻'} ${tid}
@@ -2134,7 +2192,7 @@ async function setCurrentBeer() {
       const summary = Object.entries(_teamBeerSelections).map(([t,b]) => `${t}: ${b.name}`).join(' · ');
       showToast('🎯 ' + summary);
       _teamBeerSelections = {}; _teamBeerTarget = null;
-      setBeerMode('global');
+      // We do NOT switch back to global here, so the UI stays in per-team mode and shows active assignments
     } catch(e) { showToast('❌ ' + e.message); }
   } else {
     if (!selectedBeer) return;
@@ -2216,7 +2274,22 @@ function renderPendingItems(s) {
 
   // Yes/No question
   if (pq && !pq.answered) {
-    if (ynEl) { ynEl.style.display='block'; setEl('pending-yn-text', `"${pq.playerName}" (${pq.teamId}) pregunta: "${pq.question}"`); }
+    if (ynEl) { 
+      ynEl.style.display='block'; 
+      setEl('pending-yn-text', `"${pq.playerName}" (${pq.teamId}) pregunta: "${pq.question}"`); 
+      
+      const lieWarning = el('pending-yn-lie');
+      if (pq.lieTeam) {
+        if (!lieWarning) {
+          ynEl.insertAdjacentHTML('beforeend', `<div id="pending-yn-lie" style="background:var(--r);color:white;padding:10px;margin-top:10px;border-radius:4px;font-weight:bold;text-align:center;">⚠️ ALERTA: L'equip "${pq.lieTeam}" ha tirat una mentida! Has de respondre el CONTRARI de la veritat a aquest jugador!</div>`);
+        } else {
+          lieWarning.style.display = 'block';
+          lieWarning.innerHTML = `⚠️ ALERTA: L'equip "${pq.lieTeam}" ha tirat una mentida! Has de respondre el CONTRARI de la veritat a aquest jugador!`;
+        }
+      } else if (lieWarning) {
+        lieWarning.style.display = 'none';
+      }
+    }
   } else { if (ynEl) ynEl.style.display='none'; }
 
   // Sensory clue
@@ -2231,11 +2304,14 @@ function renderPendingItems(s) {
     // Use team-specific beer so the hint matches what that team needs to identify
     const teamBeer = getBeerForTeam(s, pa.teamId);
     const beerCard = BJCP_CARDS.find(c => c.id === teamBeer?.id);
-    const hint   = pa.mustLie ? '🤥 Dona una resposta FALSA (Carta Mentida activa)' : `Valor real: ${getRealValue(pa.type, beerCard)}`;
+    const hint = pa.lieTeam 
+      ? `<span style="color:white;background:var(--r);padding:6px 10px;border-radius:4px;display:inline-block;margin-top:5px;">⚠️ ALERTA: L'equip "${pa.lieTeam}" ha tirat una mentida! Has d'inventar una dada FALSA per enganyar a aquest equip! (Valor real: ${getRealValue(pa.type, beerCard)})</span>` 
+      : `Valor real: ${getRealValue(pa.type, beerCard)}`;
     if (infoEl) {
       infoEl.style.display='block';
       setEl('pending-info-title', `${labels[pa.type]||pa.type} — ${pa.playerName} (${pa.teamId})`);
-      setEl('pending-info-hint', hint);
+      const hintEl = el('pending-info-hint');
+      if (hintEl) hintEl.innerHTML = hint;
       // Set the input placeholder
       const inp = el('pending-info-input');
       if (inp) {
@@ -2408,7 +2484,7 @@ function renderTeamsDetail(s) {
         </div>
         <div style="display:flex;align-items:center;gap:6px">
           <button onclick="adjustPoints('team','${tid}',null,-1)" style="background:rgba(139,32,32,.3);border:1px solid rgba(180,50,50,.4);border-radius:5px;width:24px;height:24px;color:#e07070;cursor:pointer;font-size:.9rem">−</button>
-          <span style="font-family:'Cormorant Garamond',serif;font-size:1.4rem;color:var(--amber-l);min-width:32px;text-align:center">${t.points||0}pt</span>
+          <span style="font-family:'Cormorant Garamond',serif;font-size:1.4rem;color:var(--rl);min-width:32px;text-align:center">${t.points||0}pt</span>
           <button onclick="adjustPoints('team','${tid}',null,+1)" style="background:rgba(32,100,50,.3);border:1px solid rgba(50,160,80,.4);border-radius:5px;width:24px;height:24px;color:#6DBF7E;cursor:pointer;font-size:.9rem">+</button>
         </div>
       </div>
@@ -2418,11 +2494,11 @@ function renderTeamsDetail(s) {
           <div style="flex:1;min-width:0">
             <div style="font-weight:700;font-size:.88rem">${pName}</div>
             <div class="muted" style="font-size:.67rem">${p.correctGuesses||0} encerts · ${p.actionCardsReceived||0} cartes rebudes</div>
-            ${(p.actionCards||[]).length ? `<div style="font-size:.63rem;margin-top:2px;color:var(--amber)">${(p.actionCards||[]).map(c=>{const d=ACTION_CARD_TYPES.find(a=>a.id===c.type)||{}; return `${d.icon||'🃏'} ${d.name||c.type}`;}).join(' · ')}</div>` : ''}
+            ${(p.actionCards||[]).length ? `<div style="font-size:.63rem;margin-top:2px;color:var(--r)">${(p.actionCards||[]).map(c=>{const d=ACTION_CARD_TYPES.find(a=>a.id===c.type)||{}; return `${d.icon||'🃏'} ${d.name||c.type}`;}).join(' · ')}</div>` : ''}
           </div>
           <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
             <button onclick="adjustPoints('player','${tid}','${pName}',-1)" style="background:rgba(139,32,32,.3);border:1px solid rgba(180,50,50,.4);border-radius:5px;width:22px;height:22px;color:#e07070;cursor:pointer;font-size:.8rem">−</button>
-            <span style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:var(--amber-l);min-width:28px;text-align:center">${p.points||0}</span>
+            <span style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:var(--rl);min-width:28px;text-align:center">${p.points||0}</span>
             <button onclick="adjustPoints('player','${tid}','${pName}',+1)" style="background:rgba(32,100,50,.3);border:1px solid rgba(50,160,80,.4);border-radius:5px;width:22px;height:22px;color:#6DBF7E;cursor:pointer;font-size:.8rem">+</button>
           </div>
         </div>`).join('')}
@@ -2473,13 +2549,13 @@ function renderMasterLog(s) {
   let html = '';
 
   if (beer) {
-    html += `<div class="card mb-10" style="border-color:var(--amber)">
+    html += `<div class="card mb-10" style="border-color:var(--r)">
       <div class="sec-title" style="margin-bottom:8px">🍺 Ronda actual — ${beer.name||'?'}</div>`;
 
     // Proposals
     const guesses = Object.values(beer.guesses||{}).sort((a,b)=>a.submittedAt-b.submittedAt);
     if (guesses.length) {
-      html += `<div style="font-size:.75rem;font-weight:700;margin-bottom:5px;color:var(--amber)">📨 Propostes</div>`;
+      html += `<div style="font-size:.75rem;font-weight:700;margin-bottom:5px;color:var(--r)">📨 Propostes</div>`;
       html += guesses.map(g => {
         const icon = !g.judged ? '⏳' : g.correct ? '✅' : '❌';
         const pts  = g.judged ? ` (${g.points>=0?'+':''}${g.points}pt)` : '';
@@ -2495,9 +2571,37 @@ function renderMasterLog(s) {
     Object.entries(revInfo).forEach(([k,v])=>allRevs.push({k,v,who:'Tots'}));
     Object.entries(teamInfos).forEach(([tid,info])=>Object.entries(info).forEach(([k,v])=>allRevs.push({k,v,who:tid})));
     if (allRevs.length) {
-      html += `<div style="font-size:.75rem;font-weight:700;margin:8px 0 5px;color:var(--amber)">👁️ Info revelada</div>`;
+      html += `<div style="font-size:.75rem;font-weight:700;margin:8px 0 5px;color:var(--r)">👁️ Info revelada</div>`;
       html += allRevs.map(r=>`<div style="font-size:.74rem;padding:2px 0"><span class="muted">${r.who}:</span> ${r.k.toUpperCase()} = ${r.v}</div>`).join('');
     }
+    html += `</div>`;
+  }
+
+  // ── Round History (Master View) ────────────────────────────────
+  const history = s.roundHistory;
+  if (history && Object.keys(history).length) {
+    const roundsList = Object.values(history).sort((a,b) => a.round - b.round);
+    html += `<div class="card mb-10">
+      <div class="sec-title" style="margin-bottom:8px">📜 Historial de Rondes</div>`;
+    
+    roundsList.forEach(r => {
+      const isPerTeam = !!r.teamBeers;
+      const globalBeerName = r.beerName || '?';
+      html += `<div style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05)">
+        <div style="font-size:.78rem;font-weight:700;color:var(--r);margin-bottom:4px">Ronda ${r.round} ${isPerTeam ? '<span class="muted">🎯 (Per equip)</span>' : `— 🍺 ${globalBeerName}`}</div>`;
+      
+      const teamsRes = Object.entries(r.results || {});
+      teamsRes.forEach(([tid, res]) => {
+        const won = res.some(p => p.correct);
+        const correctStr = res.filter(p => p.correct).map(p => `${p.playerName} (+${p.points}pt)`).join(', ');
+        const tPts = res.reduce((sum, p) => sum + (p.points||0), 0);
+        const tBeerName = r.teamBeers?.[tid]?.name || globalBeerName;
+        html += `<div style="font-family:var(--fu);font-size:.73rem;color:var(--sl);padding:2px 0">
+          ${won ? '✅' : '❌'} <strong>${tid}</strong> (${tPts}pt)${isPerTeam ? ` <span class="muted">— 🍺 ${tBeerName}</span>` : ''}${won ? ` → ${correctStr}` : ''}
+        </div>`;
+      });
+      html += `</div>`;
+    });
     html += `</div>`;
   }
 
@@ -2616,7 +2720,7 @@ function renderMessages(msgs, viewRole) {
         const t=new Date(m.ts).toLocaleTimeString('ca',{hour:'2-digit',minute:'2-digit'});
         const to=m.toPlayer?`→ ${m.toPlayer}`:m.toTeam&&m.toTeam!=='all'?`→ ${m.toTeam}`:'→ Tots';
         const isSystem=m.fromRole==='system';
-        const borderColor=isSystem?'var(--amber)':'rgba(255,255,255,.2)';
+        const borderColor=isSystem?'var(--r)':'rgba(255,255,255,.2)';
         return `<div class="msg-bubble" style="border-left-color:${borderColor}">
           <div style="display:flex;justify-content:space-between;margin-bottom:3px">
             <span class="msg-from">${isSystem?'🤖 Sistema':m.from} <span class="muted">${to}</span></span>

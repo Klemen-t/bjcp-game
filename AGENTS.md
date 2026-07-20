@@ -1,5 +1,5 @@
 # AGENTS.md — BJCP Beer Style Game
-## Börn Loka Ales · v2026.28
+## Börn Loka Ales · v2026.34
 
 Instruccions per a qualsevol agent (Claude o altre LLM) que treballi en aquest projecte.
 
@@ -215,6 +215,12 @@ Quan `s.roundReset !== lastRoundReset`:
 
 | Versió | Data | Canvis principals |
 |--------|------|-------------------|
+| v2026.34 | 20/07/2026 | Canvi de paradigma per la Carta Mentida: Ara el Master rep alertes visuals per mentir manualment en lloc de dependre de l'automatisme |
+| v2026.33 | 20/07/2026 | S'amaga l'actualització del rànquing als jugadors fins que el Master revela els resultats |
+| v2026.32 | 20/07/2026 | Fix: Reset adequat de `cardStates` i `roundReset` en començar una partida (Ronda 1) perquè els jugadors no conservin estils de partides anteriors |
+| v2026.31 | 20/07/2026 | S'afegeix historial de rondes i punts als logs del Master. S'afegeix Hidromel Tradicional (M1) a data/cards.js |
+| v2026.30 | 20/07/2026 | Visibilitat de cerveses assignades per equip mentre la ronda està activa pel Master |
+| v2026.29 | 20/07/2026 | Fix: "L'equip rival ha guanyat" mostrava victòria rival en cas d'empat (calculat ara respecte a punts màxims de qualsevol rival, no a la suma de rivals) |
 | v2026.28 | 19/07/2026 | Mode cervesa per equip: Master pot assignar estils diferents a cada equip per ronda |
 | v2026.27 | 19/07/2026 | Fix: botó ↩️ Desfer proposta sempre visible (no només al filtre Possible) |
 | v2026.26 | 24/03/2026 | Pills toggle, reset filtres per ronda, ordenació millorada |
