@@ -389,7 +389,8 @@ class BJCPGame {
     
     let correct = false;
     if (beer?.isCatalogBeer) {
-      correct = (guessId === beer.styleId || (beer.styleId2 && guessId === beer.styleId2));
+      // Must be boolean — `false || null` would be null/undefined and Firebase update() rejects that
+      correct = !!(guessId === beer.styleId || (beer.styleId2 && guessId === beer.styleId2));
     } else {
       correct = (guessId === beer?.id);
     }

@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
 //  UI.JS  —  Interface & interaction logic
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION = 'v2026.40 · 20/07/2026';
+const APP_VERSION = 'v2026.41 · 22/07/2026';
 
 // ═══ THEME TOGGLE ════════════════════════════════════════════
 function toggleTheme() {
@@ -2509,7 +2509,7 @@ function openJudge(key, teamId, playerName, guessId) {
   
   let correct = false;
   if (teamBeer?.isCatalogBeer) {
-    correct = (guessId === teamBeer.styleId || (teamBeer.styleId2 && guessId === teamBeer.styleId2));
+    correct = !!(guessId === teamBeer.styleId || (teamBeer.styleId2 && guessId === teamBeer.styleId2));
   } else {
     correct = (guessId === teamBeer?.id);
   }
