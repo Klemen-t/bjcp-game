@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
 //  UI.JS  —  Interface & interaction logic
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION = 'v2026.41 · 22/07/2026';
+const APP_VERSION = 'v2026.42 · 22/07/2026';
 
 // ═══ THEME TOGGLE ════════════════════════════════════════════
 function toggleTheme() {
@@ -1278,7 +1278,9 @@ function listenGameState() {
       if (wrap) wrap.style.display = 'none';
       // Reset sensory filters too
       explorerResetFilters();
-      showToast('🔄 Nova ronda — cartes i filtres reiniciats!');
+      if (!s.cardsLocked) {
+        showToast('🔄 Nova ronda — cartes i filtres reiniciats!');
+      }
       renderCurrentCardView();
     }
     activeCardIds = s.activeCardIds || null;
@@ -1427,14 +1429,44 @@ function updateTeamView(s) {
   }
 }
 
+function catalogBeerRevealHTML(beer) {
+  if (!beer) return '';
+  const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const hero = beer.image
+    ? `<img class="catalog-reveal-hero" src="${beer.image}" alt="${esc(beer.name)}">`
+    : `<div class="catalog-reveal-hero-ph">🍺</div>`;
+  const pills = [
+    beer.styleName || beer.styleId ? `<span class="info-pill">${esc(beer.styleName || beer.styleId)}</span>` : '',
+    beer.styleId2 ? `<span class="info-pill" style="opacity:.75;border:1px dashed var(--m)">🥈 ${esc(beer.styleName2 || beer.styleId2)}</span>` : '',
+    beer.abv ? `<span class="info-pill">${esc(beer.abv)}% ABV</span>` : '',
+    beer.ibu ? `<span class="info-pill">${esc(beer.ibu)} IBU</span>` : '',
+    beer.srm ? `<span class="info-pill">Color: ${esc(beer.srm)}</span>` : '',
+  ].filter(Boolean).join('');
+
+  return `${hero}
+    <div class="catalog-reveal-body">
+      <div class="catalog-reveal-name">${esc(beer.name)}</div>
+      <div class="catalog-reveal-brewery">${esc(beer.brewery)}${beer.country ? ` · ${esc(beer.country)}` : ''}</div>
+      ${pills ? `<div class="catalog-reveal-pills">${pills}</div>` : ''}
+      ${beer.ingredients ? `<div class="catalog-reveal-section">
+        <div class="catalog-reveal-section-title">Ingredients clau</div>
+        <div class="catalog-reveal-section-text">${esc(beer.ingredients)}</div>
+      </div>` : ''}
+      ${beer.description ? `<div class="catalog-reveal-section">
+        <div class="catalog-reveal-section-title">Descripció comercial</div>
+        <div class="catalog-reveal-section-text">${esc(beer.description)}</div>
+      </div>` : ''}
+    </div>`;
+}
+
 function showResultOverlay(s) {
   const beer    = s.currentBeer;
   const guesses = Object.values(beer?.guesses || {});
   const overlay = el('result-overlay');
   if (!overlay) return;
 
-  // Use per-team beer if assigned, otherwise global
   const myBeer = getBeerForTeam(s, game.teamId);
+  const isCatalog = !!(myBeer && myBeer.isCatalogBeer);
 
   const judged    = guesses.filter(g => g.judged);
   const myGuess   = judged.find(g => g.playerName === game.playerName && g.teamId === game.teamId);
@@ -1442,7 +1474,6 @@ function showResultOverlay(s) {
   const iLost     = myGuess && !myGuess.correct;
   const myPts     = myGuess?.points ?? null;
 
-  // ── Personal half ─────────────────────────────────────────────
   let persIcon, persTitle, persDetail, persClass;
   if (iWon) {
     persIcon  = '🎯';
@@ -1453,24 +1484,23 @@ function showResultOverlay(s) {
     persIcon  = '❌';
     persTitle = 'No has encertat';
     const myCard = BJCP_CARDS.find(c => c.id === myGuess.guessId);
-    persDetail = `Has triat: ${myCard?.name || myGuess.guess || '?'}<br>Cervesa correcta: <strong>${myBeer?.name || '?'}</strong>`;
+    persDetail = `Has triat: ${myCard?.name || myGuess.guess || '?'} · Estil correcte: ${myBeer?.styleName || myBeer?.styleId || '?'}`;
     persClass = 'res-pers-lose';
   } else {
     persIcon  = '⏸️';
     persTitle = 'No has fet proposta';
-    persDetail = `La cervesa era: ${myBeer?.name || '?'}`;
+    persDetail = `Estil correcte: ${myBeer?.styleName || myBeer?.styleId || '?'}`;
     persClass = 'res-pers-lose';
   }
 
-  // ── Team half ─────────────────────────────────────────────────
   const myTeamGuesses  = judged.filter(g => g.teamId === game.teamId);
   const rivTeamGuesses = judged.filter(g => g.teamId !== game.teamId);
-  const myTeamPts   = myTeamGuesses.reduce((s,g) => s + (g.points||0), 0);
-  
+  const myTeamPts   = myTeamGuesses.reduce((sum,g) => sum + (g.points||0), 0);
+
   const rivalTeamsList = [...new Set(rivTeamGuesses.map(g => g.teamId))];
   let maxRivPts = 0;
   rivalTeamsList.forEach(rtid => {
-    const rPts = rivTeamGuesses.filter(g => g.teamId === rtid).reduce((s,g) => s + (g.points||0), 0);
+    const rPts = rivTeamGuesses.filter(g => g.teamId === rtid).reduce((sum,g) => sum + (g.points||0), 0);
     if (rPts > maxRivPts) maxRivPts = rPts;
   });
 
@@ -1489,12 +1519,10 @@ function showResultOverlay(s) {
     teamTitle = `L'equip rival ha guanyat`;
   }
 
-  // Detail: pts breakdown + rivals' beer in per-team mode
   const myWinners  = myTeamGuesses.filter(g=>g.correct).map(g=>`${g.playerName} (+${g.points}pt)`).join(', ');
   teamDetail = '';
   if (myTeamPts !== 0) teamDetail += `El teu equip: <strong>${myTeamPts >= 0 ? '+' : ''}${myTeamPts}pt</strong>`;
   if (myWinners)       teamDetail += `<br>${myWinners}`;
-  // Show rival teams' beers and results
   const rivalTeams = [...new Set(rivTeamGuesses.map(g => g.teamId))];
   rivalTeams.forEach(rtid => {
     const rBeer = getBeerForTeam(s, rtid);
@@ -1504,45 +1532,50 @@ function showResultOverlay(s) {
     teamDetail += `<br><span style="opacity:.75">${rtid}: ${rWon ? '✅' : '❌'} ${rBeerName}</span>`;
   });
 
-  // Apply to DOM
   overlay.style.display = 'flex';
-  overlay.className = `result-overlay ${persClass} ${teamClass}`;
-  setHTML('res-personal-icon',   persIcon);
-  setEl ('res-personal-title',   persTitle);
-  setHTML('res-personal-detail', persDetail);
-  el('res-personal-icon')?.classList.toggle('res-bounce', iWon);
-  setHTML('res-team-icon',   teamIcon);
-  setEl ('res-team-title',   teamTitle);
-  setHTML('res-team-detail', teamDetail);
-  setEl ('res-beer', `🍺 ${myBeer?.name||'—'}`);
+
+  if (isCatalog) {
+    overlay.className = `result-overlay catalog-mode ${persClass} ${teamClass}`;
+    const bannerCls = iWon || myTeamPts > maxRivPts ? 'res-banner-win' : 'res-banner-lose';
+    const banner = el('res-catalog-banner');
+    if (banner) {
+      banner.className = `catalog-result-banner ${bannerCls}`;
+      banner.innerHTML = `
+        <div class="catalog-result-banner-row">
+          <span class="catalog-result-banner-icon">${persIcon}</span>
+          <div>
+            <div class="catalog-result-banner-title">${persTitle}</div>
+            <div class="catalog-result-banner-detail">${persDetail}</div>
+          </div>
+        </div>
+        <div class="catalog-result-banner-row" style="margin-top:10px;margin-bottom:0">
+          <span class="catalog-result-banner-icon">${teamIcon}</span>
+          <div>
+            <div class="catalog-result-banner-title">${teamTitle}</div>
+            <div class="catalog-result-banner-detail">${teamDetail}</div>
+          </div>
+        </div>`;
+    }
+    setHTML('res-catalog-scroll', catalogBeerRevealHTML(myBeer));
+  } else {
+    overlay.className = `result-overlay ${persClass} ${teamClass}`;
+    setHTML('res-personal-icon',   persIcon);
+    setEl ('res-personal-title',   persTitle);
+    setHTML('res-personal-detail', persDetail);
+    el('res-personal-icon')?.classList.toggle('res-bounce', iWon);
+    setHTML('res-team-icon',   teamIcon);
+    setEl ('res-team-title',   teamTitle);
+    setHTML('res-team-detail', teamDetail);
+    setEl ('res-beer', `🍺 ${myBeer?.name||'—'}`);
+  }
   clearTimeout(overlay._t);
 }
 
 function closeVictoryAnimation() {
-  document.getElementById('result-overlay').style.display = 'none';
-  
-  if (!gameState || !game.teamId) return;
-  const myBeer = getBeerForTeam(gameState, game.teamId);
-  
-  if (myBeer && myBeer.isCatalogBeer) {
-    showModal(`🍺 Fitxa de la Cervesa`, `
-      <div style="display:flex;gap:15px;margin-bottom:15px;text-align:left">
-        ${myBeer.image ? `<img src="${myBeer.image}" style="width:100px;height:140px;object-fit:cover;border-radius:4px">` : `<div style="width:100px;height:140px;background:var(--k3);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:2rem">🍺</div>`}
-        <div style="flex:1">
-          <div style="font-weight:700;font-size:1.3rem;color:var(--sl);margin-bottom:4px;line-height:1.1">${myBeer.name}</div>
-          <div style="font-family:var(--fu);font-size:1rem;color:var(--m);margin-bottom:8px">${myBeer.brewery}${myBeer.country ? ` · ${myBeer.country}` : ''}</div>
-          <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px">
-            <span class="info-pill">${myBeer.styleName || myBeer.styleId || '?'}</span>
-            ${myBeer.styleId2 ? `<span class="info-pill" style="opacity:0.75;border:1px dashed var(--m)">🥈 ${myBeer.styleName2 || myBeer.styleId2}</span>` : ''}
-            ${myBeer.abv ? `<span class="info-pill">${myBeer.abv}% ABV</span>` : ''}
-            ${myBeer.ibu ? `<span class="info-pill">${myBeer.ibu} IBU</span>` : ''}
-            ${myBeer.srm ? `<span class="info-pill">Color: ${myBeer.srm}</span>` : ''}
-          </div>
-        </div>
-      </div>
-      ${myBeer.ingredients ? `<div style="margin-bottom:10px;text-align:left"><div style="font-weight:700;font-size:.8rem;color:var(--sl);margin-bottom:2px">Ingredients clau</div><div style="font-size:.9rem;color:var(--t)">${myBeer.ingredients}</div></div>` : ''}
-      ${myBeer.description ? `<div style="margin-bottom:10px;text-align:left"><div style="font-weight:700;font-size:.8rem;color:var(--sl);margin-bottom:2px">Descripció comercial</div><div style="font-size:.9rem;color:var(--t)">${myBeer.description}</div></div>` : ''}
-    `);
+  const overlay = el('result-overlay');
+  if (overlay) {
+    overlay.style.display = 'none';
+    overlay.className = 'result-overlay';
   }
 }
 
@@ -1713,10 +1746,10 @@ function renderBeerCards() {
   const teamCS     = buildTeamCardMap();
   let cards        = getVisibleCards();
 
-  // Sync local cardStates with Firebase
+  // Sync local cardStates with Firebase (replace when server has data)
   const myPlayer = gameState?.teams?.[game.teamId]?.players?.[game.playerName];
-  if (myPlayer?.cardStates) {
-    Object.entries(myPlayer.cardStates).forEach(([id,st]) => { cardStates[id] = st; });
+  if (myPlayer?.cardStates && Object.keys(myPlayer.cardStates).length) {
+    cardStates = { ...myPlayer.cardStates };
   }
 
   if (cardFilter==='possible') {

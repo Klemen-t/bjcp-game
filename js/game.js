@@ -263,6 +263,7 @@ class BJCPGame {
 
   // teamBeers: optional { teamId: beerObject } for per-team mode
   async setCurrentBeer(beerData, teamBeers = null) {
+    const state = (await this.gameRef.once('value')).val();
     const clean = beerData
       ? Object.fromEntries(Object.entries(beerData).filter(([,v]) => v !== undefined && v !== null))
       : {};
@@ -282,7 +283,13 @@ class BJCPGame {
       winnerTeam: null, winnerPlayer: null, guesses: {},
       pendingQuestion: null, pendingAction: null
     });
-    await this.gameRef.update({ cardsLocked: false, cancelShieldTeam: null });
+    const updates = { cardsLocked: false, cancelShieldTeam: null, roundReset: Date.now() };
+    Object.entries(state?.teams || {}).forEach(([tid, t]) => {
+      Object.keys(t.players || {}).forEach(pName => {
+        updates[`teams/${tid}/players/${pName}/cardStates`] = null;
+      });
+    });
+    await this.gameRef.update(updates);
     // activeLieTeam persists until consumed
   }
 

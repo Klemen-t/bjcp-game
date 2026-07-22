@@ -1391,6 +1391,152 @@
       text-align: center
     }
 
+    /* Catalog beer — full-screen reveal (mobile-first) */
+    .result-overlay.catalog-mode {
+      overflow: hidden;
+      background: var(--k)
+    }
+
+    .result-overlay.catalog-mode .res-close-btn {
+      position: fixed;
+      top: max(12px, env(safe-area-inset-top));
+      right: 12px;
+      z-index: 20
+    }
+
+    #res-catalog-layout {
+      display: none;
+      flex-direction: column;
+      width: 100%;
+      height: 100%;
+      overflow: hidden
+    }
+
+    .result-overlay.catalog-mode #res-classic-layout {
+      display: none !important
+    }
+
+    .result-overlay.catalog-mode #res-catalog-layout {
+      display: flex
+    }
+
+    .catalog-result-banner {
+      flex-shrink: 0;
+      padding: max(52px, calc(env(safe-area-inset-top) + 44px)) 16px 12px;
+      border-bottom: 1px solid var(--k4);
+      background: var(--k2)
+    }
+
+    .catalog-result-banner.res-banner-win {
+      background: linear-gradient(180deg, rgba(30, 92, 44, .35), var(--k2))
+    }
+
+    .catalog-result-banner.res-banner-lose {
+      background: linear-gradient(180deg, rgba(122, 28, 28, .35), var(--k2))
+    }
+
+    .catalog-result-banner-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 6px
+    }
+
+    .catalog-result-banner-icon {
+      font-size: 1.6rem;
+      line-height: 1
+    }
+
+    .catalog-result-banner-title {
+      font-family: var(--fd);
+      font-size: 1.15rem;
+      letter-spacing: .04em;
+      color: var(--sl);
+      line-height: 1.15
+    }
+
+    .catalog-result-banner-detail {
+      font-family: var(--fu);
+      font-size: .78rem;
+      color: var(--m);
+      line-height: 1.45;
+      margin-top: 2px
+    }
+
+    .catalog-result-scroll {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 0 0 max(24px, env(safe-area-inset-bottom))
+    }
+
+    .catalog-reveal-hero {
+      width: 100%;
+      max-height: 42vh;
+      object-fit: cover;
+      display: block;
+      background: var(--k3)
+    }
+
+    .catalog-reveal-hero-ph {
+      width: 100%;
+      height: 180px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 4rem;
+      background: var(--k3)
+    }
+
+    .catalog-reveal-body {
+      padding: 16px 16px 8px
+    }
+
+    .catalog-reveal-name {
+      font-family: var(--fd);
+      font-size: 1.75rem;
+      letter-spacing: .03em;
+      color: var(--sl);
+      line-height: 1.05;
+      margin-bottom: 4px
+    }
+
+    .catalog-reveal-brewery {
+      font-family: var(--fu);
+      font-size: .95rem;
+      color: var(--m);
+      margin-bottom: 12px
+    }
+
+    .catalog-reveal-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 16px
+    }
+
+    .catalog-reveal-section {
+      margin-bottom: 18px
+    }
+
+    .catalog-reveal-section-title {
+      font-family: var(--fu);
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--r);
+      margin-bottom: 6px
+    }
+
+    .catalog-reveal-section-text {
+      font-family: var(--fb);
+      font-size: .92rem;
+      color: var(--t);
+      line-height: 1.55;
+      white-space: pre-wrap
+    }
+
     /* ── SETTINGS ── */
     .settings-code-box {
       background: var(--k3);
@@ -1966,24 +2112,30 @@
 
   <!-- ══ RESULT OVERLAY ══════════════════════════════════ -->
   <div id="result-overlay" class="result-overlay" style="padding:0;flex-direction:column">
-    <div id="res-personal"
-      style="flex:1;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 24px 16px;border-bottom:1px solid rgba(255,255,255,.1)">
-      <div id="res-personal-icon" style="font-size:3.8rem;margin-bottom:8px">🎯</div>
-      <div id="res-personal-title"></div>
-      <div id="res-personal-detail" style="margin-top:6px"></div>
-    </div>
-    <div id="res-team-half"
-      style="flex:1;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 24px 24px">
-      <div id="res-team-icon" style="font-size:3.2rem;margin-bottom:6px">🍻</div>
-      <div id="res-team-title"></div>
-      <div id="res-team-detail" style="margin-top:6px"></div>
-      <div id="res-beer"
-        style="font-family:var(--fu);font-size:.78rem;letter-spacing:.08em;color:rgba(255,255,255,.45);margin-top:10px">
+    <button class="btn btn-ghost res-close-btn"
+      style="width:auto;padding:8px 14px;font-size:.75rem"
+      onclick="closeVictoryAnimation()">✕ Tancar</button>
+    <div id="res-classic-layout" style="flex:1;width:100%;display:flex;flex-direction:column">
+      <div id="res-personal"
+        style="flex:1;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 24px 16px;border-bottom:1px solid rgba(255,255,255,.1)">
+        <div id="res-personal-icon" style="font-size:3.8rem;margin-bottom:8px">🎯</div>
+        <div id="res-personal-title"></div>
+        <div id="res-personal-detail" style="margin-top:6px"></div>
+      </div>
+      <div id="res-team-half"
+        style="flex:1;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 24px 24px">
+        <div id="res-team-icon" style="font-size:3.2rem;margin-bottom:6px">🍻</div>
+        <div id="res-team-title"></div>
+        <div id="res-team-detail" style="margin-top:6px"></div>
+        <div id="res-beer"
+          style="font-family:var(--fu);font-size:.78rem;letter-spacing:.08em;color:rgba(255,255,255,.45);margin-top:10px">
+        </div>
       </div>
     </div>
-    <button class="btn btn-ghost"
-      style="position:absolute;top:14px;right:14px;width:auto;padding:6px 14px;font-size:.75rem;z-index:10"
-      onclick="closeVictoryAnimation()">✕ Tancar</button>
+    <div id="res-catalog-layout">
+      <div id="res-catalog-banner" class="catalog-result-banner"></div>
+      <div id="res-catalog-scroll" class="catalog-result-scroll"></div>
+    </div>
   </div>
 
   <!-- ══ WELCOME ════════════════════════════════════════ -->
