@@ -389,6 +389,29 @@ class BJCPGame {
     return state?.currentBeer?.teamBeers?.[teamId] || state?.currentBeer || null;
   }
 
+  // Resolve catalog beer → linked BJCP style card (or pass through style cards)
+  _getBjcpStyle(beer) {
+    if (!beer) return null;
+    if (beer.isCatalogBeer && beer.styleId) {
+      return BJCP_CARDS.find(c => c.id === beer.styleId) || null;
+    }
+    if (beer.categoryNumber != null) return beer;
+    if (beer.id) return BJCP_CARDS.find(c => c.id === beer.id) || beer;
+    return null;
+  }
+
+  _getCorrectStyleIds(beer) {
+    const ids = new Set();
+    if (!beer) return ids;
+    if (beer.isCatalogBeer) {
+      if (beer.styleId) ids.add(beer.styleId);
+      if (beer.styleId2) ids.add(beer.styleId2);
+    } else if (beer.id) {
+      ids.add(beer.id);
+    }
+    return ids;
+  }
+
   async judgeGuess(guessKey, teamId, playerName, guessId, cardTypeToGrant = null) {
     const snap  = await this.gameRef.once('value');
     const state = snap.val();
@@ -585,11 +608,13 @@ class BJCPGame {
       }
 
       case 'category': {
-        // Auto-resolves — no master needed. System lies automatically for category since Master isn't involved.
-        const beer = state.currentBeer;
-        const catNum = beer?.categoryNumber ?? beer?.categorynumber ?? '?';
-        const catName = beer?.category ?? '?';
-        const val = lieEligibleTeam ? this._lieValue('category', beer) : `${catNum} — ${catName}`;
+        // Auto-resolves — no master needed. Uses linked BJCP style for catalog beers.
+        const teamBeer = this._getBeerForTeam(state, teamId);
+        const bjcpStyle = this._getBjcpStyle(teamBeer);
+        const catNum = bjcpStyle?.categoryNumber ?? '?';
+        const val = lieEligibleTeam
+          ? this._lieValue('category', bjcpStyle || {})
+          : String(catNum);
         await this.revealInfo('category', val, teamId);
         const ts = Date.now();
         await this.gameRef.child(`messages/${ts}`).set({
@@ -705,49 +730,53 @@ class BJCPGame {
       }
 
       case 'eliminate': {
+        const teamBeer = this._getBeerForTeam(state, teamId);
+        const correctIds = this._getCorrectStyleIds(teamBeer);
         const myTeamData = state.teams[teamId] || {};
-        const players    = myTeamData.players || {};
-        const beerId     = beer.id;
+        const players = myTeamData.players || {};
 
-        // Gather all 'possible' cards across all team members
-        const possibleMap = {}; // cardId → [playerNames]
-        Object.entries(players).forEach(([pName, pData]) => {
-          Object.entries(pData.cardStates||{}).forEach(([cardId, st]) => {
-            if (st === 'possible') {
-              if (!possibleMap[cardId]) possibleMap[cardId] = [];
-              possibleMap[cardId].push(pName);
-            }
+        const possibleIds = new Set();
+        Object.values(players).forEach(pData => {
+          Object.entries(pData.cardStates || {}).forEach(([cardId, st]) => {
+            if (st === 'possible') possibleIds.add(cardId);
           });
         });
 
-        let toDiscard;
-        if (mustLie) {
-          // Lie active: discard the CORRECT card (if marked possible), else discard GOOD cards
+        if (!possibleIds.size) {
+          return { ok: false, message: 'No hi ha cartes marcades com a possibles.' };
+        }
+
+        let toDiscard = [];
+
+        if (lieEligibleTeam) {
           await this.gameRef.child('activeLieTeam').set(null);
-          if (possibleMap[beerId]) {
-            // Discard the correct card
-            toDiscard = [beerId];
+          const correctMarked = [...correctIds].filter(id => possibleIds.has(id));
+          if (correctMarked.length) {
+            toDiscard = correctMarked;
             const lTs = Date.now();
             await this.gameRef.child(`messages/${lTs}`).set({
-              from: 'Sistema', fromRole: 'system', toTeam: lieTeam, toPlayer: null,
-              text: `🤡 Mentida activa! L'equip rival ha usat "Descartar la Meitat" però ha eliminat la carta CORRECTA!`,
+              from: 'Sistema', fromRole: 'system', toTeam: lieEligibleTeam, toPlayer: null,
+              text: `🤡 Mentida activa! L'equip rival ha descartat la carta CORRECTA de les seves possibles!`,
               ts: lTs, isSystemAlert: true
             });
           } else {
-            // Correct card not marked — discard half of the non-wrong ones (best possibles)
-            const nonWrong = Object.keys(possibleMap).filter(id => id === beerId);
-            toDiscard = Object.keys(possibleMap).sort(() => Math.random()-.5)
-              .slice(0, Math.max(1, Math.floor(Object.keys(possibleMap).length/2)));
+            const wrong = [...possibleIds].filter(id => !correctIds.has(id));
+            const n = Math.floor(possibleIds.size / 2);
+            toDiscard = wrong.sort(() => Math.random() - 0.5).slice(0, n);
           }
         } else {
-          // Normal: discard half of WRONG possible cards
-          const wrong = Object.keys(possibleMap).filter(id => id !== beerId);
-          toDiscard = wrong.sort(() => Math.random()-.5).slice(0, Math.max(1, Math.floor(wrong.length/2)));
+          const wrong = [...possibleIds].filter(id => !correctIds.has(id));
+          const n = Math.floor(possibleIds.size / 2);
+          if (!n || !wrong.length) {
+            return { ok: false, message: 'No hi ha cartes possibles incorrectes per descartar.' };
+          }
+          toDiscard = wrong.sort(() => Math.random() - 0.5).slice(0, n);
         }
 
         if (!toDiscard.length) {
           return { ok: false, message: 'No hi ha cartes possibles incorrectes per descartar.' };
         }
+
         const updates = {};
         Object.keys(players).forEach(pName => {
           toDiscard.forEach(cardId => {
@@ -758,7 +787,7 @@ class BJCPGame {
         const ts = Date.now();
         await this.gameRef.child(`messages/${ts}`).set({
           from: 'Sistema', fromRole: 'system', toTeam: teamId, toPlayer: null,
-          text: `✂️ ${toDiscard.length} cartes preferides incorrectes han estat descartades!`,
+          text: `✂️ ${toDiscard.length} cartes possibles incorrectes han estat descartades!`,
           ts, isSystemAlert: true
         });
         return { ok: true, message: `${toDiscard.length} cartes descartades!` };
