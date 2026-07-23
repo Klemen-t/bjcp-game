@@ -1391,88 +1391,52 @@
       text-align: center
     }
 
-    /* Catalog beer — full-screen reveal (mobile-first) */
-    .result-overlay.catalog-mode {
-      overflow: hidden;
-      background: var(--k)
-    }
-
-    .result-overlay.catalog-mode .res-close-btn {
+    /* Catalog beer — full-screen reveal (step 2 after result) */
+    .catalog-reveal-overlay {
       position: fixed;
-      top: max(12px, env(safe-area-inset-top));
-      right: 12px;
-      z-index: 20
-    }
-
-    #res-catalog-layout {
+      inset: 0;
+      z-index: 910;
       display: none;
       flex-direction: column;
-      width: 100%;
-      height: 100%;
-      overflow: hidden
+      background: var(--k);
+      animation: rin .32s ease
     }
 
-    .result-overlay.catalog-mode #res-classic-layout {
-      display: none !important
-    }
-
-    .result-overlay.catalog-mode #res-catalog-layout {
-      display: flex
-    }
-
-    .catalog-result-banner {
+    .catalog-reveal-header {
       flex-shrink: 0;
-      padding: max(52px, calc(env(safe-area-inset-top) + 44px)) 16px 12px;
-      border-bottom: 1px solid var(--k4);
-      background: var(--k2)
-    }
-
-    .catalog-result-banner.res-banner-win {
-      background: linear-gradient(180deg, rgba(30, 92, 44, .35), var(--k2))
-    }
-
-    .catalog-result-banner.res-banner-lose {
-      background: linear-gradient(180deg, rgba(122, 28, 28, .35), var(--k2))
-    }
-
-    .catalog-result-banner-row {
       display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      margin-bottom: 6px
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: max(12px, env(safe-area-inset-top)) 14px 12px;
+      background: var(--k2);
+      border-bottom: 1px solid var(--k4)
     }
 
-    .catalog-result-banner-icon {
-      font-size: 1.6rem;
-      line-height: 1
-    }
-
-    .catalog-result-banner-title {
+    .catalog-reveal-header-title {
       font-family: var(--fd);
       font-size: 1.15rem;
       letter-spacing: .04em;
-      color: var(--sl);
-      line-height: 1.15
+      color: var(--sl)
     }
 
-    .catalog-result-banner-detail {
-      font-family: var(--fu);
-      font-size: .78rem;
-      color: var(--m);
-      line-height: 1.45;
-      margin-top: 2px
+    .catalog-reveal-close {
+      flex-shrink: 0;
+      min-width: 88px;
+      padding: 10px 16px !important;
+      font-size: .78rem !important
     }
 
-    .catalog-result-scroll {
+    #catalog-reveal-scroll {
       flex: 1;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
-      padding: 0 0 max(24px, env(safe-area-inset-bottom))
+      padding-bottom: max(20px, env(safe-area-inset-bottom))
     }
 
     .catalog-reveal-hero {
       width: 100%;
-      max-height: 42vh;
+      max-height: 200px;
       object-fit: cover;
       display: block;
       background: var(--k3)
@@ -1480,11 +1444,11 @@
 
     .catalog-reveal-hero-ph {
       width: 100%;
-      height: 180px;
+      height: 120px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 4rem;
+      font-size: 3rem;
       background: var(--k3)
     }
 
@@ -1535,6 +1499,41 @@
       color: var(--t);
       line-height: 1.55;
       white-space: pre-wrap
+    }
+
+    /* Master pending banners */
+    .pending-yn-meta {
+      font-family: var(--fu);
+      font-size: .78rem;
+      color: var(--m);
+      margin-bottom: 6px
+    }
+
+    .pending-yn-question {
+      font-family: var(--fu);
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--t);
+      line-height: 1.4;
+      margin-bottom: 8px
+    }
+
+    .pending-catalog-hint {
+      font-size: .8rem;
+      color: var(--m);
+      margin-top: 8px;
+      background: var(--k3);
+      padding: 10px;
+      border-radius: 4px;
+      border: 1px solid var(--k4);
+      text-align: left;
+      line-height: 1.45
+    }
+
+    .pending-catalog-hint strong {
+      color: var(--t);
+      display: block;
+      margin-bottom: 4px
     }
 
     /* ── SETTINGS ── */
@@ -2113,7 +2112,7 @@
   <!-- ══ RESULT OVERLAY ══════════════════════════════════ -->
   <div id="result-overlay" class="result-overlay" style="padding:0;flex-direction:column">
     <button class="btn btn-ghost res-close-btn"
-      style="width:auto;padding:8px 14px;font-size:.75rem"
+      style="position:absolute;top:14px;right:14px;width:auto;padding:8px 14px;font-size:.75rem;z-index:10"
       onclick="closeVictoryAnimation()">✕ Tancar</button>
     <div id="res-classic-layout" style="flex:1;width:100%;display:flex;flex-direction:column">
       <div id="res-personal"
@@ -2132,10 +2131,15 @@
         </div>
       </div>
     </div>
-    <div id="res-catalog-layout">
-      <div id="res-catalog-banner" class="catalog-result-banner"></div>
-      <div id="res-catalog-scroll" class="catalog-result-scroll"></div>
+  </div>
+
+  <!-- ══ CATALOG BEER REVEAL (after result overlay) ═════ -->
+  <div id="catalog-reveal-overlay" class="catalog-reveal-overlay">
+    <div class="catalog-reveal-header">
+      <div class="catalog-reveal-header-title">🍺 Fitxa de la cervesa</div>
+      <button class="btn btn-primary catalog-reveal-close" onclick="closeCatalogBeerReveal()">✕ Tancar</button>
     </div>
+    <div id="catalog-reveal-scroll"></div>
   </div>
 
   <!-- ══ WELCOME ════════════════════════════════════════ -->

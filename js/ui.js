@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
 //  UI.JS  —  Interface & interaction logic
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION = 'v2026.42 · 22/07/2026';
+const APP_VERSION = 'v2026.43 · 23/07/2026';
 
 // ═══ THEME TOGGLE ════════════════════════════════════════════
 function toggleTheme() {
@@ -878,6 +878,7 @@ const el    = id => document.getElementById(id);
 const v     = id => (el(id)?.value||'').trim();
 const setEl = (id, t) => { const e=el(id); if(e) e.textContent=t; };
 const setHTML = (id, h) => { const e=el(id); if(e) e.innerHTML=h; };
+const escHtml = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const emptyState = (icon, msg, sub='') =>
   `<div class="empty-state"><span class="empty-icon">${icon}</span><p>${msg}</p>${sub?`<p class="muted" style="font-size:.72rem;margin-top:4px">${sub}</p>`:''}</div>`;
 const playerItem = (name, team) =>
@@ -1268,6 +1269,7 @@ function listenGameState() {
     if (s.roundReset && s.roundReset !== lastRoundReset) {
       lastRoundReset = s.roundReset;
       cardStates = {}; lastRevealedId = null;
+      closeCatalogBeerReveal();
       cardSearch = '';
       cardFilter = 'all';
       const searchInp = el('card-search');
@@ -1431,32 +1433,43 @@ function updateTeamView(s) {
 
 function catalogBeerRevealHTML(beer) {
   if (!beer) return '';
-  const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const hero = beer.image
-    ? `<img class="catalog-reveal-hero" src="${beer.image}" alt="${esc(beer.name)}">`
+    ? `<img class="catalog-reveal-hero" src="${beer.image}" alt="${escHtml(beer.name)}">`
     : `<div class="catalog-reveal-hero-ph">🍺</div>`;
   const pills = [
-    beer.styleName || beer.styleId ? `<span class="info-pill">${esc(beer.styleName || beer.styleId)}</span>` : '',
-    beer.styleId2 ? `<span class="info-pill" style="opacity:.75;border:1px dashed var(--m)">🥈 ${esc(beer.styleName2 || beer.styleId2)}</span>` : '',
-    beer.abv ? `<span class="info-pill">${esc(beer.abv)}% ABV</span>` : '',
-    beer.ibu ? `<span class="info-pill">${esc(beer.ibu)} IBU</span>` : '',
-    beer.srm ? `<span class="info-pill">Color: ${esc(beer.srm)}</span>` : '',
+    beer.styleName || beer.styleId ? `<span class="info-pill">${escHtml(beer.styleName || beer.styleId)}</span>` : '',
+    beer.styleId2 ? `<span class="info-pill" style="opacity:.75;border:1px dashed var(--m)">🥈 ${escHtml(beer.styleName2 || beer.styleId2)}</span>` : '',
+    beer.abv ? `<span class="info-pill">${escHtml(beer.abv)}% ABV</span>` : '',
+    beer.ibu ? `<span class="info-pill">${escHtml(beer.ibu)} IBU</span>` : '',
+    beer.srm ? `<span class="info-pill">Color: ${escHtml(beer.srm)}</span>` : '',
   ].filter(Boolean).join('');
 
   return `${hero}
     <div class="catalog-reveal-body">
-      <div class="catalog-reveal-name">${esc(beer.name)}</div>
-      <div class="catalog-reveal-brewery">${esc(beer.brewery)}${beer.country ? ` · ${esc(beer.country)}` : ''}</div>
+      <div class="catalog-reveal-name">${escHtml(beer.name)}</div>
+      <div class="catalog-reveal-brewery">${escHtml(beer.brewery)}${beer.country ? ` · ${escHtml(beer.country)}` : ''}</div>
       ${pills ? `<div class="catalog-reveal-pills">${pills}</div>` : ''}
       ${beer.ingredients ? `<div class="catalog-reveal-section">
         <div class="catalog-reveal-section-title">Ingredients clau</div>
-        <div class="catalog-reveal-section-text">${esc(beer.ingredients)}</div>
+        <div class="catalog-reveal-section-text">${escHtml(beer.ingredients)}</div>
       </div>` : ''}
       ${beer.description ? `<div class="catalog-reveal-section">
         <div class="catalog-reveal-section-title">Descripció comercial</div>
-        <div class="catalog-reveal-section-text">${esc(beer.description)}</div>
+        <div class="catalog-reveal-section-text">${escHtml(beer.description)}</div>
       </div>` : ''}
     </div>`;
+}
+
+function showCatalogBeerReveal(beer) {
+  const overlay = el('catalog-reveal-overlay');
+  if (!overlay || !beer) return;
+  setHTML('catalog-reveal-scroll', catalogBeerRevealHTML(beer));
+  overlay.style.display = 'flex';
+}
+
+function closeCatalogBeerReveal() {
+  const overlay = el('catalog-reveal-overlay');
+  if (overlay) overlay.style.display = 'none';
 }
 
 function showResultOverlay(s) {
@@ -1466,7 +1479,6 @@ function showResultOverlay(s) {
   if (!overlay) return;
 
   const myBeer = getBeerForTeam(s, game.teamId);
-  const isCatalog = !!(myBeer && myBeer.isCatalogBeer);
 
   const judged    = guesses.filter(g => g.judged);
   const myGuess   = judged.find(g => g.playerName === game.playerName && g.teamId === game.teamId);
@@ -1484,12 +1496,12 @@ function showResultOverlay(s) {
     persIcon  = '❌';
     persTitle = 'No has encertat';
     const myCard = BJCP_CARDS.find(c => c.id === myGuess.guessId);
-    persDetail = `Has triat: ${myCard?.name || myGuess.guess || '?'} · Estil correcte: ${myBeer?.styleName || myBeer?.styleId || '?'}`;
+    persDetail = `Has triat: ${myCard?.name || myGuess.guess || '?'}<br>Cervesa correcta: <strong>${myBeer?.name || '?'}</strong>`;
     persClass = 'res-pers-lose';
   } else {
     persIcon  = '⏸️';
     persTitle = 'No has fet proposta';
-    persDetail = `Estil correcte: ${myBeer?.styleName || myBeer?.styleId || '?'}`;
+    persDetail = `La cervesa era: ${myBeer?.name || '?'}`;
     persClass = 'res-pers-lose';
   }
 
@@ -1533,41 +1545,15 @@ function showResultOverlay(s) {
   });
 
   overlay.style.display = 'flex';
-
-  if (isCatalog) {
-    overlay.className = `result-overlay catalog-mode ${persClass} ${teamClass}`;
-    const bannerCls = iWon || myTeamPts > maxRivPts ? 'res-banner-win' : 'res-banner-lose';
-    const banner = el('res-catalog-banner');
-    if (banner) {
-      banner.className = `catalog-result-banner ${bannerCls}`;
-      banner.innerHTML = `
-        <div class="catalog-result-banner-row">
-          <span class="catalog-result-banner-icon">${persIcon}</span>
-          <div>
-            <div class="catalog-result-banner-title">${persTitle}</div>
-            <div class="catalog-result-banner-detail">${persDetail}</div>
-          </div>
-        </div>
-        <div class="catalog-result-banner-row" style="margin-top:10px;margin-bottom:0">
-          <span class="catalog-result-banner-icon">${teamIcon}</span>
-          <div>
-            <div class="catalog-result-banner-title">${teamTitle}</div>
-            <div class="catalog-result-banner-detail">${teamDetail}</div>
-          </div>
-        </div>`;
-    }
-    setHTML('res-catalog-scroll', catalogBeerRevealHTML(myBeer));
-  } else {
-    overlay.className = `result-overlay ${persClass} ${teamClass}`;
-    setHTML('res-personal-icon',   persIcon);
-    setEl ('res-personal-title',   persTitle);
-    setHTML('res-personal-detail', persDetail);
-    el('res-personal-icon')?.classList.toggle('res-bounce', iWon);
-    setHTML('res-team-icon',   teamIcon);
-    setEl ('res-team-title',   teamTitle);
-    setHTML('res-team-detail', teamDetail);
-    setEl ('res-beer', `🍺 ${myBeer?.name||'—'}`);
-  }
+  overlay.className = `result-overlay ${persClass} ${teamClass}`;
+  setHTML('res-personal-icon',   persIcon);
+  setEl ('res-personal-title',   persTitle);
+  setHTML('res-personal-detail', persDetail);
+  el('res-personal-icon')?.classList.toggle('res-bounce', iWon);
+  setHTML('res-team-icon',   teamIcon);
+  setEl ('res-team-title',   teamTitle);
+  setHTML('res-team-detail', teamDetail);
+  setEl ('res-beer', `🍺 ${myBeer?.name||'—'}`);
   clearTimeout(overlay._t);
 }
 
@@ -1577,6 +1563,9 @@ function closeVictoryAnimation() {
     overlay.style.display = 'none';
     overlay.className = 'result-overlay';
   }
+  if (!gameState || !game.teamId) return;
+  const myBeer = getBeerForTeam(gameState, game.teamId);
+  if (myBeer?.isCatalogBeer) showCatalogBeerReveal(myBeer);
 }
 
 // ── Render action cards with full descriptions ──────────────────
@@ -2375,10 +2364,10 @@ function renderPendingItems(s) {
   const getCustomHintHtml = (teamId) => {
     const b = getBeerForTeam(s, teamId);
     if (!b || !b.isCatalogBeer) return '';
-    return `<div style="font-size:0.8rem;color:var(--m);margin-top:8px;background:var(--k3);padding:8px;border-radius:4px;border:1px solid var(--k4);text-align:left;line-height:1.4">
-      <strong style="color:var(--t)">🍺 ${b.name} (${b.brewery})</strong><br>
-      ${b.ingredients ? `<em>Ingredients:</em> ${b.ingredients}<br>` : ''}
-      ${b.description ? `<em>Descripció:</em> ${b.description}` : ''}
+    return `<div class="pending-catalog-hint">
+      <strong>🍺 ${escHtml(b.name)} (${escHtml(b.brewery)})</strong>
+      ${b.ingredients ? `<div><em>Ingredients:</em> ${escHtml(b.ingredients)}</div>` : ''}
+      ${b.description ? `<div><em>Descripció:</em> ${escHtml(b.description)}</div>` : ''}
     </div>`;
   };
 
@@ -2386,7 +2375,10 @@ function renderPendingItems(s) {
   if (pq && !pq.answered) {
     if (ynEl) { 
       ynEl.style.display='block'; 
-      setEl('pending-yn-text', `"${pq.playerName}" (${pq.teamId}) pregunta:<br><strong style="font-size:1.1rem;color:var(--t);display:block;margin:5px 0">"${pq.question}"</strong>${getCustomHintHtml(pq.teamId)}`); 
+      setHTML('pending-yn-text', `
+        <div class="pending-yn-meta">"${escHtml(pq.playerName)}" (${escHtml(pq.teamId)}) pregunta:</div>
+        <div class="pending-yn-question">"${escHtml(pq.question)}"</div>
+        ${getCustomHintHtml(pq.teamId)}`);
       
       const lieWarning = el('pending-yn-lie');
       if (pq.lieTeam) {
@@ -2404,7 +2396,12 @@ function renderPendingItems(s) {
 
   // Sensory clue
   if (pa && pa.type==='sensory' && !pa.resolved) {
-    if (sensEl) { sensEl.style.display='block'; setEl('pending-sensory-text', `"${pa.playerName}" (${pa.teamId}) demana Pista Sensorial${getCustomHintHtml(pa.teamId)}`); }
+    if (sensEl) {
+      sensEl.style.display='block';
+      setHTML('pending-sensory-text', `
+        <div class="pending-yn-meta">"${escHtml(pa.playerName)}" (${escHtml(pa.teamId)}) demana Pista Sensorial</div>
+        ${getCustomHintHtml(pa.teamId)}`);
+    }
   } else { if (sensEl) sensEl.style.display='none'; }
 
   // Info card (ibu/abv/srm/category) — master types the actual value
