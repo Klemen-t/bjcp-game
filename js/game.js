@@ -619,7 +619,7 @@ class BJCPGame {
         const ts = Date.now();
         await this.gameRef.child(`messages/${ts}`).set({
           from: 'Sistema', fromRole: 'system', toTeam: teamId, toPlayer: null,
-          text: `📂 Categoria: ${val}${lieEligibleTeam ? ' 🤥' : ''}`,
+          text: `📂 Categoria: ${val}${lieEligibleTeam ? ' 📂' : ''}`,
           ts, isInfoReveal: true
         });
         if (lieEligibleTeam) {
