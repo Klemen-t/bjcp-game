@@ -392,21 +392,26 @@ class BJCPGame {
   // Resolve catalog beer → linked BJCP style card (or pass through style cards)
   _getBjcpStyle(beer) {
     if (!beer) return null;
-    if (beer.isCatalogBeer && beer.styleId) {
-      return BJCP_CARDS.find(c => c.id === beer.styleId) || null;
+    if (beer.styleId) {
+      const found = BJCP_CARDS.find(c => c.id === beer.styleId);
+      if (found) return found;
     }
     if (beer.categoryNumber != null) return beer;
-    if (beer.id) return BJCP_CARDS.find(c => c.id === beer.id) || beer;
-    return null;
+    if (beer.id) {
+      const found = BJCP_CARDS.find(c => c.id === beer.id);
+      if (found) return found;
+    }
+    return beer;
   }
 
   _getCorrectStyleIds(beer) {
     const ids = new Set();
     if (!beer) return ids;
-    if (beer.isCatalogBeer) {
+    if (beer.isCatalogBeer || beer.styleId) {
       if (beer.styleId) ids.add(beer.styleId);
       if (beer.styleId2) ids.add(beer.styleId2);
-    } else if (beer.id) {
+    }
+    if (beer.id) {
       ids.add(beer.id);
     }
     return ids;
@@ -742,39 +747,52 @@ class BJCPGame {
           });
         });
 
-        if (!possibleIds.size) {
-          return { ok: false, message: 'No hi ha cartes marcades com a possibles.' };
+        // Use marked possible cards if present; otherwise fall back to remaining non-discarded cards
+        let candidatePool = [...possibleIds];
+        if (!candidatePool.length) {
+          const activePool = state.activeCardIds || BJCP_CARDS.map(c => c.id);
+          const discardedIds = new Set();
+          Object.values(players).forEach(pData => {
+            Object.entries(pData.cardStates || {}).forEach(([cardId, st]) => {
+              if (st === 'discarded') discardedIds.add(cardId);
+            });
+          });
+          candidatePool = activePool.filter(id => !discardedIds.has(id));
+        }
+
+        if (!candidatePool.length) {
+          return { ok: false, message: 'No hi ha cartes disponibles per descartar.' };
         }
 
         let toDiscard = [];
 
         if (lieEligibleTeam) {
           await this.gameRef.child('activeLieTeam').set(null);
-          const correctMarked = [...correctIds].filter(id => possibleIds.has(id));
+          const correctMarked = candidatePool.filter(id => correctIds.has(id));
           if (correctMarked.length) {
             toDiscard = correctMarked;
             const lTs = Date.now();
             await this.gameRef.child(`messages/${lTs}`).set({
               from: 'Sistema', fromRole: 'system', toTeam: lieEligibleTeam, toPlayer: null,
-              text: `🤡 Mentida activa! L'equip rival ha descartat la carta CORRECTA de les seves possibles!`,
+              text: `🤡 Mentida activa! L'equip rival ha descartat la carta CORRECTA de les seves opcions!`,
               ts: lTs, isSystemAlert: true
             });
           } else {
-            const wrong = [...possibleIds].filter(id => !correctIds.has(id));
-            const n = Math.floor(possibleIds.size / 2);
-            toDiscard = wrong.sort(() => Math.random() - 0.5).slice(0, n);
+            const wrong = candidatePool.filter(id => !correctIds.has(id));
+            const n = Math.max(1, Math.ceil(candidatePool.length / 2));
+            toDiscard = wrong.sort(() => Math.random() - 0.5).slice(0, Math.min(n, wrong.length));
           }
         } else {
-          const wrong = [...possibleIds].filter(id => !correctIds.has(id));
-          const n = Math.floor(possibleIds.size / 2);
-          if (!n || !wrong.length) {
-            return { ok: false, message: 'No hi ha cartes possibles incorrectes per descartar.' };
+          const wrong = candidatePool.filter(id => !correctIds.has(id));
+          if (!wrong.length) {
+            return { ok: false, message: 'No hi ha cartes incorrectes per descartar.' };
           }
-          toDiscard = wrong.sort(() => Math.random() - 0.5).slice(0, n);
+          const n = Math.max(1, Math.ceil(candidatePool.length / 2));
+          toDiscard = wrong.sort(() => Math.random() - 0.5).slice(0, Math.min(n, wrong.length));
         }
 
         if (!toDiscard.length) {
-          return { ok: false, message: 'No hi ha cartes possibles incorrectes per descartar.' };
+          return { ok: false, message: 'No hi ha cartes incorrectes per descartar.' };
         }
 
         const updates = {};
@@ -787,7 +805,7 @@ class BJCPGame {
         const ts = Date.now();
         await this.gameRef.child(`messages/${ts}`).set({
           from: 'Sistema', fromRole: 'system', toTeam: teamId, toPlayer: null,
-          text: `✂️ ${toDiscard.length} cartes possibles incorrectes han estat descartades!`,
+          text: `✂️ ${toDiscard.length} cartes incorrectes han estat descartades!`,
           ts, isSystemAlert: true
         });
         return { ok: true, message: `${toDiscard.length} cartes descartades!` };
