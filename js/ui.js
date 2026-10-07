@@ -924,11 +924,14 @@ function setMasterMode(mode) {
   el('master-rejoin-section').style.display = isRejoin ? 'block' : 'none';
   el('master-create-section').style.display = isRejoin ? 'none'  : 'block';
   // Toggle button styles
-  const amber = 'var(--r)', dark = '#1a0f00', muted = 'var(--muted)';
+  const amber = 'var(--r)', dark = '#1a0f00', muted = 'var(--m)';
   const btnC = el('btn-mode-create'), btnR = el('btn-mode-rejoin');
   if (btnC) { btnC.style.background = isRejoin ? 'transparent' : amber; btnC.style.color = isRejoin ? muted : dark; }
   if (btnR) { btnR.style.background = isRejoin ? amber : 'transparent'; btnR.style.color = isRejoin ? dark : muted; }
 }
+
+let _allFetchedGames = [];
+let _currentGameFilter = 'all';
 
 async function loadExistingGames() {
   const pw = v('master-password');
@@ -936,43 +939,113 @@ async function loadExistingGames() {
   const ok = await _checkMasterPassword(pw);
   if (!ok) return showToast('❌ Contrassenya incorrecta');
   const listEl = el('existing-games-list');
-  listEl.innerHTML = '<p class="muted" style="font-size:.75rem;text-align:center">⏳ Cercant…</p>';
+  listEl.innerHTML = '<p class="muted" style="font-size:.75rem;text-align:center">⏳ Cercant partides…</p>';
   try {
     await game.initFirebase();
     const snap = await game.db.ref('games').once('value');
     const all  = snap.val() || {};
-    const active = Object.entries(all)
-      .filter(([, g]) => g && !g.terminated && g.status !== 'finished')
-      .sort(([, a], [, b]) => (b.createdAt || 0) - (a.createdAt || 0));
-    if (!active.length) {
-      listEl.innerHTML = '<p class="muted" style="font-size:.75rem;text-align:center">Cap partida activa trobada</p>';
+    _allFetchedGames = Object.entries(all)
+      .filter(([code, g]) => g && typeof g === 'object')
+      .map(([code, g]) => ({ code, ...g }))
+      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+    if (!_allFetchedGames.length) {
+      listEl.innerHTML = '<p class="muted" style="font-size:.75rem;text-align:center;padding:12px">Cap partida trobada a la base de dades</p>';
       return;
     }
-    listEl.innerHTML = active.map(([code, g]) => {
-      const dt   = g.createdAt ? new Date(g.createdAt) : null;
-      const date = dt ? dt.toLocaleDateString('ca',{day:'2-digit',month:'2-digit'}) + ' ' +
-                        dt.toLocaleTimeString('ca',{hour:'2-digit',minute:'2-digit'}) : '—';
-      const teams  = Object.keys(g.teams || {}).join(', ') || 'Sense equips';
-      const round  = g.currentRound || 1;
-      const status = g.status === 'playing' ? `Ronda ${round}` : g.status || '?';
-      return `<div style="display:flex;gap:6px;margin-bottom:6px;align-items:stretch">
-        <button onclick="pickExistingGame('${code}')"
-          style="flex:1;text-align:left;background:var(--k3);border:1px solid var(--k4);
-                 border-radius:9px;padding:10px 12px;cursor:pointer;transition:.15s"
-          onmouseover="this.style.borderColor='var(--r)'" onmouseout="this.style.borderColor='rgba(255,255,255,.1)'">
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <span style="font-family:'Cormorant Garamond',serif;font-size:1.3rem;font-weight:700;color:var(--r);letter-spacing:3px">${code}</span>
-            <span class="muted" style="font-size:.68rem">${date}</span>
-          </div>
-          <div style="font-size:.72rem;color:var(--m);margin-top:2px">${teams} · ${status}</div>
-        </button>
-        <button onclick="deleteGame('${code}')"
-          style="background:rgba(139,32,32,.25);border:1px solid rgba(139,32,32,.4);border-radius:9px;
-                 padding:0 12px;cursor:pointer;color:#e07070;font-size:1rem;flex-shrink:0"
-          title="Esborrar partida">🗑️</button>
-      </div>`;
-    }).join('');
-  } catch(e) { listEl.innerHTML = `<p class="muted" style="font-size:.75rem">Error: ${e.message}</p>`; }
+    
+    // Default filter: 'active' if any active exist, else 'all'
+    const hasActive = _allFetchedGames.some(g => !g.terminated && g.status !== 'finished');
+    _currentGameFilter = hasActive ? 'active' : 'all';
+    
+    renderFetchedGamesList();
+  } catch(e) { listEl.innerHTML = `<p class="muted" style="font-size:.75rem;padding:12px">Error: ${e.message}</p>`; }
+}
+
+function renderFetchedGamesList(filter) {
+  if (filter) _currentGameFilter = filter;
+  const listEl = el('existing-games-list');
+  if (!listEl) return;
+
+  const activeCount = _allFetchedGames.filter(g => !g.terminated && g.status !== 'finished').length;
+  const finishedCount = _allFetchedGames.filter(g => g.status === 'finished' || g.terminated).length;
+  const totalCount = _allFetchedGames.length;
+
+  let games = _allFetchedGames;
+  if (_currentGameFilter === 'active') {
+    games = _allFetchedGames.filter(g => !g.terminated && g.status !== 'finished');
+  } else if (_currentGameFilter === 'finished') {
+    games = _allFetchedGames.filter(g => g.status === 'finished' || g.terminated);
+  }
+
+  const activePillStyle = 'background:var(--r);color:#fff;border-color:var(--r);font-weight:600;padding:3px 10px;border-radius:12px;font-size:.72rem;cursor:pointer;';
+  const inactivePillStyle = 'background:var(--k3);color:var(--m);border:1px solid var(--k4);padding:3px 10px;border-radius:12px;font-size:.72rem;cursor:pointer;';
+
+  let html = `
+    <div style="display:flex;gap:6px;margin-bottom:10px;justify-content:center;align-items:center;flex-wrap:wrap">
+      <button style="${_currentGameFilter==='active'?activePillStyle:inactivePillStyle}" onclick="renderFetchedGamesList('active')">Actives (${activeCount})</button>
+      <button style="${_currentGameFilter==='finished'?activePillStyle:inactivePillStyle}" onclick="renderFetchedGamesList('finished')">Finalitzades (${finishedCount})</button>
+      <button style="${_currentGameFilter==='all'?activePillStyle:inactivePillStyle}" onclick="renderFetchedGamesList('all')">Totes (${totalCount})</button>
+    </div>
+  `;
+
+  if (!games.length) {
+    html += '<p class="muted" style="font-size:.75rem;text-align:center;padding:12px">Cap partida en aquest filtre</p>';
+    listEl.innerHTML = html;
+    return;
+  }
+
+  html += games.map(g => {
+    const code = g.code;
+    const dt   = g.createdAt ? new Date(g.createdAt) : null;
+    const date = dt ? dt.toLocaleDateString('ca',{day:'2-digit',month:'2-digit'}) + ' ' +
+                      dt.toLocaleTimeString('ca',{hour:'2-digit',minute:'2-digit'}) : '—';
+    const teams  = Object.keys(g.teams || {}).join(', ') || 'Sense equips';
+    const round  = g.currentRound || 1;
+    
+    let statusLabel = '';
+    let statusBg = '';
+    let statusFg = '';
+    if (g.terminated) {
+      statusLabel = '⛔ Anul·lada';
+      statusBg = 'rgba(224,112,112,0.15)';
+      statusFg = '#e07070';
+    } else if (g.status === 'finished') {
+      statusLabel = '🏁 Finalitzada';
+      statusBg = 'rgba(255,255,255,0.08)';
+      statusFg = '#aaa';
+    } else if (g.status === 'playing') {
+      statusLabel = `🟢 Ronda ${round}`;
+      statusBg = 'rgba(76,175,80,0.15)';
+      statusFg = '#4caf50';
+    } else {
+      statusLabel = '🟡 Lobby';
+      statusBg = 'rgba(255,193,7,0.15)';
+      statusFg = '#ffc107';
+    }
+
+    return `<div style="display:flex;gap:6px;margin-bottom:6px;align-items:stretch">
+      <button onclick="pickExistingGame('${code}')"
+        style="flex:1;text-align:left;background:var(--k3);border:1px solid var(--k4);
+               border-radius:9px;padding:8px 12px;cursor:pointer;transition:.15s;min-width:0"
+        onmouseover="this.style.borderColor='var(--r)'" onmouseout="this.style.borderColor='var(--k4)'">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:6px">
+          <span style="font-family:'Cormorant Garamond',serif;font-size:1.25rem;font-weight:700;color:var(--r);letter-spacing:2px">${code}</span>
+          <span style="font-size:.65rem;padding:2px 7px;border-radius:4px;background:${statusBg};color:${statusFg};font-weight:600;white-space:nowrap">${statusLabel}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:3px;font-size:.72rem;gap:8px">
+          <span style="color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1">${teams}</span>
+          <span class="muted" style="font-size:.65rem;white-space:nowrap;flex-shrink:0">${date}</span>
+        </div>
+      </button>
+      <button onclick="deleteGame('${code}')"
+        style="background:rgba(139,32,32,.25);border:1px solid rgba(139,32,32,.4);border-radius:9px;
+               padding:0 10px;cursor:pointer;color:#e07070;font-size:.9rem;flex-shrink:0"
+        title="Esborrar partida">🗑️</button>
+    </div>`;
+  }).join('');
+
+  listEl.innerHTML = html;
 }
 
 async function deleteGame(code) {
