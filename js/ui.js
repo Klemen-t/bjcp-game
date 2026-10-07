@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
 //  UI.JS  —  Interface & interaction logic
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION = 'v2026.49 · 07/10/2026';
+const APP_VERSION = 'v2026.50 · 07/10/2026';
 
 // ═══ THEME TOGGLE ════════════════════════════════════════════
 function toggleTheme() {
@@ -982,10 +982,21 @@ function renderFetchedGamesList(filter) {
   const inactivePillStyle = 'background:var(--k3);color:var(--m);border:1px solid var(--k4);padding:3px 10px;border-radius:12px;font-size:.72rem;cursor:pointer;';
 
   let html = `
-    <div style="display:flex;gap:6px;margin-bottom:10px;justify-content:center;align-items:center;flex-wrap:wrap">
+    <div style="display:flex;gap:6px;margin-bottom:8px;justify-content:center;align-items:center;flex-wrap:wrap">
       <button style="${_currentGameFilter==='active'?activePillStyle:inactivePillStyle}" onclick="renderFetchedGamesList('active')">Actives (${activeCount})</button>
       <button style="${_currentGameFilter==='finished'?activePillStyle:inactivePillStyle}" onclick="renderFetchedGamesList('finished')">Finalitzades (${finishedCount})</button>
       <button style="${_currentGameFilter==='all'?activePillStyle:inactivePillStyle}" onclick="renderFetchedGamesList('all')">Totes (${totalCount})</button>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding:5px 8px;background:var(--k2);border-radius:8px;border:1px solid var(--k4)">
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--t);font-size:.72rem;user-select:none">
+        <input type="checkbox" id="toggle-all-games-cb" onchange="toggleSelectAllGames(this.checked)" style="accent-color:var(--r);cursor:pointer;width:14px;height:14px">
+        <span>Totes les d'aquest filtre</span>
+      </label>
+      <div style="display:flex;gap:6px;align-items:center">
+        ${finishedCount > 0 ? `<button onclick="purgeFinishedGames()" style="background:rgba(139,32,32,.25);border:1px solid rgba(139,32,32,.4);border-radius:6px;padding:3px 8px;cursor:pointer;color:#e07070;font-size:.68rem;font-weight:600" title="Esborrar totes les partides finalitzades d'un sol cop">🧹 Purgar finalitzades (${finishedCount})</button>` : ''}
+        <button id="btn-delete-selected-games" onclick="deleteSelectedGames()" style="display:none;background:var(--r);border:1px solid var(--rl);border-radius:6px;padding:3px 8px;cursor:pointer;color:#fff;font-size:.68rem;font-weight:600">🗑️ Esborrar (0)</button>
+      </div>
     </div>
   `;
 
@@ -1025,6 +1036,9 @@ function renderFetchedGamesList(filter) {
     }
 
     return `<div style="display:flex;gap:6px;margin-bottom:6px;align-items:stretch">
+      <div style="display:flex;align-items:center;padding:0 2px">
+        <input type="checkbox" class="game-select-cb" data-code="${code}" onchange="updateSelectedGamesCount()" style="accent-color:var(--r);width:16px;height:16px;cursor:pointer">
+      </div>
       <button onclick="pickExistingGame('${code}')"
         style="flex:1;text-align:left;background:var(--k3);border:1px solid var(--k4);
                border-radius:9px;padding:8px 12px;cursor:pointer;transition:.15s;min-width:0"
@@ -1046,6 +1060,62 @@ function renderFetchedGamesList(filter) {
   }).join('');
 
   listEl.innerHTML = html;
+}
+
+function toggleSelectAllGames(checked) {
+  const cbs = document.querySelectorAll('.game-select-cb');
+  cbs.forEach(cb => cb.checked = checked);
+  updateSelectedGamesCount();
+}
+
+function updateSelectedGamesCount() {
+  const cbs = Array.from(document.querySelectorAll('.game-select-cb'));
+  const selected = cbs.filter(cb => cb.checked);
+  const count = selected.length;
+  const btn = el('btn-delete-selected-games');
+  const toggleAll = el('toggle-all-games-cb');
+
+  if (toggleAll && cbs.length > 0) {
+    toggleAll.checked = selected.length === cbs.length;
+  }
+
+  if (btn) {
+    if (count > 0) {
+      btn.style.display = 'inline-block';
+      btn.textContent = `🗑️ Esborrar (${count})`;
+    } else {
+      btn.style.display = 'none';
+    }
+  }
+}
+
+async function deleteSelectedGames() {
+  const selectedCbs = Array.from(document.querySelectorAll('.game-select-cb:checked'));
+  const codes = selectedCbs.map(cb => cb.getAttribute('data-code')).filter(Boolean);
+  if (!codes.length) return showToast('⚠️ No hi ha cap partida seleccionada');
+  if (!confirm(`Segur que vols esborrar les ${codes.length} partides seleccionades? Aquesta acció no es pot desfer.`)) return;
+
+  try {
+    showToast(`⏳ Esborrant ${codes.length} partides…`);
+    await game.initFirebase();
+    await Promise.all(codes.map(code => game.db.ref('games/' + code).remove()));
+    showToast(`🗑️ ${codes.length} partides esborrades!`);
+    loadExistingGames();
+  } catch(e) { showToast('❌ ' + e.message); }
+}
+
+async function purgeFinishedGames() {
+  const finishedGames = _allFetchedGames.filter(g => g.status === 'finished' || g.terminated);
+  if (!finishedGames.length) return showToast('⚠️ No hi ha cap partida finalitzada per esborrar');
+  if (!confirm(`⚠️ SEGURETAT: Segur que vols esborrar TOTES les ${finishedGames.length} partides finalitzades/anul·lades de la base de dades?`)) return;
+
+  try {
+    showToast(`⏳ Purgant ${finishedGames.length} partides finalitzades…`);
+    await game.initFirebase();
+    await Promise.all(finishedGames.map(g => game.db.ref('games/' + g.code).remove()));
+    showToast(`🧹 ${finishedGames.length} partides finalitzades esborrades!`);
+    loadExistingGames();
+  } catch(e) { showToast('❌ ' + e.message); }
 }
 
 async function deleteGame(code) {
