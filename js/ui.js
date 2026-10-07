@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
 //  UI.JS  —  Interface & interaction logic
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION = 'v2026.51 · 07/10/2026';
+const APP_VERSION = 'v2026.52 · 07/10/2026';
 
 // ═══ THEME TOGGLE ════════════════════════════════════════════
 function toggleTheme() {
@@ -1452,18 +1452,64 @@ function updateLobbyTeam(s) {
     Object.values(t.players||{}).forEach(p => { html += playerItem(p.name, tid); }));
   setHTML('lobby-team-list', html);
 }
+function setStartRounds(n) {
+  const inp = el('start-rounds');
+  const disp = el('start-rounds-display');
+  const val = Math.max(1, Math.min(30, n));
+  if (inp) inp.value = val;
+  if (disp) disp.textContent = val;
+  [3, 5, 6, 8].forEach(p => {
+    const btn = el('preset-' + p);
+    if (btn) {
+      btn.classList.toggle('btn-primary', p === val);
+      btn.classList.toggle('btn-secondary', p !== val);
+    }
+  });
+}
+
+function stepStartRounds(delta) {
+  const inp = el('start-rounds');
+  const cur = parseInt(inp?.value || 6);
+  setStartRounds(cur + delta);
+}
+
 async function startGame() {
   showModal('🚀 Iniciar Partida', `
-    <p class="muted mb-12" style="font-size:.82rem;line-height:1.5">Quantes rondes voleu jugar? Podràs modificar-ho després des de ⚙️ Configuració.</p>
-    <div class="ig mb-12">
-      <label>Nombre de rondes</label>
-      <div style="display:flex;gap:8px;align-items:center">
-        <button class="btn btn-secondary btn-sm" onclick="let i=document.getElementById('start-rounds');i.value=Math.max(1,parseInt(i.value||6)-1)" style="padding:4px 12px;font-size:1.1rem">−</button>
-        <input type="number" id="start-rounds" value="6" min="1" max="30" style="text-align:center;font-size:1.5rem;font-weight:700;letter-spacing:2px;flex:1">
-        <button class="btn btn-secondary btn-sm" onclick="let i=document.getElementById('start-rounds');i.value=Math.min(30,parseInt(i.value||6)+1)" style="padding:4px 12px;font-size:1.1rem">+</button>
+    <div style="text-align:center;padding:4px 0 6px">
+      <p class="muted mb-16" style="font-size:.84rem;line-height:1.5">
+        Tria el nombre de rondes / cerveses per a aquesta partida:
+      </p>
+
+      <!-- Preset buttons -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:16px">
+        <button type="button" class="btn btn-secondary btn-sm" id="preset-3" onclick="setStartRounds(3)" style="font-size:.72rem;padding:8px 2px;letter-spacing:0">3 rondes</button>
+        <button type="button" class="btn btn-secondary btn-sm" id="preset-5" onclick="setStartRounds(5)" style="font-size:.72rem;padding:8px 2px;letter-spacing:0">5 rondes</button>
+        <button type="button" class="btn btn-primary btn-sm" id="preset-6" onclick="setStartRounds(6)" style="font-size:.72rem;padding:8px 2px;letter-spacing:0">6 rondes</button>
+        <button type="button" class="btn btn-secondary btn-sm" id="preset-8" onclick="setStartRounds(8)" style="font-size:.72rem;padding:8px 2px;letter-spacing:0">8 rondes</button>
+      </div>
+
+      <!-- Counter Card -->
+      <div style="background:var(--k3);border:1px solid var(--k4);border-radius:8px;padding:16px 12px;margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:20px">
+        <button type="button" class="btn btn-secondary" onclick="stepStartRounds(-1)" style="width:44px;height:44px;padding:0;font-size:1.6rem;font-weight:700;display:flex;align-items:center;justify-content:center;border-radius:50%">−</button>
+        
+        <div style="min-width:90px;text-align:center">
+          <input type="hidden" id="start-rounds" value="6">
+          <div id="start-rounds-display" style="font-family:var(--fd);font-size:3.8rem;color:var(--rl);line-height:1">6</div>
+          <div class="muted" style="font-family:var(--fu);font-size:.68rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-top:2px">Rondes</div>
+        </div>
+
+        <button type="button" class="btn btn-secondary" onclick="stepStartRounds(1)" style="width:44px;height:44px;padding:0;font-size:1.6rem;font-weight:700;display:flex;align-items:center;justify-content:center;border-radius:50%">+</button>
+      </div>
+
+      <div class="muted mb-16" style="font-size:.74rem;line-height:1.4">
+        💡 <em>Podràs modificar les rondes en qualsevol moment des de ⚙️ Configuració.</em>
+      </div>
+
+      <div style="display:flex;gap:8px">
+        <button type="button" class="btn btn-secondary" onclick="closeModal()" style="flex:1">Cancel·lar</button>
+        <button type="button" class="btn btn-success" onclick="confirmStartGame()" style="flex:2">🚀 Començar Partida</button>
       </div>
     </div>
-    <button class="btn btn-success" onclick="confirmStartGame()" style="width:100%">🚀 Començar!</button>
   `, true);
 }
 async function confirmStartGame() {
@@ -2468,25 +2514,25 @@ function updateMasterRoundWorkflow(s) {
     [s1, s2, s3, s4].forEach(step => { step.classList.remove('active', 'done'); });
     if (phase === 'setup') {
       s1.classList.add('active');
-      if (badgeEl) { badgeEl.textContent = '1. Preparar ronda'; badgeEl.className = 'badge badge-info'; }
+      if (badgeEl) { badgeEl.textContent = '1. Preparar ronda'; badgeEl.className = 'phase-badge phase-badge-info'; }
       if (msgEl) msgEl.innerHTML = '👉 <strong>Pas 1:</strong> Tria l\'estil o cervesa BJCP per a aquesta ronda i fes clic a <strong>"🚀 Iniciar ronda"</strong>.';
     } else if (phase === 'playing') {
       s1.classList.add('done');
       s2.classList.add('active');
-      if (badgeEl) { badgeEl.textContent = '2. Ronda en joc'; badgeEl.className = 'badge badge-primary'; }
+      if (badgeEl) { badgeEl.textContent = '2. Ronda en joc'; badgeEl.className = 'phase-badge phase-badge-primary'; }
       if (msgEl) msgEl.innerHTML = '🍺 <strong>Pas 2:</strong> Ronda en marxa! Els participants estan investigant i enviant propostes.';
     } else if (phase === 'judging') {
       s1.classList.add('done');
       s2.classList.add('done');
       s3.classList.add('active');
-      if (badgeEl) { badgeEl.textContent = '3. Avaluant propostes'; badgeEl.className = 'badge badge-warning'; }
+      if (badgeEl) { badgeEl.textContent = '3. Avaluant propostes'; badgeEl.className = 'phase-badge phase-badge-warning'; }
       if (msgEl) msgEl.innerHTML = '🎯 <strong>Pas 3:</strong> Jutja totes les propostes rebudes. En acabar, fes clic a <strong>"📢 Revelar Resultat a Tots"</strong>.';
     } else if (phase === 'revealed') {
       s1.classList.add('done');
       s2.classList.add('done');
       s3.classList.add('done');
       s4.classList.add('active');
-      if (badgeEl) { badgeEl.textContent = '4. Resultat revelat'; badgeEl.className = 'badge badge-success'; }
+      if (badgeEl) { badgeEl.textContent = '4. Resultat revelat'; badgeEl.className = 'phase-badge phase-badge-success'; }
       if (msgEl) msgEl.innerHTML = '🎉 <strong>Pas 4:</strong> Resultats i dades revelades als jugadors! Fes clic a <strong>"⏭️ Pròxima Ronda"</strong> per continuar.';
     }
   }

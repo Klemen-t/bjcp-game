@@ -1056,6 +1056,48 @@
       box-shadow: 0 0 8px rgba(196, 18, 48, 0.25);
     }
 
+    .phase-badge {
+      display: inline-block;
+      font-family: var(--fu);
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 3px;
+      background: var(--k3);
+      color: var(--t);
+      border: 1px solid var(--k4);
+      white-space: nowrap;
+      position: static;
+      width: auto;
+      height: auto;
+    }
+
+    .phase-badge.phase-badge-info {
+      background: rgba(41, 128, 185, 0.15);
+      color: #3498db;
+      border-color: rgba(41, 128, 185, 0.4);
+    }
+
+    .phase-badge.phase-badge-primary {
+      background: rgba(196, 18, 48, 0.15);
+      color: var(--rl);
+      border-color: rgba(196, 18, 48, 0.4);
+    }
+
+    .phase-badge.phase-badge-warning {
+      background: rgba(230, 126, 34, 0.15);
+      color: #e67e22;
+      border-color: rgba(230, 126, 34, 0.4);
+    }
+
+    .phase-badge.phase-badge-success {
+      background: rgba(39, 174, 96, 0.15);
+      color: #27ae60;
+      border-color: rgba(39, 174, 96, 0.4);
+    }
+
     .beer-item {
       background: rgba(255, 255, 255, .02);
       border: 1px solid var(--k4);
@@ -2622,7 +2664,7 @@
         <div id="master-round-guide" class="card mb-11" style="border-left:4px solid var(--rl);padding:11px 13px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
             <div style="font-family:var(--fu);font-size:.7rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--m)">Flux de la Ronda</div>
-            <span id="master-phase-badge" class="badge badge-info" style="font-size:.72rem">1. Preparar ronda</span>
+            <span id="master-phase-badge" class="phase-badge phase-badge-info">1. Preparar ronda</span>
           </div>
           <div class="phase-stepper mb-8">
             <div id="pstep-1" class="phase-step active">1. Triar cervesa</div>
