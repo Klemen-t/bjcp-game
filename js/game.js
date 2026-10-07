@@ -247,12 +247,14 @@ class BJCPGame {
   }
 
   // ── Master: game flow ─────────────────────────────────────────
-  async startGame() {
+  async startGame(totalRounds) {
     const state = (await this.gameRef.once('value')).val();
     const updates = { 
       status: 'playing', currentRound: 1, cardsLocked: true,
-      judgingLocked: false, roundReset: Date.now(), cancelShieldTeam: null
+      judgingLocked: false, roundPhase: 'setup',
+      roundReset: Date.now(), cancelShieldTeam: null
     };
+    if (totalRounds) updates.totalRounds = totalRounds;
     const teams = state.teams || {};
     Object.entries(teams).forEach(([tid, t]) => {
       Object.keys(t.players || {}).forEach(pName => {
@@ -284,7 +286,7 @@ class BJCPGame {
       winnerTeam: null, winnerPlayer: null, guesses: {},
       pendingQuestion: null, pendingAction: null
     });
-    const updates = { cardsLocked: false, judgingLocked: false, cancelShieldTeam: null, roundReset: Date.now() };
+    const updates = { cardsLocked: false, judgingLocked: false, roundPhase: 'playing', cancelShieldTeam: null, roundReset: Date.now() };
     Object.entries(state?.teams || {}).forEach(([tid, t]) => {
       Object.keys(t.players || {}).forEach(pName => {
         updates[`teams/${tid}/players/${pName}/cardStates`] = null;
@@ -296,6 +298,11 @@ class BJCPGame {
 
   async nextRound() {
     const state = (await this.gameRef.once('value')).val();
+    // Guard: only allow next round if current round was revealed (or no beer was set)
+    const phase = state.roundPhase || 'setup';
+    if (phase === 'playing' || phase === 'judging') {
+      throw new Error('Has d\'avaluar i revelar el resultat abans de passar a la pròxima ronda');
+    }
     const next  = (state.currentRound || 0) + 1;
 
     if (next > (state.totalRounds || 6)) {
@@ -304,7 +311,8 @@ class BJCPGame {
       // Clear all player cardStates so new round starts fresh
       const updates = {
         currentRound: next, currentBeer: null, cardsLocked: true,
-        judgingLocked: false, roundReset: Date.now(), cancelShieldTeam: null
+        judgingLocked: false, roundPhase: 'setup',
+        roundReset: Date.now(), cancelShieldTeam: null
       };
       const teams = state.teams || {};
       Object.entries(teams).forEach(([tid, t]) => {
@@ -444,6 +452,10 @@ class BJCPGame {
     if (!state.judgingLocked) {
       updates['judgingLocked'] = true;
     }
+    // Transition phase to 'judging' on first judgment
+    if (state.roundPhase !== 'judging') {
+      updates['roundPhase'] = 'judging';
+    }
 
     // Track first winner for animation (only if not already set)
     if (correct && !beer.winnerTeam) {
@@ -472,6 +484,7 @@ class BJCPGame {
     updates['currentBeer/revealed'] = true;
     updates['currentBeer/resultsVisible'] = true;
     updates['judgingLocked'] = false;
+    updates['roundPhase'] = 'revealed';
 
     if (!beer.roundPointsGiven) {
       updates['currentBeer/roundPointsGiven'] = true;

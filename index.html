@@ -1019,6 +1019,43 @@
       overflow-y: auto
     }
 
+    .phase-stepper {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
+    }
+
+    .phase-step {
+      font-family: var(--fu);
+      font-size: .62rem;
+      font-weight: 700;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      text-align: center;
+      padding: 6px 2px;
+      border-radius: 4px;
+      background: var(--k3);
+      color: var(--m);
+      border: 1px solid var(--k4);
+      transition: all .2s;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .phase-step.done {
+      background: rgba(39, 174, 96, 0.15);
+      color: #27ae60;
+      border-color: rgba(39, 174, 96, 0.4);
+    }
+
+    .phase-step.active {
+      background: rgba(196, 18, 48, 0.18);
+      color: var(--rl);
+      border-color: var(--rl);
+      box-shadow: 0 0 8px rgba(196, 18, 48, 0.25);
+    }
+
     .beer-item {
       background: rgba(255, 255, 255, .02);
       border: 1px solid var(--k4);
@@ -2581,6 +2618,23 @@
 
         <div class="team-scores" id="team-scores"></div>
 
+        <!-- MASTER ROUND STEPPER & STATUS GUIDE -->
+        <div id="master-round-guide" class="card mb-11" style="border-left:4px solid var(--rl);padding:11px 13px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <div style="font-family:var(--fu);font-size:.7rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--m)">Flux de la Ronda</div>
+            <span id="master-phase-badge" class="badge badge-info" style="font-size:.72rem">1. Preparar ronda</span>
+          </div>
+          <div class="phase-stepper mb-8">
+            <div id="pstep-1" class="phase-step active">1. Triar cervesa</div>
+            <div id="pstep-2" class="phase-step">2. En joc</div>
+            <div id="pstep-3" class="phase-step">3. Avaluar</div>
+            <div id="pstep-4" class="phase-step">4. Tancament</div>
+          </div>
+          <div id="master-phase-msg" style="font-family:var(--fu);font-size:.82rem;font-weight:600;letter-spacing:.03em;color:var(--t);line-height:1.4">
+            👉 Tria l'estil o cervesa BJCP per a aquesta ronda i fes clic a <strong>"🚀 Iniciar ronda"</strong>.
+          </div>
+        </div>
+
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
           <span class="muted" style="font-family:var(--fu);font-size:.72rem;letter-spacing:.06em" id="pool-info">🎴
             Totes les cartes</span>
@@ -2625,39 +2679,49 @@
         </div>
 
         <!-- Beer select -->
-        <div class="card mb-11">
-          <div class="sec-title">🍺 Seleccionar Cervesa</div>
+        <div class="card mb-11" id="master-beer-card">
+          <div class="sec-title">🍺 Cervesa de la Ronda</div>
 
-          <!-- Mode toggle: Global vs Per equip -->
-          <div style="display:flex;gap:6px;margin-bottom:10px">
-            <button id="mbm-global" class="btn btn-primary btn-sm" style="flex:1;font-size:.72rem"
-              onclick="setBeerMode('global')">🌐 Global</button>
-            <button id="mbm-perteam" class="btn btn-secondary btn-sm" style="flex:1;font-size:.72rem"
-              onclick="setBeerMode('perteam')">🎯 Per equip</button>
-          </div>
-
-          <!-- Team assignment panel (only visible in per-team mode) -->
-          <div id="team-beer-targets" style="display:none;margin-bottom:10px;border:1px solid var(--k4);padding:9px 10px;background:rgba(255,255,255,.02)">
-            <div style="font-family:var(--fu);font-size:.65rem;font-weight:700;letter-spacing:.08em;color:var(--m);text-transform:uppercase;margin-bottom:7px">
-              1. Clica un equip · 2. Tria la seva cervesa
+          <!-- Active Beer Display (visible during playing/judging/revealed) -->
+          <div id="active-beer-summary" style="display:none;margin-bottom:10px;padding:10px 12px;background:rgba(196,18,48,.08);border:1px solid rgba(196,18,48,.25);border-radius:6px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div style="font-family:var(--fu);font-size:.7rem;font-weight:800;letter-spacing:.08em;color:var(--rl);text-transform:uppercase">Cervesa en joc</div>
+              <button class="btn btn-secondary btn-sm" id="btn-change-beer" onclick="toggleChangeBeerPrompt()" style="font-size:.68rem;padding:3px 8px">✏️ Modificar</button>
             </div>
-            <div id="team-beer-targets-inner"></div>
+            <div id="active-beer-summary-content" style="margin-top:6px"></div>
           </div>
 
-          <div class="search-wrap" style="margin-bottom:8px">
-            <span class="search-icon">🔍</span>
-            <input type="text" id="master-search" placeholder="Filtrar…" oninput="filterMasterBeers()"
-              style="padding-left:34px">
+          <div id="beer-selection-controls">
+            <!-- Mode toggle: Global vs Per equip -->
+            <div style="display:flex;gap:6px;margin-bottom:10px">
+              <button id="mbm-global" class="btn btn-primary btn-sm" style="flex:1;font-size:.72rem"
+                onclick="setBeerMode('global')">🌐 Global</button>
+              <button id="mbm-perteam" class="btn btn-secondary btn-sm" style="flex:1;font-size:.72rem"
+                onclick="setBeerMode('perteam')">🎯 Per equip</button>
+            </div>
+
+            <!-- Team assignment panel (only visible in per-team mode) -->
+            <div id="team-beer-targets" style="display:none;margin-bottom:10px;border:1px solid var(--k4);padding:9px 10px;background:rgba(255,255,255,.02)">
+              <div style="font-family:var(--fu);font-size:.65rem;font-weight:700;letter-spacing:.08em;color:var(--m);text-transform:uppercase;margin-bottom:7px">
+                1. Clica un equip · 2. Tria la seva cervesa
+              </div>
+              <div id="team-beer-targets-inner"></div>
+            </div>
+
+            <div class="search-wrap" style="margin-bottom:8px">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="master-search" placeholder="Filtrar…" oninput="filterMasterBeers()"
+                style="padding-left:34px">
+            </div>
+            <div class="beer-grid" id="beer-grid"></div>
+            <button class="btn btn-primary" id="btn-set-beer" onclick="setCurrentBeer()" disabled
+              style="margin-top:9px">🚀 Iniciar ronda amb aquesta cervesa</button>
           </div>
-          <div class="beer-grid" id="beer-grid"></div>
-          <button class="btn btn-primary" id="btn-set-beer" onclick="setCurrentBeer()" disabled
-            style="margin-top:9px">🚀 Iniciar ronda amb aquesta cervesa</button>
+
           <div id="round-active-hint" class="muted"
             style="display:none;font-family:var(--fu);font-size:.74rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;text-align:center;margin-top:6px">
             ✅ Ronda en curs — espera les propostes</div>
         </div>
-
-        <!-- reveal-panel removed -->
 
         <!-- Guesses -->
         <div class="card mb-11">
@@ -2675,9 +2739,13 @@
             ✅ Resultat ja revelat</div>
         </div>
 
-        <div class="g2 mb-11">
-          <button id="btn-next-round" class="btn btn-info" onclick="nextRound()">⏭️ Pròxima Ronda</button>
+        <div class="g2 mb-6">
+          <button id="btn-next-round" class="btn btn-info" onclick="nextRound()" disabled>⏭️ Pròxima Ronda</button>
           <button class="btn btn-secondary" onclick="openSendMessage()">📩 Missatge</button>
+        </div>
+        <div id="next-round-locked-hint" class="muted"
+          style="font-family:var(--fu);font-size:.72rem;letter-spacing:.04em;text-align:center;margin-top:4px;margin-bottom:11px">
+          ⚠️ Avalua i revela els resultats per desbloquejar la pròxima ronda
         </div>
       </div>
 

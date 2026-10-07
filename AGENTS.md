@@ -1,5 +1,5 @@
 # AGENTS.md — BJCP Beer Style Game
-## Börn Loka Ales · v2026.40
+## Börn Loka Ales · v2026.51
 
 Instruccions per a qualsevol agent (Claude o altre LLM) que treballi en aquest projecte.
 
@@ -201,6 +201,7 @@ Quan `s.roundReset !== lastRoundReset`:
 
 | Versió | Data | Canvis principals |
 |--------|------|-------------------|
+| v2026.51 | 07/10/2026 | Flux de ronda guiat i protegit per al Master: diàleg obligatori de rondes totals en iniciar partida; màquina d'estats de ronda (`setup` → `playing` → `judging` → `revealed`) amb stepper visual i bloqueig estricte del botó "Pròxima ronda" fins que s'han avaluat i revelat tots els resultats. Resum visual de la cervesa activa amb protecció d'edició accidental. |
 | v2026.50 | 07/10/2026 | Esborrat àgil de partides per al Master: checkboxes per a selecció múltiple, botó `🗑️ Esborrar (N)` en un sol clic i botó `🧹 Purgar finalitzades` per eliminar totes les partides fetes d'un sol cop. |
 | v2026.49 | 07/10/2026 | Assignació manual de cartes d'acció pel Master des de la pestanya Equips (`grantCard`). Millora de la llista de partides existent per al Master: ara no s'amaguen les partides finalitzades/anul·lades i s'afegeixen filtres (Actives / Finalitzades / Totes) amb badges d'estat visuals. |
 | v2026.48 | 07/10/2026 | Millora dels logs: `roundHistory` ara guarda `cardActivity` (accions de cartes per ronda) i `teamInfoValues` (valors complets d'info revelada). Master Log: detall de guesses incorrectes, activitat de cartes per ronda, timestamps a l'inventari, límit ampliat a 100. Team History: pills amb valors, activitat de cartes del teu equip per ronda |

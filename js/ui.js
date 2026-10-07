@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
 //  UI.JS  —  Interface & interaction logic
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION = 'v2026.50 · 07/10/2026';
+const APP_VERSION = 'v2026.51 · 07/10/2026';
 
 // ═══ THEME TOGGLE ════════════════════════════════════════════
 function toggleTheme() {
@@ -1453,7 +1453,25 @@ function updateLobbyTeam(s) {
   setHTML('lobby-team-list', html);
 }
 async function startGame() {
-  try { await game.startGame(); } catch(e) { showToast('❌ '+e.message); }
+  showModal('🚀 Iniciar Partida', `
+    <p class="muted mb-12" style="font-size:.82rem;line-height:1.5">Quantes rondes voleu jugar? Podràs modificar-ho després des de ⚙️ Configuració.</p>
+    <div class="ig mb-12">
+      <label>Nombre de rondes</label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn btn-secondary btn-sm" onclick="let i=document.getElementById('start-rounds');i.value=Math.max(1,parseInt(i.value||6)-1)" style="padding:4px 12px;font-size:1.1rem">−</button>
+        <input type="number" id="start-rounds" value="6" min="1" max="30" style="text-align:center;font-size:1.5rem;font-weight:700;letter-spacing:2px;flex:1">
+        <button class="btn btn-secondary btn-sm" onclick="let i=document.getElementById('start-rounds');i.value=Math.min(30,parseInt(i.value||6)+1)" style="padding:4px 12px;font-size:1.1rem">+</button>
+      </div>
+    </div>
+    <button class="btn btn-success" onclick="confirmStartGame()" style="width:100%">🚀 Començar!</button>
+  `, true);
+}
+async function confirmStartGame() {
+  const rounds = parseInt(el('start-rounds')?.value) || 6;
+  if (rounds < 1 || rounds > 30) return showToast('⚠️ Entre 1 i 30 rondes');
+  closeModal();
+  try { await game.startGame(rounds); showToast(`🚀 Partida iniciada amb ${rounds} rondes!`); }
+  catch(e) { showToast('❌ '+e.message); }
 }
 
 // ═══ TAB NAV ══════════════════════════════════════════════════════
@@ -2247,6 +2265,7 @@ async function initMasterView() {
   game.gameRef.on('value', snap => {
     const s=snap.val(); if(!s) return;
     gameState=s; activeCardIds=s.activeCardIds||null;
+    if (s.status==='finished') { showScreen('screen-finished'); renderFinalRanking(s); return; }
     updateMasterView(s);
   });
   game.gameRef.child('messages').on('value', snap => renderMessages(snap.val(),'master'));
@@ -2412,17 +2431,181 @@ function renderTeamBeerTargets() {
   }).join('');
 }
 
+let _allowBeerEdit = false;
+
+function toggleChangeBeerPrompt() {
+  _allowBeerEdit = !_allowBeerEdit;
+  const controls = el('beer-selection-controls');
+  const btn = el('btn-change-beer');
+  if (_allowBeerEdit) {
+    if (controls) controls.style.display = 'block';
+    if (btn) { btn.textContent = '✕ Cancel·lar'; btn.classList.add('btn-warning'); btn.classList.remove('btn-secondary'); }
+    showToast('⚠️ Modificant la cervesa activa de la ronda');
+  } else {
+    if (controls) controls.style.display = 'none';
+    if (btn) { btn.textContent = '✏️ Modificar'; btn.classList.remove('btn-warning'); btn.classList.add('btn-secondary'); }
+  }
+  _updateSetBeerBtn();
+}
+
+function getRoundPhase(s) {
+  if (s && s.roundPhase) return s.roundPhase;
+  if (!s || !s.currentBeer) return 'setup';
+  if (s.currentBeer.revealed) return 'revealed';
+  if (s.judgingLocked || Object.values(s.currentBeer.guesses || {}).some(g => g.judged)) return 'judging';
+  return 'playing';
+}
+
+function updateMasterRoundWorkflow(s) {
+  const phase = getRoundPhase(s);
+  
+  // 1. Update Stepper badges & guidance text
+  const badgeEl = el('master-phase-badge');
+  const msgEl = el('master-phase-msg');
+  const s1 = el('pstep-1'), s2 = el('pstep-2'), s3 = el('pstep-3'), s4 = el('pstep-4');
+
+  if (s1 && s2 && s3 && s4) {
+    [s1, s2, s3, s4].forEach(step => { step.classList.remove('active', 'done'); });
+    if (phase === 'setup') {
+      s1.classList.add('active');
+      if (badgeEl) { badgeEl.textContent = '1. Preparar ronda'; badgeEl.className = 'badge badge-info'; }
+      if (msgEl) msgEl.innerHTML = '👉 <strong>Pas 1:</strong> Tria l\'estil o cervesa BJCP per a aquesta ronda i fes clic a <strong>"🚀 Iniciar ronda"</strong>.';
+    } else if (phase === 'playing') {
+      s1.classList.add('done');
+      s2.classList.add('active');
+      if (badgeEl) { badgeEl.textContent = '2. Ronda en joc'; badgeEl.className = 'badge badge-primary'; }
+      if (msgEl) msgEl.innerHTML = '🍺 <strong>Pas 2:</strong> Ronda en marxa! Els participants estan investigant i enviant propostes.';
+    } else if (phase === 'judging') {
+      s1.classList.add('done');
+      s2.classList.add('done');
+      s3.classList.add('active');
+      if (badgeEl) { badgeEl.textContent = '3. Avaluant propostes'; badgeEl.className = 'badge badge-warning'; }
+      if (msgEl) msgEl.innerHTML = '🎯 <strong>Pas 3:</strong> Jutja totes les propostes rebudes. En acabar, fes clic a <strong>"📢 Revelar Resultat a Tots"</strong>.';
+    } else if (phase === 'revealed') {
+      s1.classList.add('done');
+      s2.classList.add('done');
+      s3.classList.add('done');
+      s4.classList.add('active');
+      if (badgeEl) { badgeEl.textContent = '4. Resultat revelat'; badgeEl.className = 'badge badge-success'; }
+      if (msgEl) msgEl.innerHTML = '🎉 <strong>Pas 4:</strong> Resultats i dades revelades als jugadors! Fes clic a <strong>"⏭️ Pròxima Ronda"</strong> per continuar.';
+    }
+  }
+
+  // 2. Beer Selection vs Active Beer Summary
+  const summaryWrap = el('active-beer-summary');
+  const summaryContent = el('active-beer-summary-content');
+  const controls = el('beer-selection-controls');
+  const btnSet = el('btn-set-beer');
+  const activeHint = el('round-active-hint');
+
+  if (phase === 'setup') {
+    if (summaryWrap) summaryWrap.style.display = 'none';
+    if (controls) controls.style.display = 'block';
+    if (btnSet) btnSet.style.display = 'block';
+    if (activeHint) activeHint.style.display = 'none';
+  } else {
+    // Round has started / is in progress / finished
+    if (summaryWrap) summaryWrap.style.display = 'block';
+    if (summaryContent && s.currentBeer) {
+      if (s.currentBeer.teamBeers) {
+        summaryContent.innerHTML = `
+          <div style="font-size:.72rem;font-weight:700;color:var(--m);margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em">Mode per equip:</div>
+          <div style="display:flex;flex-direction:column;gap:3px">
+            ${Object.entries(s.currentBeer.teamBeers).map(([tid, b]) => `
+              <div style="font-size:.82rem;color:var(--t)">
+                <strong style="color:var(--rl)">🍻 ${escHtml(tid)}:</strong> ${escHtml(b.name)}
+              </div>
+            `).join('')}
+          </div>`;
+      } else {
+        const catInfo = s.currentBeer.categoryNumber ? `Cat. ${s.currentBeer.categoryNumber}` : (s.currentBeer.category || '');
+        summaryContent.innerHTML = `
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:1.6rem">🍺</span>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:700;font-size:1rem;color:var(--t);line-height:1.2">${escHtml(s.currentBeer.name)}</div>
+              <div class="muted" style="font-size:.72rem;margin-top:2px">${escHtml(s.currentBeer.brewery ? s.currentBeer.brewery + ' · ' : '')}${escHtml(s.currentBeer.styleName || s.currentBeer.name)} ${catInfo ? `(${catInfo})` : ''}</div>
+            </div>
+          </div>`;
+      }
+    }
+
+    if (!_allowBeerEdit) {
+      if (controls) controls.style.display = 'none';
+      if (btnSet) btnSet.style.display = 'none';
+    } else {
+      if (controls) controls.style.display = 'block';
+      if (btnSet) {
+        btnSet.style.display = 'block';
+        btnSet.textContent = '💾 Actualitzar cervesa de la ronda';
+      }
+    }
+
+    if (activeHint) {
+      activeHint.style.display = 'block';
+      if (phase === 'playing') activeHint.innerHTML = '🟢 Ronda iniciada · Esperant propostes dels equips';
+      else if (phase === 'judging') activeHint.innerHTML = '🟠 Avaluant propostes · Participants en espera';
+      else if (phase === 'revealed') activeHint.innerHTML = '✅ Resultats ja revelats als participants';
+    }
+  }
+
+  // 3. Next Round button & lock hint
+  const btnNext = el('btn-next-round');
+  const lockedHint = el('next-round-locked-hint');
+  const currentRnd = s.currentRound || 1;
+  const totalRnds = s.totalRounds || 6;
+  const isLastRound = currentRnd >= totalRnds;
+
+  if (btnNext) {
+    if (phase === 'revealed') {
+      btnNext.disabled = false;
+      btnNext.style.opacity = '1';
+      btnNext.style.cursor = 'pointer';
+      if (isLastRound) {
+        btnNext.textContent = '🏆 Finalitzar Partida';
+        btnNext.className = 'btn btn-warning';
+      } else {
+        btnNext.textContent = `⏭️ Començar Ronda ${currentRnd + 1} de ${totalRnds}`;
+        btnNext.className = 'btn btn-primary';
+      }
+      if (lockedHint) lockedHint.style.display = 'none';
+    } else {
+      btnNext.disabled = true;
+      btnNext.style.opacity = '0.45';
+      btnNext.style.cursor = 'not-allowed';
+      btnNext.className = 'btn btn-info';
+      btnNext.textContent = '⏭️ Pròxima Ronda';
+      if (lockedHint) {
+        lockedHint.style.display = 'block';
+        if (phase === 'setup') {
+          lockedHint.textContent = '⚠️ Tria la cervesa i inicia la ronda per començar';
+        } else if (phase === 'playing') {
+          lockedHint.textContent = '⚠️ Has d\'avaluar les propostes i clicar "📢 Revelar Resultat" abans de passar de ronda';
+        } else if (phase === 'judging') {
+          lockedHint.textContent = '⚠️ Has de clicar "📢 Revelar Resultat a Tots" per poder passar a la següent ronda';
+        }
+      }
+    }
+  }
+}
+
 function _updateSetBeerBtn() {
   const btn = el('btn-set-beer'); if (!btn) return;
+  const phase = getRoundPhase(gameState || {});
+  if (phase !== 'setup' && !_allowBeerEdit) {
+    btn.style.display = 'none';
+    return;
+  }
+  btn.style.display = 'block';
   if (_beerMode === 'global') {
     btn.disabled = !selectedBeer;
-    btn.textContent = '🚀 Iniciar ronda amb aquesta cervesa';
+    btn.textContent = _allowBeerEdit ? '💾 Actualitzar cervesa de la ronda' : '🚀 Iniciar ronda amb aquesta cervesa';
   } else {
     const teams = Object.keys(gameState?.teams || {});
     const allAssigned = teams.length > 0 && teams.every(t => _teamBeerSelections[t]);
     btn.disabled = !allAssigned;
     if (allAssigned) {
-      btn.textContent = '🎯 Iniciar ronda (mode per equip)';
+      btn.textContent = _allowBeerEdit ? '💾 Actualitzar cerveses per equip' : '🎯 Iniciar ronda (mode per equip)';
     } else {
       const missing = teams.filter(t => !_teamBeerSelections[t]).length;
       btn.textContent = `⚠️ Assigna ${missing} equip${missing !== 1 ? 's' : ''} més`;
@@ -2441,7 +2624,9 @@ async function setCurrentBeer() {
       const summary = Object.entries(_teamBeerSelections).map(([t,b]) => `${t}: ${b.name}`).join(' · ');
       showToast('🎯 ' + summary);
       _teamBeerSelections = {}; _teamBeerTarget = null;
-      // We do NOT switch back to global here, so the UI stays in per-team mode and shows active assignments
+      _allowBeerEdit = false;
+      const btnChange = el('btn-change-beer');
+      if (btnChange) { btnChange.textContent = '✏️ Modificar'; btnChange.classList.remove('btn-warning'); btnChange.classList.add('btn-secondary'); }
     } catch(e) { showToast('❌ ' + e.message); }
   } else {
     if (!selectedBeer) return;
@@ -2453,6 +2638,9 @@ async function setCurrentBeer() {
     try {
       await game.setCurrentBeer(card);
       showToast('🍺 ' + card.name + ' seleccionada!');
+      _allowBeerEdit = false;
+      const btnChange = el('btn-change-beer');
+      if (btnChange) { btnChange.textContent = '✏️ Modificar'; btnChange.classList.remove('btn-warning'); btnChange.classList.add('btn-secondary'); }
     } catch(e) { showToast('❌ ' + e.message); }
   }
 }
@@ -2486,6 +2674,7 @@ let _lastActiveCardIds = undefined;
 function updateMasterView(s) {
   setEl('master-round', `Ronda ${s.currentRound||1}/${s.totalRounds||6}`);
   renderTeamScores(s);
+  updateMasterRoundWorkflow(s);
   renderPendingItems(s);
   renderMasterGuesses(s);
   renderTeamsDetail(s);
@@ -2658,21 +2847,41 @@ async function sendSensoryClue() {
 
 // ── Guesses ──────────────────────────────────────────────────────
 function renderMasterGuesses(s) {
-  const g=el('master-guesses'); if (!g) return;
+  const g = el('master-guesses'); if (!g) return;
   const beer = s.currentBeer;
-  const entries=Object.entries(beer?.guesses||{});
-  if (!entries.length) { g.innerHTML=emptyState('⏳','Esperant propostes…'); return; }
-  const alreadyPts=beer?.roundPointsGiven;
-  const allJudged = entries.every(([,gs])=>gs.judged);
+  const phase = getRoundPhase(s);
+  const entries = Object.entries(beer?.guesses || {});
+  const revealBtn = el('btn-reveal-result');
+  const revealedHint = el('result-revealed-hint');
+
+  if (phase === 'setup') {
+    g.innerHTML = emptyState('⏳', 'La ronda encara no s\'ha iniciat. Tria una cervesa per començar.');
+    if (revealBtn) revealBtn.style.display = 'none';
+    if (revealedHint) revealedHint.style.display = 'none';
+    return;
+  }
+
+  const allJudged = entries.length > 0 && entries.every(([,gs]) => gs.judged);
   const revealed  = beer?.revealed;
 
-  g.innerHTML=entries.map(([key,gs]) => {
+  if (!entries.length) {
+    g.innerHTML = emptyState('⏳', 'Esperant propostes dels jugadors…');
+    if (revealBtn) {
+      revealBtn.style.display = !revealed ? 'block' : 'none';
+      revealBtn.textContent = '📢 Revelar Resultat (sense propostes)';
+      revealBtn.className = 'btn btn-secondary mt-12';
+    }
+    if (revealedHint) revealedHint.style.display = revealed ? 'block' : 'none';
+    return;
+  }
+
+  g.innerHTML = entries.map(([key,gs]) => {
     const teamBeer = getBeerForTeam(s, gs.teamId);
     const correct  = gs.guessId === teamBeer?.id;
     const icon     = gs.judged ? (gs.correct ? '✅' : '❌') : '⏳';
     // Show which beer this team had to guess (only in per-team mode)
     const beerLabel = s.currentBeer?.teamBeers?.[gs.teamId]
-      ? `<span style="font-size:.6rem;color:var(--m);font-family:var(--fu)"> — 🎺 ${teamBeer.name}</span>` : '';
+      ? `<span style="font-size:.6rem;color:var(--m);font-family:var(--fu)"> — 🎺 ${teamBeer?.name || ''}</span>` : '';
     return `<div class="guess-row">
       <div style="flex:1">
         <div class="guess-who">${gs.teamId} · ${gs.playerName}${beerLabel}</div>
@@ -2684,12 +2893,16 @@ function renderMasterGuesses(s) {
   }).join('');
 
   // Show reveal button once all judged and not yet revealed
-  const revealBtn = el('btn-reveal-result');
   if (revealBtn) {
-    revealBtn.style.display = (allJudged && !revealed) ? 'block' : 'none';
+    if (allJudged && !revealed) {
+      revealBtn.style.display = 'block';
+      revealBtn.textContent = '📢 Revelar Resultat a Tots';
+      revealBtn.className = 'btn btn-primary mt-12';
+    } else {
+      revealBtn.style.display = 'none';
+    }
   }
   // Show "already revealed" hint
-  const revealedHint = el('result-revealed-hint');
   if (revealedHint) revealedHint.style.display = revealed ? 'block' : 'none';
 }
 
@@ -2753,12 +2966,9 @@ async function nextRound() {
     await game.nextRound();
     selectedBeer = null;
     _teamBeerSelections = {}; _teamBeerTarget = null;
+    _allowBeerEdit = false;
     setBeerMode('global');
     document.querySelectorAll('.beer-item').forEach(e => e.classList.remove('selected'));
-    // Show "Iniciar ronda" again for the new round
-    el('btn-set-beer').style.display = 'block';
-    el('btn-set-beer').disabled = true;
-    const hint = el('round-active-hint'); if (hint) hint.style.display = 'none';
     renderMasterBeerGrid();
     showToast('⏭️ Pròxima ronda!');
   } catch(e) { showToast('❌ '+e.message); }
