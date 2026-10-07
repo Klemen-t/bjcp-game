@@ -1,0 +1,1872 @@
+{
+  "cardsLocked": false,
+  "code": "DVY9Y",
+  "createdAt": 1784916654708,
+  "currentBeer": {
+    "abv": "12",
+    "brewery": "Schneider Weisse",
+    "country": "Alemania",
+    "createdAt": 1784553269720,
+    "description": "Màgia i una ànima fosca: l'«Eisbock» de color caoba —gairebé negre—, ideal per a un plaer sensorial i per servir-lo, preferiblement, en una copa tipus baló. Elaborada seguint una recepta exclusiva i un procés especial de congelació, presenta un cos suau i elegant, però intens. Hi destaquen notes especiades de pruna, plàtan i clau, acompanyades d'un lleuger toc d'ametlla amarga i massapà. És una opció temptadora com a digestiu o per acompanyar creps, xocolata negra, tiramisú i formatge parmesà ben curat.",
+    "guesses": {
+      "IPA__Josep__1784927927570": {
+        "correct": true,
+        "guess": "Eisbock",
+        "guessId": "9b",
+        "judged": true,
+        "playerName": "Josep",
+        "points": 1,
+        "submittedAt": 1784927927570,
+        "teamId": "IPA"
+      },
+      "IPA__KIKE__1784928219384": {
+        "correct": true,
+        "guess": "Eisbock",
+        "guessId": "9b",
+        "judged": true,
+        "playerName": "KIKE",
+        "points": 1,
+        "submittedAt": 1784928219384,
+        "teamId": "IPA"
+      },
+      "IPA__Leti__1784927902226": {
+        "correct": true,
+        "guess": "Eisbock",
+        "guessId": "9b",
+        "judged": true,
+        "playerName": "Leti",
+        "points": 1,
+        "submittedAt": 1784927902226,
+        "teamId": "IPA"
+      },
+      "IPA__Marta__1784927902768": {
+        "correct": true,
+        "guess": "Eisbock",
+        "guessId": "9b",
+        "judged": true,
+        "playerName": "Marta",
+        "points": 1,
+        "submittedAt": 1784927902768,
+        "teamId": "IPA"
+      },
+      "IPA__Oscar__1784927898249": {
+        "correct": true,
+        "guess": "Eisbock",
+        "guessId": "9b",
+        "judged": true,
+        "playerName": "Oscar",
+        "points": 1,
+        "submittedAt": 1784927898249,
+        "teamId": "IPA"
+      },
+      "Llevat__Elisa__1784928092969": {
+        "correct": true,
+        "guess": "Eisbock",
+        "guessId": "9b",
+        "judged": true,
+        "playerName": "Elisa",
+        "points": 1,
+        "submittedAt": 1784928092969,
+        "teamId": "Llevat"
+      },
+      "Llevat__Jacob__1784928077321": {
+        "correct": true,
+        "guess": "Eisbock",
+        "guessId": "9b",
+        "judged": true,
+        "playerName": "Jacob",
+        "points": 1,
+        "submittedAt": 1784928077321,
+        "teamId": "Llevat"
+      },
+      "Llevat__Javi__1784928081266": {
+        "correct": true,
+        "guess": "Eisbock",
+        "guessId": "9b",
+        "judged": true,
+        "playerName": "Javi",
+        "points": 1,
+        "submittedAt": 1784928081266,
+        "teamId": "Llevat"
+      },
+      "Llevat__MUESLY SNIPE__1784928072781": {
+        "correct": true,
+        "guess": "Eisbock",
+        "guessId": "9b",
+        "judged": true,
+        "playerName": "MUESLY SNIPE",
+        "points": 1,
+        "submittedAt": 1784928072781,
+        "teamId": "Llevat"
+      },
+      "Lúpulo__David T__1784928245952": {
+        "correct": false,
+        "guess": "Weizenbock",
+        "guessId": "10c",
+        "judged": true,
+        "playerName": "David T",
+        "points": 0,
+        "submittedAt": 1784928245952,
+        "teamId": "Lúpulo"
+      },
+      "Lúpulo__ISRA__1784928228169": {
+        "correct": false,
+        "guess": "Weizenbock",
+        "guessId": "10c",
+        "judged": true,
+        "playerName": "ISRA",
+        "points": 0,
+        "submittedAt": 1784928228169,
+        "teamId": "Lúpulo"
+      },
+      "Lúpulo__Jordi__1784928270091": {
+        "correct": false,
+        "guess": "Weizenbock",
+        "guessId": "10c",
+        "judged": true,
+        "playerName": "Jordi",
+        "points": 0,
+        "submittedAt": 1784928270091,
+        "teamId": "Lúpulo"
+      },
+      "Lúpulo__Vid__1784928239832": {
+        "correct": false,
+        "guess": "Weizenbock",
+        "guessId": "10c",
+        "judged": true,
+        "playerName": "Vid",
+        "points": 0,
+        "submittedAt": 1784928239832,
+        "teamId": "Lúpulo"
+      },
+      "Lúpulo__jud__1784928259202": {
+        "correct": false,
+        "guess": "Weizenbock",
+        "guessId": "10c",
+        "judged": true,
+        "playerName": "jud",
+        "points": 0,
+        "submittedAt": 1784928259202,
+        "teamId": "Lúpulo"
+      }
+    },
+    "ibu": "15",
+    "id": "b_1784553269720_ew9dz",
+    "image": "https://rus-beer.ru/media/43686_schneider_aventinus_eisbock",
+    "ingredients": "Llúpol hallertauer Herkules, malta d'ordi i de blat. Ni filtrada ni pasteuritzada. Fermentació oberta, no hi ha fermentació en ampolla degut al procés de congelació.",
+    "isCatalogBeer": true,
+    "name": "Aventinus Eisbock",
+    "pendingAction": {
+      "playerName": "Elisa",
+      "requestedAt": 1784927771167,
+      "resolved": true,
+      "teamId": "Llevat",
+      "type": "sensory"
+    },
+    "pendingQuestion": {
+      "answer": true,
+      "answered": true,
+      "askedAt": 1784928048529,
+      "cardInstanceId": "card_1784925052124",
+      "playerName": "Elisa",
+      "question": "És una Eisbock",
+      "teamId": "Llevat"
+    },
+    "resultsVisible": true,
+    "revealed": true,
+    "roundPointsGiven": true,
+    "srm": "27",
+    "startedAt": 1784926986490,
+    "styleId": "9b",
+    "styleName": "Eisbock",
+    "teamInfo": {
+      "IPA": {
+        "category": "9",
+        "ibu": "15"
+      },
+      "Llevat": {
+        "sensory": "🌾 Srmbla alemana. Categoria NAIN NAIN NAIN!"
+      }
+    },
+    "updatedAt": 1784557235689,
+    "winnerPlayer": "Josep",
+    "winnerTeam": "IPA"
+  },
+  "currentRound": 9,
+  "master": "Klemen",
+  "messages": {
+    "1784919293249": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isCardGrant": true,
+      "text": "🃏 Has rebut una carta de la ronda anterior: ❓ Sí o No",
+      "toPlayer": "Josep",
+      "toTeam": "IPA",
+      "ts": 1784919293249
+    },
+    "1784919293250": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isCardGrant": true,
+      "text": "🃏 Has rebut una carta de la ronda anterior: 🤥 Carta Mentida",
+      "toPlayer": "KIKE",
+      "toTeam": "IPA",
+      "ts": 1784919293250
+    },
+    "1784919293251": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isCardGrant": true,
+      "text": "🃏 Has rebut una carta de la ronda anterior: 🌿 Info IBU",
+      "toPlayer": "Jacob",
+      "toTeam": "Llevat",
+      "ts": 1784919293251
+    },
+    "1784919293252": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isCardGrant": true,
+      "text": "🃏 Has rebut una carta de la ronda anterior: 🦝 Robar Carta",
+      "toPlayer": "David T",
+      "toTeam": "Lúpulo",
+      "ts": 1784919293252
+    },
+    "1784919603953": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isSystemAlert": true,
+      "text": "🦝 Has robat \"🌿 Info IBU\" de Jacob (Llevat)!",
+      "toTeam": "Lúpulo",
+      "ts": 1784919603953
+    },
+    "1784919603954": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isSystemAlert": true,
+      "text": "🦝 Lúpulo ha robat \"🌿 Info IBU\" a Jacob!",
+      "toTeam": "Llevat",
+      "ts": 1784919603954
+    },
+    "1784919726162": {
+      "from": "Master",
+      "fromRole": "master",
+      "isInfoReveal": true,
+      "text": "🌿 IBU: 29",
+      "toTeam": "Lúpulo",
+      "ts": 1784919726162
+    },
+    "1784920424876": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isCardGrant": true,
+      "text": "🃏 Has rebut una carta de la ronda anterior: 🎨 Info Color",
+      "toPlayer": "Elisa",
+      "toTeam": "Llevat",
+      "ts": 1784920424876
+    },
+    "1784920424877": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isCardGrant": true,
+      "text": "🃏 Has rebut una carta de la ronda anterior: 🌾 Pista Sensorial",
+      "toPlayer": "Jacob",
+      "toTeam": "Llevat",
+      "ts": 1784920424877
+    },
+    "1784920424878": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isCardGrant": true,
+      "text": "🃏 Has rebut una carta de la ronda anterior: ✂️ Descartar la Meitat",
+      "toPlayer": "Javi",
+      "toTeam": "Llevat",
+      "ts": 1784920424878
+    },
+    "1784920424879": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isCardGrant": true,
+      "text": "🃏 Has rebut una carta de la ronda anterior: 📂 Revelar Categoria",
+      "toPlayer": "MUESLY SNIPE",
+      "toTeam": "Llevat",
+      "ts": 1784920424879
+    },
+    "1784920424880": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isCardGrant": true,
+      "text": "🃏 Has rebut una carta de la ronda anterior: ❓ Sí o No",
+      "toPlayer": "Vid",
+      "toTeam": "Lúpulo",
+      "ts": 1784920424880
+    },
+    "1784921712917": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isInfoReveal": true,
+      "text": "📂 Categoria: 29",
+      "toTeam": "Llevat",
+      "ts": 1784921712917
+    },
+    "1784922264658": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isCardGrant": true,
+      "text": "🃏 Has rebut una carta de la ronda anterior: 🍺 Info Alcohol",
+      "toPlayer": "Josep",
+      "toTeam": "IPA",
+      "ts": 1784922264658
+    },
+    "1784922264659": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isCardGrant": true,
+      "text": "🃏 Has rebut una carta de la ronda anterior: 🌾 Pista Sensorial",
+      "toPlayer": "Elisa",
+      "toTeam": "Llevat",
+      "ts": 1784922264659
+    },
+    "1784922264660": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isCardGrant": true,
+      "text": "🃏 Has rebut una carta de la ronda anterior: ✂️ Descartar la Meitat",
+      "toPlayer": "Jacob",
+      "toTeam": "Llevat",
+      "ts": 1784922264660
+    },
+    "1784922264661": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isCardGrant": true,
+      "text": "🃏 Has rebut una carta de la ronda anterior: 🤥 Carta Mentida",
+      "toPlayer": "Javi",
+      "toTeam": "Llevat",
+      "ts": 1784922264661
+    },
+    "1784922264662": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isCardGrant": true,
+      "text": "🃏 Has rebut una carta de la ronda anterior: 🌿 Info IBU",
+      "toPlayer": "Javi",
+      "toTeam": "Llevat",
+      "ts": 1784922264662
+    },
+    "1784922264663": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isCardGrant": true,
+      "text": "🃏 Has rebut una carta de la ronda anterior: 🍺 Info Alcohol",
+      "toPlayer": "Javi",
+      "toTeam": "Llevat",
+      "ts": 1784922264663
+    },
+    "1784922264664": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isCardGrant": true,
+      "text": "🃏 Has rebut una carta de la ronda anterior: 📂 Revelar Categoria",
+      "toPlayer": "MUESLY SNIPE",
+      "toTeam": "Llevat",
+      "ts": 1784922264664
+    },
+    "1784922264665": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isCardGrant": true,
+      "text": "🃏 Has rebut una carta de la ronda anterior: ❓ Sí o No",
+      "toPlayer": "David T",
+      "toTeam": "Lúpulo",
+      "ts": 1784922264665
+    },
+    "1784922264666": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isCardGrant": true,
+      "text": "🃏 Has rebut una carta de la ronda anterior: 🦝 Robar Carta",
+      "toPlayer": "ISRA",
+      "toTeam": "Lúpulo",
+      "ts": 1784922264666
+    },
+    "1784922264667": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isCardGrant": true,
+      "text": "🃏 Has rebut una carta de la ronda anterior: 🎨 Info Color",
+      "toPlayer": "Jordi",
+      "toTeam": "Lúpulo",
+      "ts": 1784922264667
+    },
+    "1784922264668": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isCardGrant": true,
+      "text": "🃏 Has rebut una carta de la ronda anterior: 🎨 Info Color",
+      "toPlayer": "Vid",
+      "toTeam": "Lúpulo",
+      "ts": 1784922264668
+    },
+    "1784922264669": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isCardGrant": true,
+      "text": "🃏 Has rebut una carta de la ronda anterior: 🚫 Anul·lar Ajuda",
+      "toPlayer": "jud",
+      "toTeam": "Lúpulo",
+      "ts": 1784922264669
+    },
+    "1784922644303": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isSystemAlert": true,
+      "text": "🤡 Carta Mentida activada! La propera carta que usi qualsevol equip rival serà sabotejada. Persisteix entre rondes.",
+      "toTeam": "Llevat",
+      "ts": 1784922644303
+    },
+    "1784922754036": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isSystemAlert": true,
+      "text": "🤡 Carta Mentida activada! La propera carta que usi qualsevol equip rival serà sabotejada. Persisteix entre rondes.",
+      "toTeam": "IPA",
+      "ts": 1784922754036
+    },
+    "1784922791127": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isInfoReveal": true,
+      "text": "📂 Categoria: Categoria 16 📂",
+      "toTeam": "Llevat",
+      "ts": 1784922791127
+    },
+    "1784922791128": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isSystemAlert": true,
+      "text": "🤡 Mentida enviada! Han rebut: \"Categoria: Categoria 16\" (FALS!)",
+      "toTeam": "IPA",
+      "ts": 1784922791128
+    },
+    "1784923028810": {
+      "from": "Master",
+      "fromRole": "master",
+      "isInfoReveal": true,
+      "text": "🎨 Color SRM: 6",
+      "toTeam": "Lúpulo",
+      "ts": 1784923028810
+    },
+    "1784923091959": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isSystemAlert": true,
+      "text": "🛡️ Carta Anular Ajuda activada! La pròxima carta que tiri qualsevol equip rival quedarà bloquejada. Ells no ho saben.",
+      "toTeam": "Lúpulo",
+      "ts": 1784923091959
+    },
+    "1784923212198": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isSystemAlert": true,
+      "text": "🦝 Has robat \"🍺 Info Alcohol\" de Javi (Llevat)!",
+      "toTeam": "Lúpulo",
+      "ts": 1784923212198
+    },
+    "1784923212199": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isSystemAlert": true,
+      "text": "🦝 Lúpulo ha robat \"🍺 Info Alcohol\" a Javi!",
+      "toTeam": "Llevat",
+      "ts": 1784923212199
+    },
+    "1784923325946": {
+      "from": "Master",
+      "fromRole": "master",
+      "isInfoReveal": true,
+      "text": "🍺 Alcohol: 9.5",
+      "toTeam": "Lúpulo",
+      "ts": 1784923325946
+    },
+    "1784923555656": {
+      "from": "Master",
+      "fromRole": "master",
+      "isSystemAlert": true,
+      "text": "❓ Resposta del Master a \"Sahti?\": ❌ NO",
+      "toTeam": "Lúpulo",
+      "ts": 1784923555656
+    },
+    "1784923672610": {
+      "from": "Master",
+      "fromRole": "master",
+      "isSystemAlert": true,
+      "text": "❓ Resposta del Master a \"Wheatwine?\": ❌ NO",
+      "toTeam": "Lúpulo",
+      "ts": 1784923672610
+    },
+    "1784924660260": {
+      "from": "Master",
+      "fromRole": "master",
+      "isInfoReveal": true,
+      "text": "🌾 Pista Sensorial: Està clar que és negre, però... El gust ho és??? Jo crec que no.",
+      "toTeam": "Llevat",
+      "ts": 1784924660260
+    },
+    "1784924693897": {
+      "from": "Master",
+      "fromRole": "master",
+      "isSystemAlert": true,
+      "text": "❓ Resposta del Master a \"Es la black IPA?\": ✅ SÍ",
+      "toTeam": "IPA",
+      "ts": 1784924693897
+    },
+    "1784924867781": {
+      "from": "Master",
+      "fromRole": "master",
+      "isInfoReveal": true,
+      "text": "🌿 IBU: 70",
+      "toTeam": "Llevat",
+      "ts": 1784924867781
+    },
+    "1784925196094": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isCardGrant": true,
+      "text": "🃏 Has rebut una carta de la ronda anterior: 🦝 Robar Carta",
+      "toPlayer": "Josep",
+      "toTeam": "IPA",
+      "ts": 1784925196094
+    },
+    "1784925196095": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isCardGrant": true,
+      "text": "🃏 Has rebut una carta de la ronda anterior: 🚫 Anul·lar Ajuda",
+      "toPlayer": "Leti",
+      "toTeam": "IPA",
+      "ts": 1784925196095
+    },
+    "1784925196096": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isCardGrant": true,
+      "text": "🃏 Has rebut una carta de la ronda anterior: 🌿 Info IBU",
+      "toPlayer": "Oscar",
+      "toTeam": "IPA",
+      "ts": 1784925196096
+    },
+    "1784925196097": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isCardGrant": true,
+      "text": "🃏 Has rebut una carta de la ronda anterior: ❓ Sí o No",
+      "toPlayer": "Elisa",
+      "toTeam": "Llevat",
+      "ts": 1784925196097
+    },
+    "1784925196098": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isCardGrant": true,
+      "text": "🃏 Has rebut una carta de la ronda anterior: 🍺 Info Alcohol",
+      "toPlayer": "Jacob",
+      "toTeam": "Llevat",
+      "ts": 1784925196098
+    },
+    "1784925196099": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isCardGrant": true,
+      "text": "🃏 Has rebut una carta de la ronda anterior: 📂 Revelar Categoria",
+      "toPlayer": "David T",
+      "toTeam": "Lúpulo",
+      "ts": 1784925196099
+    },
+    "1784925196100": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isCardGrant": true,
+      "text": "🃏 Has rebut una carta de la ronda anterior: ✂️ Descartar la Meitat",
+      "toPlayer": "ISRA",
+      "toTeam": "Lúpulo",
+      "ts": 1784925196100
+    },
+    "1784925196101": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isCardGrant": true,
+      "text": "🃏 Has rebut una carta de la ronda anterior: 🦝 Robar Carta",
+      "toPlayer": "Jordi",
+      "toTeam": "Lúpulo",
+      "ts": 1784925196101
+    },
+    "1784925196102": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isCardGrant": true,
+      "text": "🃏 Has rebut una carta de la ronda anterior: 🤥 Carta Mentida",
+      "toPlayer": "Vid",
+      "toTeam": "Lúpulo",
+      "ts": 1784925196102
+    },
+    "1784925664922": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isSystemAlert": true,
+      "text": "🦝 Has robat \"🌾 Pista Sensorial\" de Jacob (Llevat)!",
+      "toTeam": "IPA",
+      "ts": 1784925664922
+    },
+    "1784925664923": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isSystemAlert": true,
+      "text": "🦝 IPA ha robat \"🌾 Pista Sensorial\" a Jacob!",
+      "toTeam": "Llevat",
+      "ts": 1784925664923
+    },
+    "1784925687102": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isSystemAlert": true,
+      "text": "🦝 Has robat \"✂️ Descartar la Meitat\" de Javi (Llevat)!",
+      "toTeam": "Lúpulo",
+      "ts": 1784925687102
+    },
+    "1784925687103": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isSystemAlert": true,
+      "text": "🦝 Lúpulo ha robat \"✂️ Descartar la Meitat\" a Javi!",
+      "toTeam": "Llevat",
+      "ts": 1784925687103
+    },
+    "1784925813697": {
+      "from": "Master",
+      "fromRole": "master",
+      "isInfoReveal": true,
+      "text": "🌾 Pista Sensorial: Sembla que al hivern vindria més de gust que ara...",
+      "toTeam": "IPA",
+      "ts": 1784925813697
+    },
+    "1784925959006": {
+      "from": "Master",
+      "fromRole": "master",
+      "isInfoReveal": true,
+      "text": "🍺 Alcohol: 5.5",
+      "toTeam": "Llevat",
+      "ts": 1784925959006
+    },
+    "1784926073920": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isSystemAlert": true,
+      "text": "✂️ 2 cartes incorrectes han estat descartades!",
+      "toTeam": "Lúpulo",
+      "ts": 1784926073920
+    },
+    "1784926367596": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isSystemAlert": true,
+      "text": "✂️ 2 cartes incorrectes han estat descartades!",
+      "toTeam": "Llevat",
+      "ts": 1784926367596
+    },
+    "1784926492987": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isSystemAlert": true,
+      "text": "✂️ 3 cartes incorrectes han estat descartades!",
+      "toTeam": "Lúpulo",
+      "ts": 1784926492987
+    },
+    "1784926943649": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isCardGrant": true,
+      "text": "🃏 Has rebut una carta de la ronda anterior: 🌾 Pista Sensorial",
+      "toPlayer": "Josep",
+      "toTeam": "IPA",
+      "ts": 1784926943649
+    },
+    "1784926943650": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isCardGrant": true,
+      "text": "🃏 Has rebut una carta de la ronda anterior: 🦝 Robar Carta",
+      "toPlayer": "KIKE",
+      "toTeam": "IPA",
+      "ts": 1784926943650
+    },
+    "1784926943651": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isCardGrant": true,
+      "text": "🃏 Has rebut una carta de la ronda anterior: 🤥 Carta Mentida",
+      "toPlayer": "Leti",
+      "toTeam": "IPA",
+      "ts": 1784926943651
+    },
+    "1784926943652": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isCardGrant": true,
+      "text": "🃏 Has rebut una carta de la ronda anterior: ✂️ Descartar la Meitat",
+      "toPlayer": "Marta",
+      "toTeam": "IPA",
+      "ts": 1784926943652
+    },
+    "1784926943653": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isCardGrant": true,
+      "text": "🃏 Has rebut una carta de la ronda anterior: ❓ Sí o No",
+      "toPlayer": "Oscar",
+      "toTeam": "IPA",
+      "ts": 1784926943653
+    },
+    "1784926943654": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isCardGrant": true,
+      "text": "🃏 Has rebut una carta de la ronda anterior: 🦝 Robar Carta",
+      "toPlayer": "Elisa",
+      "toTeam": "Llevat",
+      "ts": 1784926943654
+    },
+    "1784926943655": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isCardGrant": true,
+      "text": "🃏 Has rebut una carta de la ronda anterior: 🌿 Info IBU",
+      "toPlayer": "Elisa",
+      "toTeam": "Llevat",
+      "ts": 1784926943655
+    },
+    "1784926943656": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isCardGrant": true,
+      "text": "🃏 Has rebut una carta de la ronda anterior: 🚫 Anul·lar Ajuda",
+      "toPlayer": "Jacob",
+      "toTeam": "Llevat",
+      "ts": 1784926943656
+    },
+    "1784926943657": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isCardGrant": true,
+      "text": "🃏 Has rebut una carta de la ronda anterior: 🚫 Anul·lar Ajuda",
+      "toPlayer": "Javi",
+      "toTeam": "Llevat",
+      "ts": 1784926943657
+    },
+    "1784927134067": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isSystemAlert": true,
+      "text": "🦝 Has robat \"🌾 Pista Sensorial\" de Josep (IPA)!",
+      "toTeam": "Llevat",
+      "ts": 1784927134067
+    },
+    "1784927134068": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isSystemAlert": true,
+      "text": "🦝 Llevat ha robat \"🌾 Pista Sensorial\" a Josep!",
+      "toTeam": "IPA",
+      "ts": 1784927134068
+    },
+    "1784927140772": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isSystemAlert": true,
+      "text": "🛡️ Carta Anular Ajuda activada! La pròxima carta que tiri qualsevol equip rival quedarà bloquejada. Ells no ho saben.",
+      "toTeam": "Llevat",
+      "ts": 1784927140772
+    },
+    "1784927145232": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isShieldBlock": true,
+      "isSystemAlert": true,
+      "text": "🃏 L'equip rival ha bloquejat la teva carta 🍺 Alcohol! L'han anulada sense avisar-vos, QUÈ CABRONS!.",
+      "toTeam": "IPA",
+      "ts": 1784927145232
+    },
+    "1784927145233": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isSystemAlert": true,
+      "text": "🃏 Èxit! Has bloquejat la carta 🍺 Alcohol de l'equip IPA.",
+      "toTeam": "Llevat",
+      "ts": 1784927145233
+    },
+    "1784927160206": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isSystemAlert": true,
+      "text": "🦝 Has robat \"📂 Revelar Categoria\" de David T (Lúpulo)!",
+      "toTeam": "IPA",
+      "ts": 1784927160206
+    },
+    "1784927160207": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isSystemAlert": true,
+      "text": "🦝 IPA ha robat \"📂 Revelar Categoria\" a David T!",
+      "toTeam": "Lúpulo",
+      "ts": 1784927160207
+    },
+    "1784927165397": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isInfoReveal": true,
+      "text": "📂 Categoria: 9",
+      "toTeam": "IPA",
+      "ts": 1784927165397
+    },
+    "1784927169143": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isSystemAlert": true,
+      "text": "🛡️ Carta Anular Ajuda activada! La pròxima carta que tiri qualsevol equip rival quedarà bloquejada. Ells no ho saben.",
+      "toTeam": "Llevat",
+      "ts": 1784927169143
+    },
+    "1784927176235": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isSystemAlert": true,
+      "text": "🛡️ Carta Anular Ajuda activada! La pròxima carta que tiri qualsevol equip rival quedarà bloquejada. Ells no ho saben.",
+      "toTeam": "IPA",
+      "ts": 1784927176235
+    },
+    "1784927196711": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isSystemAlert": true,
+      "text": "🤡 Carta Mentida activada! La propera carta que usi qualsevol equip rival serà sabotejada. Persisteix entre rondes.",
+      "toTeam": "IPA",
+      "ts": 1784927196711
+    },
+    "1784927236097": {
+      "from": "Master",
+      "fromRole": "master",
+      "isInfoReveal": true,
+      "text": "🌿 IBU: 15",
+      "toTeam": "IPA",
+      "ts": 1784927236097
+    },
+    "1784927325715": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isSystemAlert": true,
+      "text": "🤡 Carta Mentida activada! La propera carta que usi qualsevol equip rival serà sabotejada. Persisteix entre rondes.",
+      "toTeam": "Lúpulo",
+      "ts": 1784927325715
+    },
+    "1784927522967": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isSystemAlert": true,
+      "text": "🤡 Mentida activa! El Master rep l'avís per mentir manualment en la pregunta Sí/No de l'equip rival.",
+      "toTeam": "Lúpulo",
+      "ts": 1784927522967
+    },
+    "1784927523859": {
+      "from": "Master",
+      "fromRole": "master",
+      "isSystemAlert": true,
+      "text": "❓ Resposta del Master a \"La categoría 9 es veritat?\": ✅ SÍ",
+      "toTeam": "IPA",
+      "ts": 1784927523859
+    },
+    "1784927523860": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isSystemAlert": true,
+      "text": "🤡 Mentida executada! El Master ha respost manualment \"SÍ\" per despistar.",
+      "toTeam": "Lúpulo",
+      "ts": 1784927523860
+    },
+    "1784927697077": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isShieldBlock": true,
+      "isSystemAlert": true,
+      "text": "🃏 L'equip rival ha bloquejat la teva carta 🎨 Color SRM! L'han anulada sense avisar-vos, QUÈ CABRONS!.",
+      "toTeam": "Lúpulo",
+      "ts": 1784927697077
+    },
+    "1784927697078": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isSystemAlert": true,
+      "text": "🃏 Èxit! Has bloquejat la carta 🎨 Color SRM de l'equip Lúpulo.",
+      "toTeam": "IPA",
+      "ts": 1784927697078
+    },
+    "1784927774890": {
+      "from": "Sistema",
+      "fromRole": "system",
+      "isSystemAlert": true,
+      "text": "✂️ 2 cartes incorrectes han estat descartades!",
+      "toTeam": "IPA",
+      "ts": 1784927774890
+    },
+    "1784927855949": {
+      "from": "Master",
+      "fromRole": "master",
+      "isInfoReveal": true,
+      "text": "🌾 Pista Sensorial: Srmbla alemana. Categoria NAIN NAIN NAIN!",
+      "toTeam": "Llevat",
+      "ts": 1784927855949
+    },
+    "1784928059083": {
+      "from": "Master",
+      "fromRole": "master",
+      "isSystemAlert": true,
+      "text": "❓ Resposta del Master a \"És una Eisbock\": ✅ SÍ",
+      "toTeam": "Llevat",
+      "ts": 1784928059083
+    },
+    "1784942859868": {
+      "from": "Klemen",
+      "fromRole": "master",
+      "text": "Bona nit a tothom!",
+      "toTeam": "all",
+      "ts": 1784942859868
+    }
+  },
+  "roundHistory": [
+    null,
+    {
+      "beerCategory": "?",
+      "beerName": "Blanche de Namur",
+      "beerNumber": "?",
+      "results": {
+        "IPA": [
+          {
+            "correct": true,
+            "guess": "Witbier",
+            "playerName": "Josep",
+            "points": 1
+          },
+          {
+            "correct": true,
+            "guess": "Witbier",
+            "playerName": "KIKE",
+            "points": 1
+          },
+          {
+            "correct": false,
+            "guess": "Fruit Beer",
+            "playerName": "Leti",
+            "points": 0
+          },
+          {
+            "correct": false,
+            "guess": "Weissbier",
+            "playerName": "Marta",
+            "points": 0
+          },
+          {
+            "correct": false,
+            "guess": "Fruit and Spice Beer",
+            "playerName": "Oscar",
+            "points": 0
+          }
+        ],
+        "Llevat": [
+          {
+            "correct": false,
+            "guess": "American Light Lager",
+            "playerName": "Elisa",
+            "points": 0
+          },
+          {
+            "correct": true,
+            "guess": "Witbier",
+            "playerName": "Jacob",
+            "points": 1
+          },
+          {
+            "correct": false,
+            "guess": "International Pale Lager",
+            "playerName": "Javi",
+            "points": 0
+          },
+          {
+            "correct": false,
+            "guess": "International Pale Lager",
+            "playerName": "MUESLY SNIPE",
+            "points": 0
+          }
+        ],
+        "Lúpulo": [
+          {
+            "correct": true,
+            "guess": "Witbier",
+            "playerName": "David T",
+            "points": 1
+          },
+          {
+            "correct": false,
+            "guess": "American Lager",
+            "playerName": "ISRA",
+            "points": 0
+          },
+          {
+            "correct": false,
+            "guess": "American Lager",
+            "playerName": "Jordi",
+            "points": 0
+          },
+          {
+            "correct": false,
+            "guess": "Brett Beer",
+            "playerName": "Vid",
+            "points": 0
+          },
+          {
+            "correct": false,
+            "guess": "German Leichtbier",
+            "playerName": "jud",
+            "points": 0
+          }
+        ]
+      },
+      "revealedAt": 1784919061477,
+      "round": 1
+    },
+    {
+      "beerCategory": "?",
+      "beerName": "Aecht Schlenkerla Eiche Doppelbock",
+      "beerNumber": "?",
+      "results": {
+        "IPA": [
+          {
+            "correct": false,
+            "guess": "Specialty Smoked Beer",
+            "playerName": "Josep",
+            "points": 0
+          },
+          {
+            "correct": false,
+            "guess": "Classic Style Smoked Beer",
+            "playerName": "KIKE",
+            "points": 0
+          },
+          {
+            "correct": false,
+            "guess": "Weizenbock",
+            "playerName": "Leti",
+            "points": 0
+          },
+          {
+            "correct": false,
+            "guess": "Specialty Smoked Beer",
+            "playerName": "Marta",
+            "points": 0
+          },
+          {
+            "correct": false,
+            "guess": "Historical Beer: Sahti",
+            "playerName": "Oscar",
+            "points": 0
+          }
+        ],
+        "Llevat": [
+          {
+            "correct": true,
+            "guess": "Rauchbier",
+            "playerName": "Elisa",
+            "points": 1
+          },
+          {
+            "correct": true,
+            "guess": "Rauchbier",
+            "playerName": "Jacob",
+            "points": 1
+          },
+          {
+            "correct": true,
+            "guess": "Rauchbier",
+            "playerName": "Javi",
+            "points": 1
+          },
+          {
+            "correct": true,
+            "guess": "Rauchbier",
+            "playerName": "MUESLY SNIPE",
+            "points": 1
+          }
+        ],
+        "Lúpulo": [
+          {
+            "correct": false,
+            "guess": "Ordinary Bitter",
+            "playerName": "David T",
+            "points": 0
+          },
+          {
+            "correct": false,
+            "guess": "Saison",
+            "playerName": "ISRA",
+            "points": 0
+          },
+          {
+            "correct": false,
+            "guess": "Saison",
+            "playerName": "Jordi",
+            "points": 0
+          },
+          {
+            "correct": true,
+            "guess": "Rauchbier",
+            "playerName": "Vid",
+            "points": 1
+          },
+          {
+            "correct": false,
+            "guess": "Belgian Tripel",
+            "playerName": "jud",
+            "points": 0
+          }
+        ]
+      },
+      "revealedAt": 1784920298793,
+      "round": 2,
+      "teamInfoUsed": {
+        "Lúpulo": [
+          "ibu"
+        ]
+      }
+    },
+    null,
+    null,
+    {
+      "beerCategory": "?",
+      "beerName": "Avec Les Bons Vœux",
+      "beerNumber": "?",
+      "results": {
+        "IPA": [
+          {
+            "correct": false,
+            "guess": "Brett Beer",
+            "playerName": "Josep",
+            "points": 0
+          },
+          {
+            "correct": false,
+            "guess": "Fruit Beer",
+            "playerName": "KIKE",
+            "points": 0
+          },
+          {
+            "correct": false,
+            "guess": "Australian Sparkling Ale",
+            "playerName": "Leti",
+            "points": 0
+          },
+          {
+            "correct": false,
+            "guess": "Mixed-Fermentation Sour Beer",
+            "playerName": "Marta",
+            "points": 0
+          },
+          {
+            "correct": false,
+            "guess": "Mixed-Fermentation Sour Beer",
+            "playerName": "Oscar",
+            "points": 0
+          }
+        ],
+        "Llevat": [
+          {
+            "correct": false,
+            "guess": "Weizenbock",
+            "playerName": "Elisa",
+            "points": 0
+          },
+          {
+            "correct": false,
+            "guess": "Weizenbock",
+            "playerName": "Jacob",
+            "points": 0
+          },
+          {
+            "correct": false,
+            "guess": "Weizenbock",
+            "playerName": "Javi",
+            "points": 0
+          },
+          {
+            "correct": false,
+            "guess": "Weizenbock",
+            "playerName": "MUESLY SNIPE",
+            "points": 0
+          }
+        ],
+        "Lúpulo": [
+          {
+            "correct": false,
+            "guess": "Wheatwine",
+            "playerName": "David T",
+            "points": 0
+          },
+          {
+            "correct": false,
+            "guess": "Wheatwine",
+            "playerName": "ISRA",
+            "points": 0
+          },
+          {
+            "correct": false,
+            "guess": "Historical Beer: Sahti",
+            "playerName": "Jordi",
+            "points": 0
+          },
+          {
+            "correct": false,
+            "guess": "Belgian Tripel",
+            "playerName": "Vid",
+            "points": 0
+          },
+          {
+            "correct": false,
+            "guess": "Wheatwine",
+            "playerName": "jud",
+            "points": 0
+          }
+        ]
+      },
+      "revealedAt": 1784923775857,
+      "round": 5,
+      "teamInfoUsed": {
+        "Llevat": [
+          "category"
+        ],
+        "Lúpulo": [
+          "abv",
+          "srm"
+        ]
+      }
+    },
+    {
+      "beerCategory": "?",
+      "beerName": "Kraai",
+      "beerNumber": "?",
+      "results": {
+        "IPA": [
+          {
+            "correct": true,
+            "guess": "Black IPA",
+            "playerName": "Josep",
+            "points": 1
+          },
+          {
+            "correct": true,
+            "guess": "Black IPA",
+            "playerName": "Leti",
+            "points": 1
+          },
+          {
+            "correct": true,
+            "guess": "Black IPA",
+            "playerName": "Oscar",
+            "points": 1
+          }
+        ],
+        "Llevat": [
+          {
+            "correct": true,
+            "guess": "Black IPA",
+            "playerName": "Elisa",
+            "points": 1
+          },
+          {
+            "correct": true,
+            "guess": "Black IPA",
+            "playerName": "Jacob",
+            "points": 1
+          },
+          {
+            "correct": false,
+            "guess": "American Stout",
+            "playerName": "Javi",
+            "points": 0
+          },
+          {
+            "correct": false,
+            "guess": "American Stout",
+            "playerName": "MUESLY SNIPE",
+            "points": 0
+          }
+        ],
+        "Lúpulo": [
+          {
+            "correct": true,
+            "guess": "Black IPA",
+            "playerName": "David T",
+            "points": 1
+          },
+          {
+            "correct": true,
+            "guess": "Black IPA",
+            "playerName": "ISRA",
+            "points": 1
+          },
+          {
+            "correct": true,
+            "guess": "Black IPA",
+            "playerName": "Jordi",
+            "points": 1
+          },
+          {
+            "correct": true,
+            "guess": "Black IPA",
+            "playerName": "Vid",
+            "points": 1
+          },
+          {
+            "correct": true,
+            "guess": "Black IPA",
+            "playerName": "jud",
+            "points": 1
+          }
+        ]
+      },
+      "revealedAt": 1784925079952,
+      "round": 6,
+      "teamInfoUsed": {
+        "Llevat": [
+          "ibu",
+          "sensory"
+        ]
+      }
+    },
+    null,
+    null,
+    {
+      "beerCategory": "?",
+      "beerName": "Aventinus Eisbock",
+      "beerNumber": "?",
+      "results": {
+        "IPA": [
+          {
+            "correct": true,
+            "guess": "Eisbock",
+            "playerName": "Josep",
+            "points": 1
+          },
+          {
+            "correct": true,
+            "guess": "Eisbock",
+            "playerName": "KIKE",
+            "points": 1
+          },
+          {
+            "correct": true,
+            "guess": "Eisbock",
+            "playerName": "Leti",
+            "points": 1
+          },
+          {
+            "correct": true,
+            "guess": "Eisbock",
+            "playerName": "Marta",
+            "points": 1
+          },
+          {
+            "correct": true,
+            "guess": "Eisbock",
+            "playerName": "Oscar",
+            "points": 1
+          }
+        ],
+        "Llevat": [
+          {
+            "correct": true,
+            "guess": "Eisbock",
+            "playerName": "Elisa",
+            "points": 1
+          },
+          {
+            "correct": true,
+            "guess": "Eisbock",
+            "playerName": "Jacob",
+            "points": 1
+          },
+          {
+            "correct": true,
+            "guess": "Eisbock",
+            "playerName": "Javi",
+            "points": 1
+          },
+          {
+            "correct": true,
+            "guess": "Eisbock",
+            "playerName": "MUESLY SNIPE",
+            "points": 1
+          }
+        ],
+        "Lúpulo": [
+          {
+            "correct": false,
+            "guess": "Weizenbock",
+            "playerName": "David T",
+            "points": 0
+          },
+          {
+            "correct": false,
+            "guess": "Weizenbock",
+            "playerName": "ISRA",
+            "points": 0
+          },
+          {
+            "correct": false,
+            "guess": "Weizenbock",
+            "playerName": "Jordi",
+            "points": 0
+          },
+          {
+            "correct": false,
+            "guess": "Weizenbock",
+            "playerName": "Vid",
+            "points": 0
+          },
+          {
+            "correct": false,
+            "guess": "Weizenbock",
+            "playerName": "jud",
+            "points": 0
+          }
+        ]
+      },
+      "revealedAt": 1784928355934,
+      "round": 9,
+      "teamInfoUsed": {
+        "IPA": [
+          "category",
+          "ibu"
+        ],
+        "Llevat": [
+          "sensory"
+        ]
+      }
+    }
+  ],
+  "roundReset": 1784926986588,
+  "status": "finished",
+  "teams": {
+    "IPA": {
+      "name": "IPA",
+      "players": {
+        "Josep": {
+          "actionCardsReceived": 4,
+          "cardStates": {
+            "9a": "discarded",
+            "9b": "possible",
+            "9c": "discarded"
+          },
+          "correctGuesses": 5,
+          "joinedAt": 1784917042977,
+          "name": "Josep",
+          "points": 6,
+          "usedCards": [
+            {
+              "id": "card_1784919013232",
+              "type": "yes_no",
+              "usedAt": 1784924688493
+            },
+            {
+              "id": "card_1784925041132",
+              "type": "steal",
+              "usedAt": 1784925664711
+            },
+            {
+              "id": "stolen_1784925664823",
+              "type": "sensory",
+              "usedAt": 1784925689488
+            },
+            {
+              "id": "card_1784922085767",
+              "type": "abv",
+              "usedAt": 1784927145033
+            }
+          ]
+        },
+        "KIKE": {
+          "actionCardsReceived": 2,
+          "cardStates": {
+            "9a": "discarded",
+            "9b": "possible",
+            "9c": "discarded"
+          },
+          "correctGuesses": 3,
+          "joinedAt": 1784917078686,
+          "name": "KIKE",
+          "points": 5,
+          "usedCards": [
+            {
+              "id": "card_1784919017914",
+              "type": "lie",
+              "usedAt": 1784922753896
+            },
+            {
+              "id": "card_1784926779380",
+              "type": "steal",
+              "usedAt": 1784927160018
+            },
+            {
+              "id": "stolen_1784927160115",
+              "type": "category",
+              "usedAt": 1784927165163
+            }
+          ]
+        },
+        "Leti": {
+          "actionCardsReceived": 2,
+          "cardStates": {
+            "9a": "discarded",
+            "9b": "possible",
+            "9c": "discarded"
+          },
+          "correctGuesses": 3,
+          "joinedAt": 1784917067344,
+          "name": "Leti",
+          "points": 3,
+          "usedCards": [
+            {
+              "id": "card_1784925044766",
+              "type": "cancel",
+              "usedAt": 1784927176066
+            },
+            {
+              "id": "card_1784926783047",
+              "type": "lie",
+              "usedAt": 1784927196547
+            }
+          ]
+        },
+        "Marta": {
+          "actionCardsReceived": 1,
+          "cardStates": {
+            "9a": "discarded",
+            "9b": "possible",
+            "9c": "discarded"
+          },
+          "correctGuesses": 2,
+          "joinedAt": 1784917028948,
+          "name": "Marta",
+          "points": 4,
+          "usedCards": [
+            {
+              "id": "card_1784926787606",
+              "type": "eliminate",
+              "usedAt": 1784927774680
+            }
+          ]
+        },
+        "Oscar": {
+          "actionCardsReceived": 2,
+          "cardStates": {
+            "9a": "discarded",
+            "9b": "possible",
+            "9c": "discarded"
+          },
+          "correctGuesses": 3,
+          "joinedAt": 1784917056794,
+          "name": "Oscar",
+          "points": 3,
+          "usedCards": [
+            {
+              "id": "card_1784925048458",
+              "type": "ibu",
+              "usedAt": 1784927179011
+            },
+            {
+              "id": "card_1784926791548",
+              "type": "yes_no",
+              "usedAt": 1784927522625
+            }
+          ]
+        }
+      },
+      "points": 21
+    },
+    "Llevat": {
+      "name": "Llevat",
+      "players": {
+        "Elisa": {
+          "actionCardsReceived": 5,
+          "cardStates": {
+            "9b": "possible"
+          },
+          "correctGuesses": 6,
+          "joinedAt": 1784916949877,
+          "name": "Elisa",
+          "points": 6,
+          "usedCards": [
+            {
+              "id": "card_1784922096368",
+              "type": "sensory",
+              "usedAt": 1784924581434
+            },
+            {
+              "id": "card_1784926795685",
+              "type": "steal",
+              "usedAt": 1784927133882
+            },
+            {
+              "id": "card_1784926826443",
+              "type": "ibu",
+              "usedAt": 1784927760836
+            },
+            {
+              "id": "card_1784920266884",
+              "type": "srm",
+              "usedAt": 1784927765848
+            },
+            {
+              "id": "stolen_1784927133992",
+              "type": "sensory",
+              "usedAt": 1784927771019
+            },
+            {
+              "id": "card_1784925052124",
+              "type": "yes_no",
+              "usedAt": 1784928048336
+            }
+          ]
+        },
+        "Jacob": {
+          "actionCardsReceived": 5,
+          "cardStates": {
+            "9b": "possible"
+          },
+          "correctGuesses": 6,
+          "joinedAt": 1784916921676,
+          "name": "Jacob",
+          "points": 6,
+          "usedCards": [
+            {
+              "id": "card_1784925055682",
+              "type": "abv",
+              "usedAt": 1784925952813
+            },
+            {
+              "id": "card_1784922100081",
+              "type": "eliminate",
+              "usedAt": 1784926367393
+            },
+            {
+              "id": "card_1784926798982",
+              "type": "cancel",
+              "usedAt": 1784927140589
+            }
+          ]
+        },
+        "Javi": {
+          "actionCardsReceived": 5,
+          "cardStates": {
+            "9b": "possible"
+          },
+          "correctGuesses": 5,
+          "joinedAt": 1784916929835,
+          "name": "Javi",
+          "points": 5,
+          "usedCards": [
+            {
+              "id": "card_1784922104464",
+              "type": "lie",
+              "usedAt": 1784922643914
+            },
+            {
+              "id": "card_1784922134911",
+              "type": "ibu",
+              "usedAt": 1784924839136
+            },
+            {
+              "id": "card_1784926802633",
+              "type": "cancel",
+              "usedAt": 1784927168829
+            }
+          ]
+        },
+        "MUESLY SNIPE": {
+          "actionCardsReceived": 2,
+          "cardStates": {
+            "9b": "possible"
+          },
+          "correctGuesses": 3,
+          "joinedAt": 1784916949557,
+          "name": "MUESLY SNIPE",
+          "points": 3,
+          "usedCards": [
+            {
+              "id": "card_1784920278478",
+              "type": "category",
+              "usedAt": 1784921712600
+            },
+            {
+              "id": "card_1784922108371",
+              "type": "category",
+              "usedAt": 1784922790740
+            }
+          ]
+        }
+      },
+      "points": 25
+    },
+    "Lúpulo": {
+      "name": "Lúpulo",
+      "players": {
+        "David T": {
+          "actionCardsReceived": 3,
+          "cardStates": {
+            "10c": "possible",
+            "26d": "possible",
+            "9b": "possible"
+          },
+          "correctGuesses": 3,
+          "joinedAt": 1784916805900,
+          "name": "David T",
+          "points": 3,
+          "usedCards": [
+            {
+              "id": "card_1784919041906",
+              "type": "steal",
+              "usedAt": 1784919603705
+            },
+            {
+              "id": "stolen_1784919603842",
+              "type": "ibu",
+              "usedAt": 1784919704677
+            },
+            {
+              "id": "card_1784922112529",
+              "type": "yes_no",
+              "usedAt": 1784923547938
+            }
+          ]
+        },
+        "ISRA": {
+          "actionCardsReceived": 2,
+          "cardStates": {
+            "10c": "possible",
+            "26d": "possible"
+          },
+          "correctGuesses": 2,
+          "joinedAt": 1784916835456,
+          "name": "ISRA",
+          "points": 2,
+          "usedCards": [
+            {
+              "id": "card_1784922117748",
+              "type": "steal",
+              "usedAt": 1784923212060
+            },
+            {
+              "id": "stolen_1784923212140",
+              "type": "abv",
+              "usedAt": 1784923311912
+            },
+            {
+              "id": "card_1784925068506",
+              "type": "eliminate",
+              "usedAt": 1784926073574
+            }
+          ]
+        },
+        "Jordi": {
+          "actionCardsReceived": 2,
+          "cardStates": {
+            "10c": "possible"
+          },
+          "correctGuesses": 1,
+          "joinedAt": 1784916846512,
+          "name": "Jordi",
+          "points": 1,
+          "usedCards": [
+            {
+              "id": "card_1784922205060",
+              "type": "srm",
+              "usedAt": 1784922930504
+            },
+            {
+              "id": "card_1784925071732",
+              "type": "steal",
+              "usedAt": 1784925686725
+            },
+            {
+              "id": "stolen_1784925686943",
+              "type": "eliminate",
+              "usedAt": 1784926492757
+            }
+          ]
+        },
+        "Vid": {
+          "actionCardsReceived": 3,
+          "cardStates": {
+            "10c": "possible",
+            "26d": "possible"
+          },
+          "correctGuesses": 3,
+          "joinedAt": 1784916835946,
+          "name": "Vid",
+          "points": 3,
+          "usedCards": [
+            {
+              "id": "card_1784920288225",
+              "type": "yes_no",
+              "usedAt": 1784923670620
+            },
+            {
+              "id": "card_1784925075090",
+              "type": "lie",
+              "usedAt": 1784927325521
+            },
+            {
+              "id": "card_1784922123373",
+              "type": "srm",
+              "usedAt": 1784927696893
+            }
+          ]
+        },
+        "jud": {
+          "actionCardsReceived": 1,
+          "cardStates": {
+            "10c": "possible",
+            "26d": "possible"
+          },
+          "correctGuesses": 2,
+          "joinedAt": 1784916842079,
+          "name": "jud",
+          "points": 2,
+          "usedCards": [
+            {
+              "id": "card_1784922128668",
+              "type": "cancel",
+              "usedAt": 1784923091799
+            }
+          ]
+        }
+      },
+      "points": 11
+    },
+    "undefined": {
+      "players": {
+        "undefined": {
+          "correctGuesses": 1,
+          "points": 0
+        }
+      },
+      "points": 0
+    }
+  },
+  "totalRounds": 9
+}

@@ -58,6 +58,7 @@ bjcp-game/
 ```
 games/{CODE}/
   status: 'lobby' | 'playing' | 'finished'
+  judgingLocked: true | false  // true while Master is judging guesses
   ...
 master_catalog/{id}/
   brewery, name, country, styleId, styleName, abv, ibu, srm, ingredients, description, image (base64)
@@ -200,6 +201,8 @@ Quan `s.roundReset !== lastRoundReset`:
 
 | Versió | Data | Canvis principals |
 |--------|------|-------------------|
+| v2026.48 | 07/10/2026 | Millora dels logs: `roundHistory` ara guarda `cardActivity` (accions de cartes per ronda) i `teamInfoValues` (valors complets d'info revelada). Master Log: detall de guesses incorrectes, activitat de cartes per ronda, timestamps a l'inventari, límit ampliat a 100. Team History: pills amb valors, activitat de cartes del teu equip per ronda |
+| v2026.47 | 07/10/2026 | Bloqueig d'avaluació (`judgingLocked`): els jugadors no poden enviar/retirar propostes ni usar cartes d'acció mentre el Master jutja. Fix bug equip fantasma `"undefined"` amb guards a `submitGuess`, `joinGame` i `revealResult` |
 | v2026.40 | 20/07/2026 | S'afegeix un Catàleg de Cerveses (pestanya "Dades") per al Master. Emmagatzematge global de cerveses comercials a Firebase amb compressió d'imatges a Base64 integrada |
 | v2026.34 | 20/07/2026 | Canvi de paradigma per la Carta Mentida: Ara el Master rep alertes visuals per mentir manualment en lloc de dependre de l'automatisme |
 | v2026.33 | 20/07/2026 | S'amaga l'actualització del rànquing als jugadors fins que el Master revela els resultats |

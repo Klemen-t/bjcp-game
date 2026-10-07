@@ -12,21 +12,20 @@ import random
 
 beers = [
   {
-    "brewery": "Nom de la Cervesera",
-    "name": "Nom de la Cervesa",
-    "country": "País (Opcional)",
-    "styleId": "1a",             # L'ID principal (Ex: "1a", "21a", "m1")
-    "styleName": "American Light Lager", # El nom de l'estil per referència
-    "styleId2": "",              # Opcional: Estil secundari (Ex: "21b")
-    "styleName2": "",            # Opcional: Nom de l'estil secundari
-    "abv": "5.0",                # Grau d'alcohol
-    "ibu": "20",                 # Amargor
-    "srm": "3",                  # Color
-    "ingredients": "Ingredients principals (Opcional)",
-    "description": "Descripció comercial de la cervesa (Opcional)",
-    "image": None                # Pots posar-hi una URL directa a una imatge (ex: "https://...")
-  },
-  # Pots copiar i enganxar el bloc anterior per afegir-ne més
+    "brewery": "Alvinne",
+    "name": "Peace & Joy",
+    "country": "Belgica",
+    "styleId": "30c",
+    "styleName": "Winter Seasonal Beer",
+    "styleId2": "",
+    "styleName2": "",
+    "abv": "10.0",
+    "ibu": "34",
+    "srm": "28",
+    "ingredients": "Sucre cremat, especies, nespres, fulles de figa (en la edició del 2023)",
+    "description": "Aquesta collita del 2023 de Peace & Joy és una complexa Winter Seasonal Beer que mostra la profunditat característica d'Alvinne. Amb un 10% ABV, presenta un perfil sensorial fosc i ric definit per l'addició de fulles de figuera fresques i nespres. Les nespres aporten notes profundes i terroses de fruita madura i una dolçor que recorda el dàtil, mentre que les fulles de figuera introdueixen una espècie subtil, herbal i similar al coco. El sucre cremat proporciona una columna vertebral robusta i caramel·litzada que serveix dʻancoratge per al perfil. Aquesta ale és intensament càlida i maltosa, i equilibra les addicions poc convencionals de fruites i botànics amb un final luxós i lleugerament dolç, ideal per als mesos més freds.",
+    "image": None
+  }
 ]
 
 def afegir_cerveses():

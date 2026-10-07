@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
 //  UI.JS  —  Interface & interaction logic
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION = 'v2026.46 · 24/07/2026';
+const APP_VERSION = 'v2026.49 · 07/10/2026';
 
 // ═══ THEME TOGGLE ════════════════════════════════════════════
 function toggleTheme() {
@@ -1399,8 +1399,24 @@ function updateTeamView(s) {
   const badge = el('action-badge');
   if (badge) { badge.style.display=myCards.length>0?'flex':'none'; badge.textContent=myCards.length; }
 
-  // Lock banner
-  el('cards-lock-banner')?.style && (el('cards-lock-banner').style.display=s.cardsLocked?'flex':'none');
+  // Lock banner — show judging-specific text when Master is evaluating
+  const lockBanner = el('cards-lock-banner');
+  if (lockBanner?.style) {
+    const showLock = s.cardsLocked || s.judgingLocked;
+    lockBanner.style.display = showLock ? 'flex' : 'none';
+    const lockIcon = el('lock-banner-icon');
+    const lockTitle = el('lock-banner-title');
+    const lockSub = el('lock-banner-sub');
+    if (s.judgingLocked && !s.cardsLocked) {
+      if (lockIcon)  lockIcon.textContent = '⚖️';
+      if (lockTitle) lockTitle.textContent = 'El Master està avaluant';
+      if (lockSub)   lockSub.textContent = 'No pots enviar ni retirar propostes fins que acabi l\'avaluació...';
+    } else if (s.cardsLocked) {
+      if (lockIcon)  lockIcon.textContent = '🔒';
+      if (lockTitle) lockTitle.textContent = 'Cartes bloquejades';
+      if (lockSub)   lockSub.textContent = 'Esperant que el Master seleccioni la cervesa de la ronda...';
+    }
+  }
   // Lie warning
   el('lie-warning')?.style && (el('lie-warning').style.display=
     (s.activeLieTeam && s.activeLieTeam!==game.teamId)?'block':'none');
@@ -1727,7 +1743,7 @@ function getRevealStatus(card, info, teamInfo) {
 function renderBeerCards() {
   const container = el('cards-container');
   if (!container) return;
-  const locked = gameState?.cardsLocked;
+  const locked = gameState?.cardsLocked || gameState?.judgingLocked;
   if (locked) { container.innerHTML=''; return; }
 
   const globalInfo = gameState?.currentBeer?.revealedInfo||{};
@@ -1972,6 +1988,7 @@ function buildGuessOptions() {
 // Called from 🎯 button on a possible card
 function proposeCard(cardId, cardName) {
   if (gameState?.cardsLocked) return showToast('⚠️ Esperant que el Master seleccioni la cervesa');
+  if (gameState?.judgingLocked) return showToast('⚖️ El Master està avaluant. No pots fer propostes ara.');
   if (gameState?.currentBeer?.revealed) return showToast('⚠️ La ronda ja ha acabat');
   // Check if already guessed
   const guesses = gameState?.currentBeer?.guesses || {};
@@ -1996,6 +2013,7 @@ function proposeCard(cardId, cardName) {
 
 async function submitGuessById(id, nm) {
   if (gameState?.cardsLocked) return showToast('⚠️ Esperant que el Master seleccioni la cervesa');
+  if (gameState?.judgingLocked) return showToast('⚖️ El Master està avaluant. No pots fer propostes ara.');
   if (gameState?.currentBeer?.revealed) return showToast('⚠️ La ronda ja ha acabat');
   try {
     await game.submitGuess(id, nm);
@@ -2005,6 +2023,8 @@ async function submitGuessById(id, nm) {
     if (e.message.startsWith('ALREADY_GUESSED:')) {
       showToast('⚠️ Ja has enviat una proposta. Usa ↩️ Desfer per canviar-la.');
       renderTeamGuesses(gameState);
+    } else if (e.message === 'JUDGING_LOCKED') {
+      showToast('⚖️ El Master està avaluant. No pots fer propostes ara.');
     } else { showToast('❌ '+e.message); }
   }
 }
@@ -2013,6 +2033,7 @@ async function submitGuessById(id, nm) {
 async function submitGuess() { /* no-op: use proposeCard() */ }
 
 async function retractGuess(guessKey) {
+  if (gameState?.judgingLocked) return showToast('⚖️ El Master està avaluant. No pots retirar propostes ara.');
   if (!confirm('Retirar la proposta?')) return;
   try {
     await game.retractGuess(guessKey);
@@ -2630,6 +2651,7 @@ function renderTeamsDetail(s) {
             ${(p.actionCards||[]).length ? `<div style="font-size:.63rem;margin-top:2px;color:var(--r)">${(p.actionCards||[]).map(c=>{const d=ACTION_CARD_TYPES.find(a=>a.id===c.type)||{}; return `${d.icon||'🃏'} ${d.name||c.type}`;}).join(' · ')}</div>` : ''}
           </div>
           <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
+            <button onclick="openGrantCard('${tid}','${pName}')" title="Donar carta" style="background:rgba(50,50,139,.3);border:1px solid rgba(80,80,180,.4);border-radius:5px;width:22px;height:22px;color:#7090e0;cursor:pointer;font-size:.7rem">🃏</button>
             <button onclick="adjustPoints('player','${tid}','${pName}',-1)" style="background:rgba(139,32,32,.3);border:1px solid rgba(180,50,50,.4);border-radius:5px;width:22px;height:22px;color:#e07070;cursor:pointer;font-size:.8rem">−</button>
             <span style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:var(--rl);min-width:28px;text-align:center">${p.points||0}</span>
             <button onclick="adjustPoints('player','${tid}','${pName}',+1)" style="background:rgba(32,100,50,.3);border:1px solid rgba(50,160,80,.4);border-radius:5px;width:22px;height:22px;color:#6DBF7E;cursor:pointer;font-size:.8rem">+</button>
@@ -2659,6 +2681,42 @@ async function adjustPoints(type, teamId, playerName, delta) {
       updates[`teams/${teamId}/points`] = Math.max(0, newTeamPts);
     }
     await game.gameRef.update(updates);
+  } catch(e) { showToast('❌ '+e.message); }
+}
+
+function openGrantCard(teamId, playerName) {
+  showModal(`🃏 Donar carta a ${playerName}`, `
+    <p class="muted mb-8" style="font-size:.78rem">Selecciona la carta d'acció que vols donar manualment a <strong>${playerName}</strong> (${teamId}):</p>
+    <select id="grant-card-type" style="width:100%;background:var(--k3);border:1px solid var(--k4);padding:11px;color:var(--t);font-family:var(--fu);font-size:.85rem;margin-bottom:14px">
+      ${ACTION_CARD_TYPES.map(ac=>`<option value="${ac.id}">${ac.icon} ${ac.name}</option>`).join('')}
+    </select>
+    <button class="btn btn-primary" onclick="confirmGrantCard('${teamId}','${playerName}')">🃏 Donar carta</button>`);
+}
+
+async function confirmGrantCard(teamId, playerName) {
+  const cardType = el('grant-card-type')?.value;
+  if (!cardType) return;
+  closeModal();
+  try {
+    const state = (await game.gameRef.once('value')).val();
+    const pData = state?.teams?.[teamId]?.players?.[playerName];
+    if (!pData) return showToast('❌ Jugador no trobat');
+    const newCard = { id: `card_${Date.now()}`, type: cardType };
+    const current = pData.actionCards || [];
+    const updates = {};
+    updates[`teams/${teamId}/players/${playerName}/actionCards`] = [...current, newCard];
+    updates[`teams/${teamId}/players/${playerName}/actionCardsReceived`] = (pData.actionCardsReceived || 0) + 1;
+    await game.gameRef.update(updates);
+    // Notify the player
+    const def = ACTION_CARD_TYPES.find(a => a.id === cardType);
+    const ts = Date.now();
+    await game.gameRef.child(`messages/${ts}`).set({
+      from: 'Sistema', fromRole: 'system',
+      toTeam: teamId, toPlayer: playerName,
+      text: `🃏 El Master t'ha donat una carta: ${def?.icon||'🃏'} ${def?.name||cardType}`,
+      ts, isCardGrant: true
+    });
+    showToast(`✅ ${def?.icon||'🃏'} ${def?.name||cardType} donada a ${playerName}!`);
   } catch(e) { showToast('❌ '+e.message); }
 }
 
@@ -2720,19 +2778,53 @@ function renderMasterLog(s) {
     roundsList.forEach(r => {
       const isPerTeam = !!r.teamBeers;
       const globalBeerName = r.beerName || '?';
-      html += `<div style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05)">
+      html += `<div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,.08)">
         <div style="font-size:.78rem;font-weight:700;color:var(--r);margin-bottom:4px">Ronda ${r.round} ${isPerTeam ? '<span class="muted">🎯 (Per equip)</span>' : `— 🍺 ${globalBeerName}`}</div>`;
       
       const teamsRes = Object.entries(r.results || {});
       teamsRes.forEach(([tid, res]) => {
         const won = res.some(p => p.correct);
         const correctStr = res.filter(p => p.correct).map(p => `${p.playerName} (+${p.points}pt)`).join(', ');
+        const wrongStr = res.filter(p => !p.correct).map(p => `${p.playerName}: ${p.guess}`).join(', ');
         const tPts = res.reduce((sum, p) => sum + (p.points||0), 0);
         const tBeerName = r.teamBeers?.[tid]?.name || globalBeerName;
         html += `<div style="font-family:var(--fu);font-size:.73rem;color:var(--sl);padding:2px 0">
           ${won ? '✅' : '❌'} <strong>${tid}</strong> (${tPts}pt)${isPerTeam ? ` <span class="muted">— 🍺 ${tBeerName}</span>` : ''}${won ? ` → ${correctStr}` : ''}
         </div>`;
+        if (wrongStr) {
+          html += `<div style="font-family:var(--fu);font-size:.65rem;color:var(--m);padding:0 0 2px 20px">❌ ${wrongStr}</div>`;
+        }
       });
+
+      // Info revealed this round (with values)
+      const roundInfos = [];
+      Object.entries(r.revealedInfo || {}).forEach(([k,v]) => roundInfos.push({k,v,who:'Tots'}));
+      Object.entries(r.teamInfoValues || r.teamInfoUsed || {}).forEach(([tid, info]) => {
+        if (typeof info === 'object' && !Array.isArray(info)) {
+          Object.entries(info).forEach(([k,v]) => roundInfos.push({k,v,who:tid}));
+        } else if (Array.isArray(info)) {
+          info.forEach(k => roundInfos.push({k,v:'—',who:tid}));
+        }
+      });
+      if (roundInfos.length) {
+        html += `<div style="font-size:.68rem;color:var(--m);margin-top:3px">👁️ `;
+        html += roundInfos.map(ri => `${ri.who}: ${ri.k.toUpperCase()}=${ri.v}`).join(' · ');
+        html += `</div>`;
+      }
+
+      // Card activity this round
+      const acts = r.cardActivity || [];
+      if (acts.length) {
+        html += `<div style="margin-top:4px">`;
+        html += acts.map(a => {
+          const t = new Date(a.ts).toLocaleTimeString('ca',{hour:'2-digit',minute:'2-digit'});
+          const icon = a.type === 'info' ? '👁️' : a.type === 'shield' ? '🛡️' : '⚡';
+          return `<div style="font-size:.65rem;color:var(--m);padding:1px 0;padding-left:8px;border-left:2px solid rgba(196,18,48,.15)">
+            <span style="font-size:.58rem">${t}</span> ${icon} <span style="opacity:.7">→ ${a.team||'?'}:</span> ${a.text}
+          </div>`;
+        }).join('');
+        html += `</div>`;
+      }
       html += `</div>`;
     });
     html += `</div>`;
@@ -2742,8 +2834,8 @@ function renderMasterLog(s) {
   const cardMsgs = allMsgs.filter(m => m.isCardGrant || m.isInfoReveal || m.isSystemAlert);
   if (cardMsgs.length) {
     html += `<div class="card mb-10">
-      <div class="sec-title" style="margin-bottom:8px">📜 Activitat de cartes</div>`;
-    html += cardMsgs.slice(-40).reverse().map(m => {
+      <div class="sec-title" style="margin-bottom:8px">📜 Activitat de cartes (${cardMsgs.length})</div>`;
+    html += cardMsgs.slice(-100).reverse().map(m => {
       const t  = new Date(m.ts).toLocaleTimeString('ca',{hour:'2-digit',minute:'2-digit'});
       const who = m.toPlayer ? `${m.toPlayer} (${m.toTeam})` : m.toTeam || 'Tots';
       return `<div style="font-size:.73rem;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.05)">
@@ -2760,7 +2852,12 @@ function renderMasterLog(s) {
   Object.entries(teams).forEach(([tid, t]) => {
     Object.entries(t.players||{}).forEach(([pName, p]) => {
       const active = (p.actionCards||[]).map(c=>{const d=ACTION_CARD_TYPES.find(a=>a.id===c.type)||{}; return `${d.icon||'🃏'} ${d.name||c.type}`;});
-      const used   = (p.usedCards||[]).map(c=>{const d=ACTION_CARD_TYPES.find(a=>a.id===c.type)||{}; return `${d.icon||'🃏'} ${d.name||c.type}`;});
+      const used   = (p.usedCards||[]).map(c=>{
+        const d=ACTION_CARD_TYPES.find(a=>a.id===c.type)||{};
+        const usedTime = c.usedAt ? new Date(c.usedAt).toLocaleTimeString('ca',{hour:'2-digit',minute:'2-digit'}) : '';
+        const stolen = c.id?.startsWith('stolen_') ? ' 🦝' : '';
+        return `${d.icon||'🃏'} ${d.name||c.type}${stolen}${usedTime ? ` <span class="muted">(${usedTime})</span>` : ''}`;
+      });
       html += `<div style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05)">
         <div style="font-size:.78rem;font-weight:700">${pName} <span class="muted" style="font-weight:400">(${tid})</span></div>
         <div style="font-size:.68rem;margin-top:2px">
@@ -2888,9 +2985,6 @@ function renderTeamHistory(s) {
   g.innerHTML = rounds.map(r => {
     const myResults  = (r.results || {})[game.teamId] || [];
     const rivals     = Object.entries(r.results || {}).filter(([tid]) => tid !== game.teamId);
-    const myInfoKeys = r.teamInfoUsed?.[game.teamId] || [];
-    const globalInfo = Object.keys(r.revealedInfo || {});
-    const allInfo    = [...new Set([...globalInfo, ...myInfoKeys])];
     const myWon      = myResults.some(p => p.correct);
     // Per-team beer: use my team's specific beer if available, otherwise global
     const myBeerName = r.teamBeers?.[game.teamId]?.name || r.beerName;
@@ -2919,9 +3013,39 @@ function renderTeamHistory(s) {
           ${won ? '✅' : '❌'} <strong>${tid}</strong>${isPerTeam ? ` — 🍺 ${rivBeerName}` : ''}${won ? `: ${correct}` : ''}
         </div>`;
       }).join('')}
-      ${allInfo.length ? `<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:3px">
-        ${allInfo.map(k => `<span class="info-pill" style="font-size:.58rem">${infoLabels[k]||k}</span>`).join('')}
-      </div>` : ''}
+      ${(() => {
+        // Info revealed — show values when available
+        const infoPills = [];
+        // Global info (visible to all)
+        Object.entries(r.revealedInfo || {}).forEach(([k,v]) => {
+          infoPills.push({ label: infoLabels[k]||k, val: v });
+        });
+        // Team-specific info (my team only) — prefer values over keys
+        const myVals = r.teamInfoValues?.[game.teamId];
+        const myKeys = r.teamInfoUsed?.[game.teamId];
+        if (myVals && typeof myVals === 'object') {
+          Object.entries(myVals).forEach(([k,v]) => {
+            infoPills.push({ label: infoLabels[k]||k, val: v });
+          });
+        } else if (myKeys && Array.isArray(myKeys)) {
+          myKeys.forEach(k => infoPills.push({ label: infoLabels[k]||k, val: null }));
+        }
+        if (!infoPills.length) return '';
+        return `<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:3px">
+          ${infoPills.map(p => `<span class="info-pill" style="font-size:.58rem">${p.label}${p.val != null ? ': '+p.val : ''}</span>`).join('')}
+        </div>`;
+      })()}
+      ${(() => {
+        // Card activity — show events relevant to my team this round
+        const acts = (r.cardActivity || []).filter(a => a.team === game.teamId || a.team === 'all');
+        if (!acts.length) return '';
+        return `<div style="margin-top:5px;padding-top:4px;border-top:1px solid rgba(255,255,255,.06)">
+          ${acts.map(a => {
+            const icon = a.type === 'info' ? '👁️' : a.type === 'shield' ? '🛡️' : '⚡';
+            return `<div style="font-size:.64rem;color:var(--m);padding:1px 0">${icon} ${a.text}</div>`;
+          }).join('')}
+        </div>`;
+      })()}
     </div>`;
   }).join('');
 }

@@ -192,7 +192,7 @@ class BJCPGame {
     // activeCardIds: null means ALL cards visible
     await this.gameRef.set({
       code: this.gameCode, master: masterName,
-      status: 'lobby', cardsLocked: true,
+      status: 'lobby', cardsLocked: true, judgingLocked: false,
       currentRound: 0, totalRounds: 6,
       currentBeer: null, teams: {}, rounds: {}, messages: {}, roundReset: 0,
       activeLieTeam: null, cancelShieldTeam: null,
@@ -204,6 +204,7 @@ class BJCPGame {
   }
 
   async joinGame(code, playerName, teamId) {
+    if (!playerName || !teamId) throw new Error('Nom de jugador i equip són obligatoris');
     await this.initFirebase();
     this.gameCode = code.toUpperCase();
     this.playerName = playerName;
@@ -250,7 +251,7 @@ class BJCPGame {
     const state = (await this.gameRef.once('value')).val();
     const updates = { 
       status: 'playing', currentRound: 1, cardsLocked: true,
-      roundReset: Date.now(), cancelShieldTeam: null
+      judgingLocked: false, roundReset: Date.now(), cancelShieldTeam: null
     };
     const teams = state.teams || {};
     Object.entries(teams).forEach(([tid, t]) => {
@@ -283,7 +284,7 @@ class BJCPGame {
       winnerTeam: null, winnerPlayer: null, guesses: {},
       pendingQuestion: null, pendingAction: null
     });
-    const updates = { cardsLocked: false, cancelShieldTeam: null, roundReset: Date.now() };
+    const updates = { cardsLocked: false, judgingLocked: false, cancelShieldTeam: null, roundReset: Date.now() };
     Object.entries(state?.teams || {}).forEach(([tid, t]) => {
       Object.keys(t.players || {}).forEach(pName => {
         updates[`teams/${tid}/players/${pName}/cardStates`] = null;
@@ -303,7 +304,7 @@ class BJCPGame {
       // Clear all player cardStates so new round starts fresh
       const updates = {
         currentRound: next, currentBeer: null, cardsLocked: true,
-        roundReset: Date.now(), cancelShieldTeam: null
+        judgingLocked: false, roundReset: Date.now(), cancelShieldTeam: null
       };
       const teams = state.teams || {};
       Object.entries(teams).forEach(([tid, t]) => {
@@ -439,6 +440,10 @@ class BJCPGame {
     updates[`currentBeer/guesses/${guessKey}/correct`] = correct;
     updates[`currentBeer/guesses/${guessKey}/points`]  = pts;
 
+    // Lock players out while Master is judging
+    if (!state.judgingLocked) {
+      updates['judgingLocked'] = true;
+    }
 
     // Track first winner for animation (only if not already set)
     if (correct && !beer.winnerTeam) {
@@ -466,6 +471,7 @@ class BJCPGame {
     const updates = {};
     updates['currentBeer/revealed'] = true;
     updates['currentBeer/resultsVisible'] = true;
+    updates['judgingLocked'] = false;
 
     if (!beer.roundPointsGiven) {
       updates['currentBeer/roundPointsGiven'] = true;
@@ -478,6 +484,11 @@ class BJCPGame {
           const tid = g.teamId;
           const pName = g.playerName;
           const pts = g.points || 0;
+          
+          // Skip ghost entries with undefined/missing team or player
+          if (!tid || !pName || tid === 'undefined' || pName === 'undefined') return;
+          // Skip if the team or player doesn't actually exist in state
+          if (!state.teams[tid]?.players?.[pName]) return;
           
           // Must accumulate in updates object since multiple guesses might belong to the same team/player
           const teamCurrent = updates[`teams/${tid}/points`] ?? (state.teams[tid]?.points || 0);
@@ -499,6 +510,8 @@ class BJCPGame {
       const guesses = beer.guesses || {};
       const results = {};
       Object.entries(guesses).forEach(([k, g]) => {
+        // Skip ghost entries with undefined team/player
+        if (!g.teamId || !g.playerName || g.teamId === 'undefined' || g.playerName === 'undefined') return;
         results[g.teamId] = results[g.teamId] || [];
         results[g.teamId].push({
           playerName: g.playerName,
@@ -508,9 +521,12 @@ class BJCPGame {
         });
       });
       const revInfo = { ...beer.revealedInfo };
+      // Save both keys (backward compat) and full values
       const teamInfoSummary = {};
+      const teamInfoValues = {};
       Object.entries(beer.teamInfo || {}).forEach(([tid, info]) => {
         teamInfoSummary[tid] = Object.keys(info);
+        teamInfoValues[tid] = { ...info };
       });
       // Save per-team beers if in per-team mode
       const teamBeersHistory = {};
@@ -519,6 +535,19 @@ class BJCPGame {
           teamBeersHistory[tid] = { id: tb.id, name: tb.name, number: tb.number, category: tb.category };
         });
       }
+      // Collect card activity from messages during this round
+      const roundStart = beer.startedAt || 0;
+      const allMsgs = Object.values(state.messages || {});
+      const cardActivity = allMsgs
+        .filter(m => m.ts >= roundStart && (m.isInfoReveal || m.isSystemAlert || m.isShieldBlock))
+        .sort((a, b) => a.ts - b.ts)
+        .map(m => ({
+          ts: m.ts,
+          team: m.toTeam || null,
+          player: m.toPlayer || null,
+          text: m.text,
+          type: m.isInfoReveal ? 'info' : m.isShieldBlock ? 'shield' : 'action'
+        }));
       await this.gameRef.child(`roundHistory/${round}`).set({
         round,
         beerName: beer.name || '?',
@@ -528,7 +557,9 @@ class BJCPGame {
         revealedAt: Date.now(),
         results,
         revealedInfo: revInfo,
-        teamInfoUsed: teamInfoSummary
+        teamInfoUsed: teamInfoSummary,
+        teamInfoValues: teamInfoValues,
+        cardActivity: cardActivity.length ? cardActivity : null
       });
     }
   }
@@ -556,6 +587,10 @@ class BJCPGame {
     // Block if round is already over (beer revealed) — but NOT cancel/lie which work between rounds
     if (beer?.revealed && !canUseWithoutBeer) {
       throw new Error('La ronda ja ha acabat. Espera la pròxima ronda.');
+    }
+    // Block action cards while Master is judging — cancel/lie still allowed (meta-cards)
+    if (state.judgingLocked && !canUseWithoutBeer) {
+      throw new Error('El Master està avaluant. Espera que acabi.');
     }
 
     const cancelShield = state.cancelShieldTeam;
@@ -921,6 +956,15 @@ class BJCPGame {
 
   // ── Submit guess ─────────────────────────────────────────────
   async submitGuess(guessId, guessName) {
+    // Guard: prevent ghost "undefined" entries in Firebase
+    if (!this.teamId || !this.playerName) {
+      throw new Error('Sessió invàlida. Torna a entrar a la partida.');
+    }
+    // Block submissions while Master is judging
+    const jSnap = await this.gameRef.child('judgingLocked').once('value');
+    if (jSnap.val()) {
+      throw new Error('JUDGING_LOCKED');
+    }
     // Check if this player already has a PENDING (not judged) guess
     const snap  = await this.gameRef.child('currentBeer/guesses').once('value');
     const guesses = snap.val() || {};
