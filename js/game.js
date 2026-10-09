@@ -286,7 +286,9 @@ class BJCPGame {
       winnerTeam: null, winnerPlayer: null, guesses: {},
       pendingQuestion: null, pendingAction: null
     });
-    const updates = { cardsLocked: false, judgingLocked: false, roundPhase: 'playing', cancelShieldTeam: null, roundReset: Date.now() };
+    const updates = { cardsLocked: false, judgingLocked: false, roundPhase: 'playing', roundReset: Date.now() };
+    // NOTE: cancelShieldTeam is NOT reset here — the shield may have been activated before
+    // the Master sets the beer (e.g. during card delivery). It resets in nextRound() / startGame().
     Object.entries(state?.teams || {}).forEach(([tid, t]) => {
       Object.keys(t.players || {}).forEach(pName => {
         updates[`teams/${tid}/players/${pName}/cardStates`] = null;
@@ -610,9 +612,9 @@ class BJCPGame {
     const lieTeam      = state.activeLieTeam;
 
     // Check if this card is blocked by cancel shield (rival used cancel)
-    // Shield blocks ANY card (except cancel/lie which are meta-cards)
+    // Shield blocks ANY card EXCEPT cancel, lie, steal (per game rules in AGENTS.md)
     const infoTypes = ['ibu','abv','srm','category'];
-    const blockableByShield = !['cancel','lie'].includes(cardType);
+    const blockableByShield = !['cancel','lie','steal'].includes(cardType);
     if (blockableByShield && cancelShield && cancelShield !== teamId) {
       await this.consumeCard(teamId, playerName, cardInstanceId);
       await this.gameRef.child('cancelShieldTeam').set(null); // shield consumed

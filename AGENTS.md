@@ -201,6 +201,7 @@ Quan `s.roundReset !== lastRoundReset`:
 
 | Versió | Data | Canvis principals |
 |--------|------|-------------------|
+| v2026.53 | 09/10/2026 | Fix carta Anular Ajuda: (1) `setCurrentBeer` ja no reseta `cancelShieldTeam` (el shield activat abans de posar la cervesa es perdia); (2) el `steal` ara s'exclou de les cartes bloquejables pel shield, tal com especifiquen les regles (excepte cancel/lie/steal). |
 | v2026.52 | 07/10/2026 | Redisseny elegant del diàleg de selecció de rondes inicials (targeta de comptador gran amb +/− i presets ràpids de 3, 5, 6, 8 rondes). Correcció del badge d'estat de ronda que feia servir la classe '.badge' (posició absoluta per a comptador de notificacions) provocant que el text "1. Preparar ronda" es desplacés dalt a la dreta sobre la icona de configuració retallat com a "Prep rond". |
 | v2026.51 | 07/10/2026 | Flux de ronda guiat i protegit per al Master: diàleg obligatori de rondes totals en iniciar partida; màquina d'estats de ronda (`setup` → `playing` → `judging` → `revealed`) amb stepper visual i bloqueig estricte del botó "Pròxima ronda" fins que s'han avaluat i revelat tots els resultats. Resum visual de la cervesa activa amb protecció d'edició accidental. |
 | v2026.50 | 07/10/2026 | Esborrat àgil de partides per al Master: checkboxes per a selecció múltiple, botó `🗑️ Esborrar (N)` en un sol clic i botó `🧹 Purgar finalitzades` per eliminar totes les partides fetes d'un sol cop. |
